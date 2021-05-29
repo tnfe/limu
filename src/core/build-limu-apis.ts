@@ -20,7 +20,7 @@ export function buildLimuApis() {
     let revoke: null | (() => void) = null;
 
     var copyOnWriteTraps = {
-      get: function (parent, key) {
+      get: (parent, key) => {
         // debugger;
         let currentChildVal = parent[key];
         if (key === '__proto__' || key === finishHandler) {
@@ -83,12 +83,19 @@ export function buildLimuApis() {
           currentChildVal = meta.proxyVal;
         }
 
+        if (Array.isArray(parent) && key === 'pop') {
+          return copyDataNode(parent, { op: 'pop', key, value: '', metaVer }, true);
+        }
 
         return currentChildVal;
       },
-      set: function (parent, key, value) {
+      set: (parent, key, value) => {
         // console.log('Set ', getKeyPath(parent, key, metaVer));
-        copyDataNode(parent, key, value, metaVer, true);
+        copyDataNode(parent, { key, value, metaVer }, true);
+        return true;
+      },
+      deleteProperty: (parent, key) => {
+        copyDataNode(parent, { op: 'del', key, value: '', metaVer }, true);
         return true;
       },
     };

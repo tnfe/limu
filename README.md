@@ -51,6 +51,6 @@ console.log(nextState.c === baseState.c); // true
 
 ## todo 
 - performance: compare with `immer`
-- trap `delete` `push` `pop`
+- trap `delete` `push` `pop` [done]
 - add test case
 - support Map Set

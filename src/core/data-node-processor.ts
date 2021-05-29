@@ -11,7 +11,8 @@ import {
 } from './helper';
 
 
-export function copyDataNode(dataNode, key, mayProxyValue, metaVer, isFirstCall) {
+export function copyDataNode(dataNode, copyCtx, isFirstCall) {
+  const { op, key, value: mayProxyValue, metaVer } = copyCtx;
   const dataNodeMeta = getMeta(dataNode, metaVer);
   /**
    * 防止 value 本身就是一个 Proxy
@@ -91,11 +92,18 @@ export function copyDataNode(dataNode, key, mayProxyValue, metaVer, isFirstCall)
 
       // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
       if (dataNodeMeta.parentMeta) {
-        copyDataNode(dataNodeMeta.parentMeta.self, dataNodeMeta.key, selfCopy, metaVer, false);
+        const copyCtx = { key: dataNodeMeta.key, value: selfCopy, metaVer };
+        copyDataNode(dataNodeMeta.parentMeta.self, copyCtx, false,);
       }
     }
 
-    selfCopy[key] = value;
+    if (op === 'pop') {
+      return selfCopy.pop.bind(selfCopy);
+    } else if (op === 'del') {
+      delete selfCopy[key];
+    } else {
+      selfCopy[key] = value;
+    }
 
     /**
      * 链路断裂，此对象未被代理
