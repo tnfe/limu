@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "es3",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "preserve",
+    "declaration": true,
+    "pretty": true,
+    "skipLibCheck": true,
+    "rootDir": "src",
+    "sourceMap": false,
+    "strict": true,
+    "removeComments": false,
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noImplicitAny": false,
+    "noFallthroughCasesInSwitch": true,
+    "outDir": "lib",
+    "lib": [
+      "es2018",
+      "dom",
+      "esnext"
+    ],
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dom"
+  ]
+}
