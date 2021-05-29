@@ -1,4 +1,4 @@
-## limu
+## limu 🍋
 `limu` is short of 'love immutable', born for efficient creation and operation of immutable object.
 
 ## Quick Start
