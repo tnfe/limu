@@ -27,12 +27,12 @@ export class Limu {
   }
 }
 
-export function createDraft(base: ObjectLike) {
+export function createDraft<T extends ObjectLike>(base: T): Draft<T> {
   const apis = new Limu();
   return apis.createDraft(base);
 }
 
-export function finishDraft<T extends ObjectLike>(draft: Draft<T>) {
+export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
   const draftMeta = getMetaForDraft(draft, draft[verKey]);
   let finishHandler: (FinishDraft | null) = null;
   if (draftMeta) finishHandler = draftMeta.finishDraft;
