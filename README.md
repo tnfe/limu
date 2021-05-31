@@ -1,5 +1,6 @@
 ## limu 🍋
 `limu` is short of 'love immutable', born for efficient creation and operation of immutable object.
+![limu](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu.png)
 
 ## Quick Start
 install
