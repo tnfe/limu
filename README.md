@@ -1,6 +1,10 @@
 ## limu 🍋
 `limu` is short of 'love immutable', born for efficient creation and operation of immutable object.
-![limu](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu.png)
+<p align="center">
+  <a href="https://concentjs.github.io/concent-doc">
+    <img width="380" src="https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu.png">
+  </a>
+</p>
 
 ## Quick Start
 install
