@@ -99,6 +99,8 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
 
     if (op === 'pop') {
       return selfCopy.pop.bind(selfCopy);
+    } else if (op === 'splice') {
+      return selfCopy.splice.bind(selfCopy);
     } else if (op === 'del') {
       delete selfCopy[key];
     } else {

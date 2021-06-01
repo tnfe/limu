@@ -83,8 +83,13 @@ export function buildLimuApis() {
           currentChildVal = meta.proxyVal;
         }
 
-        if (Array.isArray(parent) && key === 'pop') {
-          return copyDataNode(parent, { op: 'pop', key, value: '', metaVer }, true);
+        if (Array.isArray(parent)) {
+          if (key === 'pop') {
+            return copyDataNode(parent, { op: 'pop', key, value: '', metaVer }, true);
+          }
+          if (key === 'splice') {
+            return copyDataNode(parent, { op: 'splice', key, value: '', metaVer }, true);
+          }
         }
 
         return currentChildVal;
