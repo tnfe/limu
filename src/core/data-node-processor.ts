@@ -1,6 +1,7 @@
 import { isPrimitive, canHaveProto } from '../support/util';
 import { ver2MetasList } from '../support/inner-data';
 import { metasKey } from '../support/symbols';
+import { mapFnKeys, setFnKeys } from '../support/consts';
 import {
   getMeta,
   getUnProxyValue,
@@ -12,7 +13,7 @@ import {
 
 
 export function copyDataNode(dataNode, copyCtx, isFirstCall) {
-  const { op, key, value: mayProxyValue, metaVer } = copyCtx;
+  const { op, key, value: mayProxyValue, metaVer, parentType } = copyCtx;
   const dataNodeMeta = getMeta(dataNode, metaVer);
   /**
    * 防止 value 本身就是一个 Proxy
@@ -97,6 +98,15 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
       }
     }
 
+    if (['Map', 'Set'].includes(parentType)) {
+      const fnKeys = parentType === 'Map' ? mapFnKeys : setFnKeys;
+      if (fnKeys.includes(op)) {
+        return selfCopy[op].bind(selfCopy);
+      }
+      return selfCopy[op];
+    }
+
+    // may be array
     if (op === 'pop') {
       return selfCopy.pop.bind(selfCopy);
     } else if (op === 'splice') {
@@ -106,7 +116,6 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
     } else {
       selfCopy[key] = value;
     }
-
     /**
      * 链路断裂，此对象未被代理
      * // draft = { a: { b: { c: 1 } }};

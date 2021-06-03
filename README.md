@@ -101,4 +101,4 @@ spend 119 ms
 - performance: compare with `immer`
 - trap `delete` `push` `pop` [done]
 - add test case
-- support Map Set
+- support Map Set [done]

@@ -1,15 +1,24 @@
+import { objDesc, arrDesc, mapDesc, setDesc } from './consts';
 
 const toString = Object.prototype.toString;
-const objDesc = '[object Object]';
-const arrDesc = '[object Array]';
+
+
 
 export function isObject(val) {
-  return toString.call(val) === '[object Object]';
+  return toString.call(val) === objDesc;
+}
+
+export function isMap(val) {
+  return toString.call(val) === mapDesc;
+}
+
+export function isSet(val) {
+  return toString.call(val) === setDesc;
 }
 
 export function isPrimitive(val) {
   const desc = toString.call(val);
-  return ![objDesc, arrDesc].includes(desc);
+  return ![objDesc, arrDesc, mapDesc, setDesc].includes(desc);
 }
 
 export function isPromiseFn(obj) {

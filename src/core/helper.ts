@@ -1,4 +1,4 @@
-import { isObject } from '../support/util';
+import { isObject, isMap, isSet } from '../support/util';
 import { metasKey, verKey } from '../support/symbols';
 import { verWrap } from '../support/inner-data';
 
@@ -29,6 +29,7 @@ export function getMetas(mayMetasProtoObj) {
 }
 
 // 调用处已保证 meta 不为空
+// 调用处已保证 meta 不为空
 export function makeCopy(meta) {
   const metaOwner = meta.self;
 
@@ -38,8 +39,15 @@ export function makeCopy(meta) {
   if (isObject(metaOwner)) {
     return { ...metaOwner };
   }
+  if (isMap(metaOwner)) {
+    return new Map(metaOwner);
+  }
+  if (isSet(metaOwner)) {
+    return new Set(metaOwner);
+  }
   throw new Error(`data ${metaOwner} try trigger getCopy, its type is ${typeof meta}`)
 }
+
 
 export function getUnProxyValue(value, metaVer) {
   const valueMeta = getMetaForDraft(value, metaVer);
