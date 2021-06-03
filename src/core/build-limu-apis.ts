@@ -10,7 +10,7 @@ import {
 } from './helper';
 import { finishHandler, verKey } from '../support/symbols';
 import { carefulDataTypes } from '../support/consts';
-import { isPrimitive, isMap, isSet } from '../support/util';
+import { isPrimitive } from '../support/util';
 import { copyDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer } from './data-node-processor'
 
 
@@ -84,7 +84,7 @@ export function buildLimuApis() {
           // 指向代理对象
           currentChildVal = meta.proxyVal;
         }
-        
+
         const parentType = getDataNodeType(parent);
         if (carefulDataTypes[parentType]) {
           return copyDataNode(parent, { parentType, op: key, key, value: '', metaVer }, true);

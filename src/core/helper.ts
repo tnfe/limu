@@ -1,5 +1,5 @@
 import { isObject, isMap, isSet, getValStrDesc } from '../support/util';
-import { dataType2Desc, desc2dataType } from '../support/consts';
+import { desc2dataType } from '../support/consts';
 import { metasKey, verKey } from '../support/symbols';
 import { verWrap } from '../support/inner-data';
 
