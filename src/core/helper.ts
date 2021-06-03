@@ -1,4 +1,5 @@
-import { isObject, isMap, isSet } from '../support/util';
+import { isObject, isMap, isSet, getValStrDesc } from '../support/util';
+import { dataType2Desc, desc2dataType } from '../support/consts';
 import { metasKey, verKey } from '../support/symbols';
 import { verWrap } from '../support/inner-data';
 
@@ -98,4 +99,10 @@ export function setMetasProto(val, realProto) {
 export function isDraft(mayDraft) {
   const ver = mayDraft[verKey];
   return !!ver;
+}
+
+export function getDataNodeType(dataNode) {
+  var strDesc = getValStrDesc(dataNode);
+  const dataType = desc2dataType[strDesc];
+  return dataType;
 }

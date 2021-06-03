@@ -5,9 +5,11 @@ import {
   setMeta,
   getKeyPath,
   getMetaForDraft,
+  getDataNodeType,
   isDraft,
 } from './helper';
 import { finishHandler, verKey } from '../support/symbols';
+import { carefulDataTypes } from '../support/consts';
 import { isPrimitive, isMap, isSet } from '../support/util';
 import { copyDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer } from './data-node-processor'
 
@@ -82,20 +84,10 @@ export function buildLimuApis() {
           // 指向代理对象
           currentChildVal = meta.proxyVal;
         }
-
-        if (Array.isArray(parent)) {
-          if (key === 'pop') {
-            return copyDataNode(parent, { op: 'pop', key, value: '', metaVer }, true);
-          }
-          if (key === 'splice') {
-            return copyDataNode(parent, { op: 'splice', key, value: '', metaVer }, true);
-          }
-        }
-        if (isMap(parent)) {
-          return copyDataNode(parent, { parentType: 'Map', op: key, key, value: '', metaVer }, true);
-        }
-        if (isSet(parent)) {
-          return copyDataNode(parent, { parentType: 'Set', op: key, key, value: '', metaVer }, true);
+        
+        const parentType = getDataNodeType(parent);
+        if (carefulDataTypes[parentType]) {
+          return copyDataNode(parent, { parentType, op: key, key, value: '', metaVer }, true);
         }
 
         return currentChildVal;

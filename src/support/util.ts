@@ -2,8 +2,6 @@ import { objDesc, arrDesc, mapDesc, setDesc } from './consts';
 
 const toString = Object.prototype.toString;
 
-
-
 export function isObject(val) {
   return toString.call(val) === objDesc;
 }
@@ -14,6 +12,10 @@ export function isMap(val) {
 
 export function isSet(val) {
   return toString.call(val) === setDesc;
+}
+
+export function getValStrDesc(val) {
+  return toString.call(val);
 }
 
 export function isPrimitive(val) {

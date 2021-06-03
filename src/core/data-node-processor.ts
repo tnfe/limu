@@ -1,7 +1,7 @@
 import { isPrimitive, canHaveProto } from '../support/util';
 import { ver2MetasList } from '../support/inner-data';
 import { metasKey } from '../support/symbols';
-import { mapFnKeys, setFnKeys } from '../support/consts';
+import { mapFnKeys, setFnKeys, arrFnKeys, carefulDataTypes } from '../support/consts';
 import {
   getMeta,
   getUnProxyValue,
@@ -10,6 +10,12 @@ import {
   getRealProto,
   setMetasProto,
 } from './helper';
+
+const type2FnKeys = {
+  Map: mapFnKeys,
+  Set: setFnKeys,
+  Array: arrFnKeys,
+};
 
 
 export function copyDataNode(dataNode, copyCtx, isFirstCall) {
@@ -98,20 +104,16 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
       }
     }
 
-    if (['Map', 'Set'].includes(parentType)) {
-      const fnKeys = parentType === 'Map' ? mapFnKeys : setFnKeys;
+    // 是 Map, Set, Array 类型的方法操作或者值获取
+    if (carefulDataTypes[parentType]) {
+      const fnKeys = type2FnKeys[parentType];
       if (fnKeys.includes(op)) {
         return selfCopy[op].bind(selfCopy);
       }
       return selfCopy[op];
     }
 
-    // may be array
-    if (op === 'pop') {
-      return selfCopy.pop.bind(selfCopy);
-    } else if (op === 'splice') {
-      return selfCopy.splice.bind(selfCopy);
-    } else if (op === 'del') {
+    if (op === 'del') {
       delete selfCopy[key];
     } else {
       selfCopy[key] = value;
