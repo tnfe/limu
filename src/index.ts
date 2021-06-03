@@ -42,17 +42,20 @@ export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
   return finishHandler(draft);
 }
 
-function innerProduce(baseState, cb) {
+function checkCb(cb) {
   if (typeof cb !== 'function') {
     throw new Error('produce callback is not a function');
   }
   if (isPromiseFn(cb)) {
-    throw new Error('produce callback can not be a  promise function');
+    throw new Error('produce callback can not be a promise function');
   }
+}
+
+function innerProduce(baseState, cb, check = true) {
+  if (check) checkCb(cb);
   const draft = createDraft(baseState);
   cb(draft);
   return finishDraft(draft);
-
 }
 
 type ProduceCb<T> = (draft: Draft<T>) => void;
@@ -70,9 +73,10 @@ interface IProduce {
 
 const produceFn = (baseState: any, cb: any) => {
   if (!cb) {
+    // expect baseState to be a cb
+    checkCb(baseState);
     return (state) => {
-      // now baseState may be cb
-      return innerProduce(state, baseState);
+      return innerProduce(state, baseState, false);
     }
   }
   return innerProduce(baseState, cb) as any;
