@@ -19,7 +19,6 @@ export const desc2dataType = {
   [arrDesc]: carefulDataTypes.Array,
 };
 
-
 export const arrFnKeys = [
   'concat', 'copyWithin', 'entries', 'every', 'fill', 'filter', 'find', 'findIndex', 'flat', 'flatMap',
   'forEach', 'includes', 'indexOf', 'join', 'keys', 'lastIndexOf', 'map', 'pop', 'push', 'reduce', 'reduceRight',
@@ -29,3 +28,9 @@ export const arrFnKeys = [
 export const mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has', 'keys', 'set', 'values'];
 
 export const setFnKeys = ['add', 'clear', 'delete', 'entries', 'forEach', 'has', 'keys', 'values'];
+
+export const carefulType2FnKeys = {
+  [carefulDataTypes.Map]: mapFnKeys,
+  [carefulDataTypes.Set]: setFnKeys,
+  [carefulDataTypes.Array]: arrFnKeys,
+};

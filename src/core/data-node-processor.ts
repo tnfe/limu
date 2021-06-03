@@ -1,7 +1,7 @@
 import { isPrimitive, canHaveProto } from '../support/util';
 import { ver2MetasList } from '../support/inner-data';
 import { metasKey } from '../support/symbols';
-import { mapFnKeys, setFnKeys, arrFnKeys, carefulDataTypes } from '../support/consts';
+import { carefulType2FnKeys, carefulDataTypes } from '../support/consts';
 import {
   getMeta,
   getUnProxyValue,
@@ -10,13 +10,6 @@ import {
   getRealProto,
   setMetasProto,
 } from './helper';
-
-const type2FnKeys = {
-  Map: mapFnKeys,
-  Set: setFnKeys,
-  Array: arrFnKeys,
-};
-
 
 export function copyDataNode(dataNode, copyCtx, isFirstCall) {
   const { op, key, value: mayProxyValue, metaVer, parentType } = copyCtx;
@@ -105,8 +98,8 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
     }
 
     // 是 Map, Set, Array 类型的方法操作或者值获取
-    if (carefulDataTypes[parentType]) {
-      const fnKeys = type2FnKeys[parentType];
+    const fnKeys = carefulType2FnKeys[parentType];
+    if (fnKeys) {
       if (fnKeys.includes(op)) {
         return selfCopy[op].bind(selfCopy);
       }
