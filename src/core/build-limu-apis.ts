@@ -11,7 +11,8 @@ import {
 import { finishHandler, verKey } from '../support/symbols';
 import { carefulDataTypes } from '../support/consts';
 import { isPrimitive } from '../support/util';
-import { copyDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer } from './data-node-processor'
+import { copyDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer } from './data-node-processor';
+import { ObjectLike } from '../inner-types';
 
 
 export function buildLimuApis() {
@@ -104,14 +105,9 @@ export function buildLimuApis() {
     };
 
     return {
-      /**
-       * @template {any} T
-       * @param {T} baseState 
-       * @returns {T}
-       */
-      createDraft: (mayDraft) => {
+      createDraft: <T extends ObjectLike>(mayDraft: T): T => {
         if (called) {
-          throw new Error(`can not call new Immut().createDraft twice`);
+          throw new Error('can not call new Limu().createDraft twice');
         }
         let baseState = mayDraft;
         called = true;
@@ -155,6 +151,11 @@ export function buildLimuApis() {
         }
 
         const rootMeta = getMetaForDraft(proxyDraft, metaVer);
+        if (!rootMeta.copy) {
+          console.log('no copy');
+        } else {
+          console.log('has copy');
+        }
         const final = rootMeta.copy || rootMeta.self;
 
         // todo: 留着这个参数，解决多引用问题

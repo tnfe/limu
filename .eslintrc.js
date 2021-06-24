@@ -20,5 +20,6 @@ module.exports = {
   rules: {
     'constructor-super': 0,
     camelcase: 0,
+    '@typescript/no-unused-vars': 0,
   }
 }

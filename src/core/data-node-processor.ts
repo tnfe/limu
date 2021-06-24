@@ -1,7 +1,7 @@
-import { isPrimitive, canHaveProto } from '../support/util';
+import { isPrimitive, canHaveProto, canBeNum } from '../support/util';
 import { ver2MetasList } from '../support/inner-data';
 import { metasKey } from '../support/symbols';
-import { carefulType2FnKeys, carefulDataTypes } from '../support/consts';
+import { carefulType2FnKeys, ignoreFnOrAttributeKeys, shouldReturnDirectlyFnOrAttributeKeys } from '../support/consts';
 import {
   getMeta,
   getUnProxyValue,
@@ -10,6 +10,17 @@ import {
   getRealProto,
   setMetasProto,
 } from './helper';
+
+function allowCopyForOp(parentType, op) {
+  console.log(`parentType ${parentType} op ${op}`);
+  if (ignoreFnOrAttributeKeys.includes(op)) {
+    return false;
+  }
+  if (parentType === 'Array' && canBeNum(op)) {
+    return false;
+  }
+  return true;
+}
 
 export function copyDataNode(dataNode, copyCtx, isFirstCall) {
   const { op, key, value: mayProxyValue, metaVer, parentType } = copyCtx;
@@ -27,7 +38,10 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
 
   if (dataNodeMeta) {
     let selfCopy = dataNodeMeta.copy;
-    if (!selfCopy) {
+    // slice 操作无需copy副本
+    const allowCopy = allowCopyForOp(parentType, op);
+    if (!selfCopy && allowCopy) {
+      console.log(`copy for ${op}`);
       selfCopy = makeCopy(dataNodeMeta);
       dataNodeMeta.copy = selfCopy;
 
@@ -97,10 +111,18 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
       }
     }
 
+
+    if (shouldReturnDirectlyFnOrAttributeKeys.includes(op) || !allowCopy) {
+      if (selfCopy) return selfCopy[op];
+      return dataNodeMeta.self[op];
+    }
+
     // 是 Map, Set, Array 类型的方法操作或者值获取
     const fnKeys = carefulType2FnKeys[parentType];
     if (fnKeys) {
       if (fnKeys.includes(op)) {
+        // slice 操作无需使用copy，返回自身即可
+        if ('slice' === op) return dataNodeMeta.self.slice;
         return selfCopy[op].bind(selfCopy);
       }
       return selfCopy[op];
@@ -111,6 +133,7 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
     } else {
       selfCopy[key] = value;
     }
+
     /**
      * 链路断裂，此对象未被代理
      * // draft = { a: { b: { c: 1 } }};

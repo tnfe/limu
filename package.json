@@ -27,6 +27,7 @@
     "rollup-plugin-sourcemaps": "^0.6.3",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript": "^1.0.1",
+    "ts-jest": "^27.0.3",
     "typescript": "^4.1.2"
   },
   "files": [
@@ -56,9 +57,15 @@
   },
   "scripts": {
     "build": "tsc & rollup -c",
+    "test": "jest",
+    "debug": "ts-node ./debug/array-slice.ts",
     "dev": "tsc --watch",
-    "lint": "eslint ./src --fix --ext js,ts,tsx"
+    "lint": "eslint ./src --fix --ext js,ts,tsx",
+    "pub": "npm publish --registry=https://registry.npmjs.org"
   },
-  "version": "1.0.5",
-  "dependencies": {}
+  "version": "1.0.6",
+  "dependencies": {
+    "@types/jest": "^26.0.23",
+    "jest": "^27.0.5"
+  }
 }

@@ -15,6 +15,7 @@ module.exports = {
       format: 'umd',
       name: 'limu',
       file: 'dist/limu.min.js',
+      // file: 'dist/limu.js',
     },
   ],
 };

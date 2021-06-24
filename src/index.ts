@@ -2,16 +2,9 @@ import { buildLimuApis } from './core/build-limu-apis';
 import { getMetaForDraft } from './core/helper';
 import { verKey } from './support/symbols';
 import { isPromiseFn } from './support/util';
-
-type AnyObject = {
-  [key: string]: any;
-};
-type AnyArray = Array<any>;
+import { ObjectLike } from './inner-types';
 
 export type Draft<T> = T;
-
-export type ObjectLike = AnyObject | AnyArray;
-
 export type CreateDraft = <T extends ObjectLike >(base: T) => Draft<T>;
 export type FinishDraft = <T extends ObjectLike >(draft: T) => T;
 
@@ -37,7 +30,7 @@ export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
   let finishHandler: (FinishDraft | null) = null;
   if (draftMeta) finishHandler = draftMeta.finishDraft;
   if (!finishHandler) {
-    throw new Error(`opps, not an Immut draft!`);
+    throw new Error(`opps, not an Limu draft!`);
   }
   return finishHandler(draft);
 }

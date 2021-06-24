@@ -20,13 +20,12 @@
     "outDir": "lib",
     "lib": [
       "es2018",
-      "dom",
       "esnext"
     ],
   },
   "include": ["src/**/*"],
   "exclude": [
     "node_modules",
-    "dom"
+    "debug/**/*",
   ]
 }

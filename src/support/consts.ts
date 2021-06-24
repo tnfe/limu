@@ -29,6 +29,9 @@ export const mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has',
 
 export const setFnKeys = ['add', 'clear', 'delete', 'entries', 'forEach', 'has', 'keys', 'values'];
 
+export const ignoreFnOrAttributeKeys = ['slice', 'length', 'constructor'];
+export const shouldReturnDirectlyFnOrAttributeKeys = ['slice', 'length', 'constructor'];
+
 export const carefulType2FnKeys = {
   [carefulDataTypes.Map]: mapFnKeys,
   [carefulDataTypes.Set]: setFnKeys,
