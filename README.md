@@ -1,5 +1,5 @@
 ## limu 🍋
-`limu` is short of 'love immutable', born for efficient creation and operation of immutable object.
+`limu` is short of **love immutable**, born for efficient creation and operation of immutable object.
 <p align="center">
   <a href="https://concentjs.github.io/concent-doc">
     <img width="260" src="https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu.png">
