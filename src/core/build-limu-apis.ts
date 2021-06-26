@@ -151,11 +151,6 @@ export function buildLimuApis() {
         }
 
         const rootMeta = getMetaForDraft(proxyDraft, metaVer);
-        if (!rootMeta.copy) {
-          console.log('no copy');
-        } else {
-          console.log('has copy');
-        }
         const final = rootMeta.copy || rootMeta.self;
 
         // todo: 留着这个参数，解决多引用问题

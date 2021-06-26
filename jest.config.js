@@ -3,12 +3,16 @@ const jestConfig = {
   roots: ['<rootDir>'],
   testEnvironment: "node",
   collectCoverageFrom: [
-    'test/**/*.{ts}'
+    'test/**/*.{ts}',
   ],
   setupFilesAfterEnv: [
   ],
   testMatch: [
-    '<rootDir>/test/*.ts',
+    '<rootDir>/test/**/*.ts',
+    // '<rootDir>/test/array-base/fill.ts',
+  ],
+  testPathIgnorePatterns: [
+    '<rootDir>/test/_util.ts',
   ],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'ts-jest',

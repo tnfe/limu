@@ -1,7 +1,7 @@
-import { isPrimitive, canHaveProto, canBeNum } from '../support/util';
+import { isPrimitive, canHaveProto, canBeNum, isSymbol } from '../support/util';
 import { ver2MetasList } from '../support/inner-data';
 import { metasKey } from '../support/symbols';
-import { carefulType2FnKeys, ignoreFnOrAttributeKeys, shouldReturnDirectlyFnOrAttributeKeys } from '../support/consts';
+import { carefulType2FnKeys, arrIgnoreFnOrAttributeKeys } from '../support/consts';
 import {
   getMeta,
   getUnProxyValue,
@@ -11,12 +11,17 @@ import {
   setMetasProto,
 } from './helper';
 
+// slice、concat 以及一些特殊的key取值等操作无需copy副本
 function allowCopyForOp(parentType, op) {
-  console.log(`parentType ${parentType} op ${op}`);
-  if (ignoreFnOrAttributeKeys.includes(op)) {
+  const isArray = parentType === 'Array';
+  if (isArray && arrIgnoreFnOrAttributeKeys.includes(op)) {
     return false;
   }
-  if (parentType === 'Array' && canBeNum(op)) {
+  // like Symbol(Symbol.isConcatSpreadable) in test case array-base/concat
+  if (isSymbol(op)) {
+    return false;
+  }
+  if (isArray && canBeNum(op)) {
     return false;
   }
   return true;
@@ -38,10 +43,14 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
 
   if (dataNodeMeta) {
     let selfCopy = dataNodeMeta.copy;
-    // slice 操作无需copy副本
     const allowCopy = allowCopyForOp(parentType, op);
+    // try {
+    //   console.log(`allowCopy ${allowCopy} op ${op}`);
+    // } catch (err) {
+    //   console.log(`allowCopy ${allowCopy} op symbol`);
+    //   console.log(op);
+    // }
     if (!selfCopy && allowCopy) {
-      console.log(`copy for ${op}`);
       selfCopy = makeCopy(dataNodeMeta);
       dataNodeMeta.copy = selfCopy;
 
@@ -112,7 +121,7 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
     }
 
 
-    if (shouldReturnDirectlyFnOrAttributeKeys.includes(op) || !allowCopy) {
+    if (!allowCopy) {
       if (selfCopy) return selfCopy[op];
       return dataNodeMeta.self[op];
     }

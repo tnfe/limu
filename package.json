@@ -63,7 +63,7 @@
     "lint": "eslint ./src --fix --ext js,ts,tsx",
     "pub": "npm publish --registry=https://registry.npmjs.org"
   },
-  "version": "1.0.6",
+  "version": "1.0.7",
   "dependencies": {
     "@types/jest": "^26.0.23",
     "jest": "^27.0.5"

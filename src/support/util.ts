@@ -61,3 +61,7 @@ export function canBeNum(val) {
   return false;
 }
 
+
+export function isSymbol(maySymbol) {
+  return typeof maySymbol === 'symbol';
+}
