@@ -1,7 +1,10 @@
 import { isPrimitive, canHaveProto, canBeNum, isSymbol } from '../support/util';
 import { ver2MetasList } from '../support/inner-data';
 import { metasKey } from '../support/symbols';
-import { carefulType2FnKeys, arrIgnoreFnOrAttributeKeys } from '../support/consts';
+import {
+  carefulDataTypes, carefulType2FnKeys, arrIgnoreFnOrAttributeKeys,
+  mapIgnoreFnOrAttributeKeys, mapIgnoreFnKeys,
+} from '../support/consts';
 import {
   getMeta,
   getUnProxyValue,
@@ -17,6 +20,9 @@ function allowCopyForOp(parentType, op) {
   if (isArray && arrIgnoreFnOrAttributeKeys.includes(op)) {
     return false;
   }
+  if (parentType === carefulDataTypes.Map && mapIgnoreFnOrAttributeKeys.includes(op)) {
+    return false;
+  }
   // like Symbol(Symbol.isConcatSpreadable) in test case array-base/concat
   if (isSymbol(op)) {
     return false;
@@ -27,9 +33,9 @@ function allowCopyForOp(parentType, op) {
   return true;
 }
 
-export function copyDataNode(dataNode, copyCtx, isFirstCall) {
+export function copyDataNode(parentDataNode, copyCtx, isFirstCall) {
   const { op, key, value: mayProxyValue, metaVer, parentType } = copyCtx;
-  const dataNodeMeta = getMeta(dataNode, metaVer);
+  const parentDataNodeMeta = getMeta(parentDataNode, metaVer);
   /**
    * 防止 value 本身就是一个 Proxy
    * var draft_a1_b = draft.a1.b;
@@ -41,8 +47,8 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
     value = getUnProxyValue(mayProxyValue, metaVer);
   }
 
-  if (dataNodeMeta) {
-    let selfCopy = dataNodeMeta.copy;
+  if (parentDataNodeMeta) {
+    let selfCopy = parentDataNodeMeta.copy;
     const allowCopy = allowCopyForOp(parentType, op);
     // try {
     //   console.log(`allowCopy ${allowCopy} op ${op}`);
@@ -50,9 +56,10 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
     //   console.log(`allowCopy ${allowCopy} op symbol`);
     //   console.log(op);
     // }
+
     if (!selfCopy && allowCopy) {
-      selfCopy = makeCopy(dataNodeMeta);
-      dataNodeMeta.copy = selfCopy;
+      selfCopy = makeCopy(parentDataNodeMeta);
+      parentDataNodeMeta.copy = selfCopy;
 
       if (!isPrimitive(value)) {
         const valueMeta = getMeta(value, metaVer);
@@ -87,10 +94,10 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
              * draft.a1 = d;
              * draft.a.b.c = null; // d属性数据节点和父亲关系解除
              */
-            if (valueMeta.parent.level !== dataNodeMeta.level) {
+            if (valueMeta.parent.level !== parentDataNodeMeta.level) {
               // 修正 valueMeta 维护的相关数据
-              valueMeta.parent = dataNodeMeta.self;
-              valueMeta.level = dataNodeMeta.level + 1;
+              valueMeta.parent = parentDataNodeMeta.self;
+              valueMeta.level = parentDataNodeMeta.level + 1;
               valueMeta.key = key;
               valueMeta.keyPath = getKeyPath(valueMeta.parent, key, metaVer);
 
@@ -114,16 +121,39 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
       }
 
       // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
-      if (dataNodeMeta.parentMeta) {
-        const copyCtx = { key: dataNodeMeta.key, value: selfCopy, metaVer };
-        copyDataNode(dataNodeMeta.parentMeta.self, copyCtx, false,);
+      if (parentDataNodeMeta.parentMeta) {
+        const copyCtx = { key: parentDataNodeMeta.key, value: selfCopy, metaVer };
+        copyDataNode(parentDataNodeMeta.parentMeta.self, copyCtx, false,);
       }
+    } else {
+      // no copy
     }
 
 
+    const { self, proxyVal } = parentDataNodeMeta;
     if (!allowCopy) {
-      if (selfCopy) return selfCopy[op];
-      return dataNodeMeta.self[op];
+      // avoid error: X.prototype.y called on incompatible type
+      // see https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Errors/Called_on_incompatible_type
+      if (mapIgnoreFnKeys.includes(op)) {
+        let fn;
+        if (selfCopy) fn = selfCopy[op].bind(selfCopy);
+        else fn = self[op].bind(self);
+        const oriFn = fn;
+
+        if (op === 'forEach' && parentType === carefulDataTypes.Map) {
+          fn = (val, key) => {
+            return oriFn(val, key, proxyVal);
+          }
+        }
+
+        return fn;
+      }
+
+      if (selfCopy) {
+        return selfCopy[op];
+      }
+
+      return self[op];
     }
 
     // 是 Map, Set, Array 类型的方法操作或者值获取
@@ -131,7 +161,7 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
     if (fnKeys) {
       if (fnKeys.includes(op)) {
         // slice 操作无需使用copy，返回自身即可
-        if ('slice' === op) return dataNodeMeta.self.slice;
+        if ('slice' === op) return self.slice;
         return selfCopy[op].bind(selfCopy);
       }
       return selfCopy[op];
@@ -151,7 +181,7 @@ export function copyDataNode(dataNode, copyCtx, isFirstCall) {
      * draft.a.n1.n2 = 888; // 此时 n2_DataNode 是未代理对象
      */
   } else {
-    dataNode[key] = value;
+    parentDataNode[key] = value;
   }
 }
 

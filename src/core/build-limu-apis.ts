@@ -10,7 +10,7 @@ import {
 } from './helper';
 import { finishHandler, verKey } from '../support/symbols';
 import { carefulDataTypes } from '../support/consts';
-import { isPrimitive } from '../support/util';
+import { isPrimitive, canBeNum } from '../support/util';
 import { copyDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer } from './data-node-processor';
 import { ObjectLike } from '../inner-types';
 
@@ -24,6 +24,7 @@ export function buildLimuApis() {
 
     var copyOnWriteTraps = {
       get: (parent, key) => {
+        // console.log('Get ', key);
         // debugger;
         let currentChildVal = parent[key];
         if (key === '__proto__' || key === finishHandler) {
@@ -34,6 +35,7 @@ export function buildLimuApis() {
         }
         // console.log('Read', getKeyPath(parent, key, metaVer));
 
+        // console.log('Get ', parent, key);
         const parentMeta = getMeta(parent, metaVer);
 
         // 第 2+ 次进入 key 的 get 函数，已为 parent 生成了代理
@@ -73,6 +75,7 @@ export function buildLimuApis() {
               level,
               proxyVal: new Proxy(currentChildVal, copyOnWriteTraps),
             };
+            // console.log('currentChildVal', currentChildVal);
 
             const parentMeta = getMeta(parent, metaVer);
             if (parentMeta && level > 0) {
@@ -87,6 +90,12 @@ export function buildLimuApis() {
         }
 
         const parentType = getDataNodeType(parent);
+        // 用下标去数组时，可直接返回
+        // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
+        if (parentType === carefulDataTypes.Array && canBeNum(key)) {
+          return currentChildVal;
+        }
+
         if (carefulDataTypes[parentType]) {
           return copyDataNode(parent, { parentType, op: key, key, value: '', metaVer }, true);
         }
@@ -94,6 +103,7 @@ export function buildLimuApis() {
         return currentChildVal;
       },
       set: (parent, key, value) => {
+        // console.log('Set ', parent, key, value);
         // console.log('Set ', getKeyPath(parent, key, metaVer));
         copyDataNode(parent, { key, value, metaVer }, true);
         return true;

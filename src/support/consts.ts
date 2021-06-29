@@ -22,7 +22,7 @@ export const desc2dataType = {
 export const arrFnKeys = [
   'concat', 'copyWithin', 'entries', 'every', 'fill', 'filter', 'find', 'findIndex', 'flat', 'flatMap',
   'forEach', 'includes', 'indexOf', 'join', 'keys', 'lastIndexOf', 'map', 'pop', 'push', 'reduce', 'reduceRight',
-  'reverse', 'shift', 'unshift', 'slice', 'some', 'sort', 'splice',  'values', 'valueOf',
+  'reverse', 'shift', 'unshift', 'slice', 'some', 'sort', 'splice', 'values', 'valueOf',
 ];
 
 export const mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has', 'keys', 'set', 'values'];
@@ -39,6 +39,14 @@ export const arrIgnoreFnOrAttributeKeys = [
   'copyWithin', 'valueOf',
   // copyWithin、valueOf will hit the keys of next line
   'asymmetricMatch', 'nodeType',
+];
+
+export const mapIgnoreFnKeys = [
+  'entries', 'keys', 'values', 'forEach',
+];
+export const mapIgnoreFnOrAttributeKeys = [
+  ...mapIgnoreFnKeys,
+  'size',
 ];
 
 export const carefulType2FnKeys = {

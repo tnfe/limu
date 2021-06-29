@@ -12,6 +12,30 @@ export function noop(...args: any[]) {
 }
 
 /**
+ * common getMapBase handler
+ * @returns
+ */
+export function getMapBase() {
+  return new Map([
+    ['k1', 1],
+    ['k2', 2],
+    ['k3', 3],
+  ]);
+}
+
+/**
+ * common getMapBase handler
+ * @returns
+ */
+export function getMapObjBase() {
+  return new Map([
+    ['k1', { name: 'k1' }],
+    ['k2', { name: 'k2' }],
+    ['k3', { name: 'k3' }],
+  ]);
+}
+
+/**
  * common getArrBase handler
  * @returns
  */
@@ -23,15 +47,15 @@ export function getArrBase() {
  * common compare handler
  * new and base should be equal
  */
-export function shouldBeEqual(arrNew, arrBase) {
-  expect(arrNew === arrBase).toBeTruthy();
+export function shouldBeEqual(stateNew, stateBase) {
+  expect(stateNew === stateBase).toBeTruthy();
 }
 /**
  * common compare handler
  * new and base should be not equal
  */
-export function shouldBeNotEqual(arrNew, arrBase) {
-  expect(arrNew !== arrBase).toBeTruthy();
+export function shouldBeNotEqual(stateNew, stateBase) {
+  expect(stateNew !== stateBase).toBeTruthy();
 }
 
 /**
@@ -64,6 +88,40 @@ export function runTestSuit(
         operateDraft(arrDraft, arrBase);
       });
       executeAssertLogic(arrNew, arrBase);
-    })
+    });
+  })
+}
+
+/**
+ * 
+ * @param testSuitDesc 
+ * @param testCaseDesc 
+ * @param getMapBase
+ * @param operateDraft
+ * @param executeAssertLogic
+ */
+export function runMapTestSuit(
+  testSuitDesc: string,
+  testCaseDesc: string,
+  getMapBase: () => Map<any, any>,
+  operateDraft: (arrDraft: Map<any, any>, arrBase: Map<any, any>) => void,
+  executeAssertLogic: (arrNew: Map<any, any>, arrBase: Map<any, any>) => void,
+) {
+  describe(testSuitDesc, () => {
+    test(createDraftTip(testCaseDesc), () => {
+      const mapBase = getMapBase();
+      const mapDraft = createDraft(mapBase);
+      operateDraft(mapDraft, mapBase);
+      const mapNew = finishDraft(mapDraft);
+      executeAssertLogic(mapNew, mapBase);
+    });
+
+    // test(produceTip(testCaseDesc), () => {
+    //   const mapBase = getMapBase();
+    //   const mapNew = produce(mapBase, mapDraft => {
+    //     operateDraft(mapDraft, mapBase);
+    //   });
+    //   executeAssertLogic(mapNew, mapBase);
+    // });
   })
 }
