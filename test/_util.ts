@@ -24,7 +24,7 @@ export function getMapBase() {
 }
 
 /**
- * common getMapBase handler
+ * common getMapObjBase handler
  * @returns
  */
 export function getMapObjBase() {
@@ -41,6 +41,22 @@ export function getMapObjBase() {
  */
 export function getArrBase() {
   return [1, 2, 3];
+}
+
+/**
+ * common getArrBase handler
+ * @returns
+ */
+export function getSetBase() {
+  return new Set([1, 2, 3]);
+}
+
+/**
+ * common getArrBase handler
+ * @returns
+ */
+export function getSetObjBase() {
+  return new Set([{ name: 'k1' }, { name: 'k2' }, { name: 'k3' }]);
 }
 
 /**
@@ -114,6 +130,40 @@ export function runMapTestSuit(
       operateDraft(mapDraft, mapBase);
       const mapNew = finishDraft(mapDraft);
       executeAssertLogic(mapNew, mapBase);
+    });
+
+    test(produceTip(testCaseDesc), () => {
+      const mapBase = getMapBase();
+      const mapNew = produce(mapBase, mapDraft => {
+        operateDraft(mapDraft, mapBase);
+      });
+      executeAssertLogic(mapNew, mapBase);
+    });
+  })
+}
+
+/**
+ * 
+ * @param testSuitDesc 
+ * @param testCaseDesc 
+ * @param getSetBase
+ * @param operateDraft
+ * @param executeAssertLogic
+ */
+export function runSetTestSuit(
+  testSuitDesc: string,
+  testCaseDesc: string,
+  getSetBase: () => Set<any>,
+  operateDraft: (setDraft: Set<any>, setBase: Set<any>) => void,
+  executeAssertLogic: (setNew: Set<any>, setBase: Set<any>) => void,
+) {
+  describe(testSuitDesc, () => {
+    test(createDraftTip(testCaseDesc), () => {
+      const setBase = getSetBase();
+      const setDraft = createDraft(setBase);
+      operateDraft(setDraft, setBase);
+      const setNew = finishDraft(setDraft);
+      executeAssertLogic(setNew, setBase);
     });
 
     // test(produceTip(testCaseDesc), () => {

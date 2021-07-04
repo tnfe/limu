@@ -42,10 +42,16 @@ export const arrIgnoreFnOrAttributeKeys = [
 ];
 
 export const mapIgnoreFnKeys = [
-  'entries', 'keys', 'values', 'forEach',
+  'entries', 'keys', 'values', 'forEach', 'has', 'get',
 ];
 export const mapIgnoreFnOrAttributeKeys = [
   ...mapIgnoreFnKeys,
+  'size',
+];
+
+export const setIgnoreFnKeys = ['entries', 'forEach', 'has', 'keys', 'values'];
+export const setIgnoreFnOrAttributeKeys = [
+  ...setIgnoreFnKeys,
   'size',
 ];
 

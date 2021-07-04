@@ -4,6 +4,7 @@ import { metasKey } from '../support/symbols';
 import {
   carefulDataTypes, carefulType2FnKeys, arrIgnoreFnOrAttributeKeys,
   mapIgnoreFnOrAttributeKeys, mapIgnoreFnKeys,
+  setIgnoreFnOrAttributeKeys, setIgnoreFnKeys,
 } from '../support/consts';
 import {
   getMeta,
@@ -16,18 +17,18 @@ import {
 
 // slice、concat 以及一些特殊的key取值等操作无需copy副本
 function allowCopyForOp(parentType, op) {
-  const isArray = parentType === 'Array';
-  if (isArray && arrIgnoreFnOrAttributeKeys.includes(op)) {
-    return false;
+  if (parentType === carefulDataTypes.Array) {
+    if (arrIgnoreFnOrAttributeKeys.includes(op)) return false;
+    if (canBeNum(op)) return false;
   }
   if (parentType === carefulDataTypes.Map && mapIgnoreFnOrAttributeKeys.includes(op)) {
     return false;
   }
-  // like Symbol(Symbol.isConcatSpreadable) in test case array-base/concat
-  if (isSymbol(op)) {
+  if (parentType === carefulDataTypes.Set && setIgnoreFnOrAttributeKeys.includes(op)) {
     return false;
   }
-  if (isArray && canBeNum(op)) {
+  // like Symbol(Symbol.isConcatSpreadable) in test case array-base/concat
+  if (isSymbol(op)) {
     return false;
   }
   return true;
@@ -134,7 +135,9 @@ export function copyDataNode(parentDataNode, copyCtx, isFirstCall) {
     if (!allowCopy) {
       // avoid error: X.prototype.y called on incompatible type
       // see https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Errors/Called_on_incompatible_type
-      if (mapIgnoreFnKeys.includes(op)) {
+      const isMapFnKey = mapIgnoreFnKeys.includes(op);
+      const isSetFnKey = setIgnoreFnKeys.includes(op);
+      if (isMapFnKey || isSetFnKey) {
         let fn;
         if (selfCopy) fn = selfCopy[op].bind(selfCopy);
         else fn = self[op].bind(self);

@@ -8,11 +8,13 @@ const jestConfig = {
   setupFilesAfterEnv: [
   ],
   testMatch: [
-    '<rootDir>/test/**/*.ts',
+    // '<rootDir>/test/**/*.ts',
     // '<rootDir>/test/array-base/fill.ts',
     // '<rootDir>/test/array-other/object-item.ts',
     // '<rootDir>/test/map-other/nothing.ts',
-    // '<rootDir>/test/map-base/forEach.ts',
+    // '<rootDir>/test/map-base/get.ts',
+    // '<rootDir>/test/set-base/size.ts',
+    '<rootDir>/test/set-other/update-object-item.ts',
   ],
   testPathIgnorePatterns: [
     '<rootDir>/test/_util.ts',
