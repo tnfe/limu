@@ -1,6 +1,6 @@
 import { runTestSuit, getArrBase, shouldBeEqual, noop } from '../_util';
 
-function changeDraft(arrDraft) {
+function changeDraft(arrDraft: any[]) {
   arrDraft.forEach((item, i) => {
     arrDraft[i] = 100 + item;
   });

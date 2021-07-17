@@ -2,7 +2,15 @@ import { isObject, isMap, isSet, getValStrDesc } from '../support/util';
 import { desc2dataType } from '../support/consts';
 import { metasKey, verKey } from '../support/symbols';
 import { verWrap } from '../support/inner-data';
+import { carefulType2proxyItemFnKeys } from '../support/consts';
+import { DraftMeta } from '../inner-types';
 
+
+
+export function shouldUseProxyItems(parentType, key) {
+  const proxyItemFnKeys = carefulType2proxyItemFnKeys[parentType] || [];
+  return proxyItemFnKeys.includes(key);
+}
 
 export function getKeyPath(mayContainMetaObj, curKey, metaVer) {
   const pathArr = [curKey];
@@ -14,7 +22,7 @@ export function getKeyPath(mayContainMetaObj, curKey, metaVer) {
   return pathArr;
 }
 
-export function getMeta(mayMetasProtoObj, metaVer) {
+export function getMeta(mayMetasProtoObj, metaVer): DraftMeta | null {
   const metas = getMetas(mayMetasProtoObj);
   if (metas) return metas[metaVer];
   return null;
@@ -30,21 +38,21 @@ export function getMetas(mayMetasProtoObj) {
 }
 
 // 调用处已保证 meta 不为空
-// 调用处已保证 meta 不为空
-export function makeCopy(meta) {
-  const metaOwner = meta.self;
+export function makeCopy(meta: DraftMeta) {
+  const metaOwner: any = meta.self;
 
   if (Array.isArray(metaOwner)) {
-    return metaOwner.slice();
+    return meta.proxyItems || metaOwner.slice();
   }
   if (isObject(metaOwner)) {
     return { ...metaOwner };
   }
   if (isMap(metaOwner)) {
-    return new Map(metaOwner);
+    return meta.proxyItems || new Map(metaOwner);
   }
   if (isSet(metaOwner)) {
-    return new Set(metaOwner);
+    console.log('meta.proxyItems for Set', meta.proxyItems);
+    return meta.proxyItems || new Set(metaOwner);
   }
   throw new Error(`data ${metaOwner} try trigger getCopy, its type is ${typeof meta}`)
 }
@@ -72,7 +80,7 @@ export function getMetaVer() {
   return verWrap.value;
 }
 
-export function getLevel(mayContainMetaObj, metaVer) {
+export function getNextMetaLevel(mayContainMetaObj, metaVer) {
   const meta = getMeta(mayContainMetaObj, metaVer);
   return meta ? meta.level + 1 : 1;
 }

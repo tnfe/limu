@@ -1,17 +1,18 @@
 import {
   getMetaVer,
   getMeta,
-  getLevel,
+  getNextMetaLevel,
   setMeta,
   getKeyPath,
   getMetaForDraft,
   getDataNodeType,
   isDraft,
+  shouldUseProxyItems,
 } from './helper';
 import { finishHandler, verKey } from '../support/symbols';
 import { carefulDataTypes } from '../support/consts';
-import { isPrimitive, canBeNum } from '../support/util';
-import { copyDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer } from './data-node-processor';
+import { isPrimitive, canBeNum, isFn, noop, isSymbol } from '../support/util';
+import { copyAndGetDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer } from './data-node-processor';
 import { ObjectLike } from '../inner-types';
 
 
@@ -24,19 +25,37 @@ export function buildLimuApis() {
 
     var copyOnWriteTraps = {
       get: (parent, key) => {
-        // console.log('Get ', key);
-        // debugger;
-        let currentChildVal = parent[key];
-        if (key === '__proto__' || key === finishHandler) {
-          return currentChildVal;
-        }
+        console.log('Get', key);
         if (key === verKey) {
           return metaVer;
         }
-        // console.log('Read', getKeyPath(parent, key, metaVer));
 
-        // console.log('Get ', parent, key);
+        if (key === '__proto__' || key === finishHandler) {
+          return parent[key];
+        }
+
+        if (isSymbol(key)) {
+          return parent[key];
+        }
+
+        const parentType = getDataNodeType(parent);
         const parentMeta = getMeta(parent, metaVer);
+
+        // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
+        // 配合 data-node-processor 里的 ATTENTION_1
+        if ([carefulDataTypes.Array, carefulDataTypes.Set].includes(parentType)) {
+          if (['length', 'constructor', 'asymmetricMatch', 'nodeType'].includes(key)) {
+            if (parentMeta) {
+              return parentMeta.copy ? parentMeta.copy[key] : parentMeta.self[key];
+            }
+          } else if (key === verKey) {
+            return metaVer;
+          }
+        }
+
+        let currentChildVal = parent[key];
+        // console.log('Read', getKeyPath(parent, key, metaVer));
+        // console.log('Get ', parent, key);
 
         // 第 2+ 次进入 key 的 get 函数，已为 parent 生成了代理
         if (parentMeta) {
@@ -59,59 +78,110 @@ export function buildLimuApis() {
           }
         }
 
-        if (currentChildVal && !isPrimitive(currentChildVal)) {
-          ensureDataNodeMetasProtoLayer(currentChildVal, metaVer);
-          let meta = getMeta(currentChildVal, metaVer);
+        const createMeta = (currentChildVal) => {
+          if (currentChildVal && !isPrimitive(currentChildVal)) {
+            let meta = getMeta(currentChildVal, metaVer);
 
-          // 惰性生成代理对象和其元数据
-          if (!meta) {
-            const level = getLevel(parent, metaVer);
-            // debugger;
-            meta = {
-              parent,
-              self: currentChildVal,
-              key,
-              keyPath: getKeyPath(parent, key, metaVer),
-              level,
-              proxyVal: new Proxy(currentChildVal, copyOnWriteTraps),
-            };
-            // console.log('currentChildVal', currentChildVal);
+            if (!isFn(currentChildVal)) {
+              console.log('-> step 2, build proxy for ', currentChildVal);
+              ensureDataNodeMetasProtoLayer(currentChildVal, metaVer);
 
-            const parentMeta = getMeta(parent, metaVer);
-            if (parentMeta && level > 0) {
-              meta.parentMeta = parentMeta;
-              meta.rootMeta = parentMeta.rootMeta;
+              // 惰性生成代理对象和其元数据
+              if (!meta) {
+                meta = {
+                  rootMeta: null,
+                  parentMeta: null,
+                  parent,
+                  self: currentChildVal,
+                  key,
+                  keyPath: getKeyPath(parent, key, metaVer),
+                  level: getNextMetaLevel(parent, metaVer),
+                  proxyVal: new Proxy(currentChildVal, copyOnWriteTraps),
+                  copy: null,
+                  modified: false,
+                  proxyItems: null,
+                  finishDraft: noop,
+                  ver: metaVer,
+                };
+                // console.log('currentChildVal', currentChildVal);
+
+                const parentMeta = getMeta(parent, metaVer);
+                if (parentMeta) {
+                  meta.parentMeta = parentMeta;
+                  meta.rootMeta = parentMeta.rootMeta;
+                }
+                setMeta(currentChildVal, meta, metaVer);
+              }
+
+              return meta.proxyVal;
+            } else {
+              if (shouldUseProxyItems(parentType, key)) {
+                meta = getMeta(parent, metaVer);
+                if (!meta) {
+                  throw new Error('[[ createMeta ]]: oops, meta should not be null');
+                }
+
+                if (!meta.proxyItems) {
+                  // 提前完成遍历，为所有item生成代理
+                  let proxyItems: any = null;
+                  if (parentType === carefulDataTypes.Set) {
+                    const tmp = new Set();
+                    (parent as Set<any>).forEach((val) => tmp.add(createMeta(val)));
+                    proxyItems = tmp;
+                  } else if (parentType === carefulDataTypes.Map) {
+                    const tmp = new Map();
+                    (parent as Map<any, any>).forEach((val, key) => tmp.set(key, createMeta(val)));
+                    proxyItems = tmp;
+                  } else if (parentType === carefulDataTypes.Array) {
+                    const tmp: any[] = [];
+                    (parent as any[]).forEach((val) => tmp.push(createMeta(val)));
+                    proxyItems = tmp;
+                  }
+
+                  meta.proxyItems = proxyItems;
+                }
+              }
+
+              return currentChildVal;
             }
-            setMeta(currentChildVal, meta, metaVer);
           }
 
-          // 指向代理对象
-          currentChildVal = meta.proxyVal;
-        }
+          return currentChildVal;
+        };
 
-        const parentType = getDataNodeType(parent);
-        // 用下标去数组时，可直接返回
+        // 可能会指向代理对象
+        currentChildVal = createMeta(currentChildVal);
+
+        // 用下标取数组时，可直接返回
         // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
         if (parentType === carefulDataTypes.Array && canBeNum(key)) {
           return currentChildVal;
         }
 
         if (carefulDataTypes[parentType]) {
-          return copyDataNode(parent, { parentType, op: key, key, value: '', metaVer }, true);
+          return copyAndGetDataNode(parent, { parentType, op: key, key, value: currentChildVal, metaVer }, true);
         }
 
         return currentChildVal;
       },
       set: (parent, key, value) => {
-        // console.log('Set ', parent, key, value);
+        console.log('Set ', parent, key, value);
         // console.log('Set ', getKeyPath(parent, key, metaVer));
-        copyDataNode(parent, { key, value, metaVer }, true);
+        copyAndGetDataNode(parent, { key, value, metaVer }, true);
         return true;
       },
       deleteProperty: (parent, key) => {
-        copyDataNode(parent, { op: 'del', key, value: '', metaVer }, true);
+        copyAndGetDataNode(parent, { op: 'del', key, value: '', metaVer }, true);
         return true;
       },
+
+      // trap function call
+      // apply: function (target, thisArg, argumentsList) {
+      //   console.log(`Apply `, target, thisArg, argumentsList);
+      //   // expected output: "Calculate sum: 1,2"
+
+      //   return target(argumentsList[0], argumentsList[1]) * 10;
+      // },
     };
 
     return {
@@ -124,6 +194,7 @@ export function buildLimuApis() {
 
         if (isDraft(mayDraft)) {
           const draftMeta = getMetaForDraft(mayDraft, mayDraft[verKey]);
+          // @ts-ignore
           baseState = draftMeta.self;
         }
 
@@ -131,13 +202,17 @@ export function buildLimuApis() {
         let meta = getMeta(baseState, metaVer);
         if (!meta) {
           meta = {
+            rootMeta: null,
             parent: null,
+            parentMeta: null,
             self: baseState,
+            copy: null,
+            modified: false,
             key: '',
             keyPath: [],
             level: 0,
             proxyVal: null,
-            parentMeta: null,
+            proxyItems: null,
             finishDraft: immutApis.finishDraft,
             ver: metaVer,
           };
@@ -145,6 +220,7 @@ export function buildLimuApis() {
           setMeta(baseState, meta, metaVer);
         }
         const { proxy: proxyDraft, revoke: revokeHandler } = Proxy.revocable(baseState, copyOnWriteTraps);
+
         meta.proxyVal = proxyDraft;
         revoke = revokeHandler;
         return proxyDraft;
@@ -161,7 +237,16 @@ export function buildLimuApis() {
         }
 
         const rootMeta = getMetaForDraft(proxyDraft, metaVer);
-        const final = rootMeta.copy || rootMeta.self;
+
+        if (!rootMeta) {
+          throw new Error('oops, rootMeta should not be null!');
+        }
+
+        let final = rootMeta.self;
+        // 有 copy 不一定有修改行为，这里需要做双重判断
+        if (rootMeta.copy && rootMeta.modified) {
+          final = rootMeta.copy;
+        }
 
         // todo: 留着这个参数，解决多引用问题
         // var base = { a: { b: { c: 1 } }, b: null };

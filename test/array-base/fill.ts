@@ -10,6 +10,8 @@ function changeDraft(arrDraft: any[]) {
 }
 
 function compare(arrNew, arrBase) {
+  console.log(arrNew);
+  console.log(arrBase);
   expect(arrNew).toMatchObject([1, 2, 10, 10, 10, 6]);
   expect(arrBase).toMatchObject([1, 2, 3, 4, 5, 6]);
 }

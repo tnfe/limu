@@ -1,4 +1,4 @@
-import { createDraft, finishDraft, produce } from '../src/index';
+import { createDraft, finishDraft } from '../src/index';
 
 export const produceTip = (testDescribe: string) => `${testDescribe} (with produce)`;
 
@@ -64,6 +64,7 @@ export function getSetObjBase() {
  * new and base should be equal
  */
 export function shouldBeEqual(stateNew, stateBase) {
+  console.log('shouldBeEqual');
   expect(stateNew === stateBase).toBeTruthy();
 }
 /**
@@ -98,13 +99,13 @@ export function runTestSuit(
       executeAssertLogic(arrNew, arrBase);
     });
 
-    test(produceTip(testCaseDesc), () => {
-      const arrBase = getArrBase();
-      const arrNew = produce(arrBase, arrDraft => {
-        operateDraft(arrDraft, arrBase);
-      });
-      executeAssertLogic(arrNew, arrBase);
-    });
+    // test(produceTip(testCaseDesc), () => {
+    //   const arrBase = getArrBase();
+    //   const arrNew = produce(arrBase, arrDraft => {
+    //     operateDraft(arrDraft, arrBase);
+    //   });
+    //   executeAssertLogic(arrNew, arrBase);
+    // });
   })
 }
 
@@ -132,13 +133,13 @@ export function runMapTestSuit(
       executeAssertLogic(mapNew, mapBase);
     });
 
-    test(produceTip(testCaseDesc), () => {
-      const mapBase = getMapBase();
-      const mapNew = produce(mapBase, mapDraft => {
-        operateDraft(mapDraft, mapBase);
-      });
-      executeAssertLogic(mapNew, mapBase);
-    });
+    // test(produceTip(testCaseDesc), () => {
+    //   const mapBase = getMapBase();
+    //   const mapNew = produce(mapBase, mapDraft => {
+    //     operateDraft(mapDraft, mapBase);
+    //   });
+    //   executeAssertLogic(mapNew, mapBase);
+    // });
   })
 }
 

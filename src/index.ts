@@ -16,6 +16,7 @@ export class Limu {
   constructor() {
     const limuApis = buildLimuApis();
     this.createDraft = limuApis.createDraft;
+    // @ts-ignore
     this.finishDraft = limuApis.finishDraft;
   }
 }
@@ -28,6 +29,7 @@ export function createDraft<T extends ObjectLike>(base: T): Draft<T> {
 export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
   const draftMeta = getMetaForDraft(draft, draft[verKey]);
   let finishHandler: (FinishDraft | null) = null;
+  // @ts-ignore
   if (draftMeta) finishHandler = draftMeta.finishDraft;
   if (!finishHandler) {
     throw new Error(`opps, not an Limu draft!`);
@@ -74,5 +76,10 @@ const produceFn = (baseState: any, cb: any) => {
   }
   return innerProduce(baseState, cb) as any;
 };
+
+export function getDraftMeta(proxyDraft) {
+  const ver = proxyDraft[verKey];
+  return getMetaForDraft(proxyDraft, ver) as ObjectLike;
+}
 
 export const produce = produceFn as unknown as IProduce;

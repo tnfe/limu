@@ -1,6 +1,10 @@
-import { objDesc, arrDesc, mapDesc, setDesc } from './consts';
+import { objDesc, arrDesc, mapDesc, setDesc, fnDesc } from './consts';
 
 const toString = Object.prototype.toString;
+
+export function noop(...args: any[]) {
+  return args;
+}
 
 export function isObject(val) {
   return toString.call(val) === objDesc;
@@ -14,13 +18,17 @@ export function isSet(val) {
   return toString.call(val) === setDesc;
 }
 
+export function isFn(val) {
+  return toString.call(val) === fnDesc;
+}
+
 export function getValStrDesc(val) {
   return toString.call(val);
 }
 
 export function isPrimitive(val) {
   const desc = toString.call(val);
-  return ![objDesc, arrDesc, mapDesc, setDesc].includes(desc);
+  return ![objDesc, arrDesc, mapDesc, setDesc, fnDesc].includes(desc);
 }
 
 export function isPromiseFn(obj) {
