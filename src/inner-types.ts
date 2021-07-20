@@ -10,10 +10,12 @@ export interface DraftMeta {
   rootMeta: null | DraftMeta,
   parentMeta: null | DraftMeta,
   parent: null | ObjectLike,
+  parentType: string,
   self: ObjectLike,
   copy: null | ObjectLike,
   modified: boolean,
   key: string,
+  idx: number, // 数组元素才需要用到
   keyPath: string[],
   level: number,
   proxyVal: null | ObjectLike,

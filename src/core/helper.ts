@@ -8,6 +8,8 @@ import { DraftMeta } from '../inner-types';
 
 
 export function shouldUseProxyItems(parentType, key) {
+  // !!! 对于Array，直接生成 proxyItems
+  if (parentType === 'Array') return true;
   const proxyItemFnKeys = carefulType2proxyItemFnKeys[parentType] || [];
   return proxyItemFnKeys.includes(key);
 }
@@ -42,7 +44,13 @@ export function makeCopy(meta: DraftMeta) {
   const metaOwner: any = meta.self;
 
   if (Array.isArray(metaOwner)) {
-    return meta.proxyItems || metaOwner.slice();
+    // if (meta.proxyItems) {
+    //   console.log('基于 meta.proxyItems');
+    // } else {
+    //   console.log('基于 metaOwner.slice');
+    // }
+    const copy = meta.proxyItems || metaOwner.slice();
+    return copy;
   }
   if (isObject(metaOwner)) {
     return { ...metaOwner };
@@ -104,6 +112,11 @@ export function setMetasProto(val, realProto) {
   val.__proto__[metasKey] = {};
 }
 
+/**
+ * 是否是 proxy 代理的草稿对象
+ * @param mayDraft
+ * @returns 
+ */
 export function isDraft(mayDraft) {
   const ver = mayDraft[verKey];
   return !!ver;

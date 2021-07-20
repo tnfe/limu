@@ -24,8 +24,8 @@ export function buildLimuApis() {
     let revoke: null | (() => void) = null;
 
     var copyOnWriteTraps = {
+      // 进入 get 时，parent指向的是为代理对象
       get: (parent, key) => {
-        console.log('Get', key);
         if (key === verKey) {
           return metaVer;
         }
@@ -40,6 +40,7 @@ export function buildLimuApis() {
 
         const parentType = getDataNodeType(parent);
         const parentMeta = getMeta(parent, metaVer);
+        // console.log('Get', key, 'parentType', parentType);
 
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // 配合 data-node-processor 里的 ATTENTION_1
@@ -78,12 +79,11 @@ export function buildLimuApis() {
           }
         }
 
-        const createMeta = (currentChildVal) => {
+        const createMeta = (currentChildVal, idx = -1) => {
           if (currentChildVal && !isPrimitive(currentChildVal)) {
             let meta = getMeta(currentChildVal, metaVer);
 
             if (!isFn(currentChildVal)) {
-              console.log('-> step 2, build proxy for ', currentChildVal);
               ensureDataNodeMetasProtoLayer(currentChildVal, metaVer);
 
               // 惰性生成代理对象和其元数据
@@ -92,8 +92,10 @@ export function buildLimuApis() {
                   rootMeta: null,
                   parentMeta: null,
                   parent,
+                  parentType,
                   self: currentChildVal,
                   key,
+                  idx,
                   keyPath: getKeyPath(parent, key, metaVer),
                   level: getNextMetaLevel(parent, metaVer),
                   proxyVal: new Proxy(currentChildVal, copyOnWriteTraps),
@@ -134,7 +136,12 @@ export function buildLimuApis() {
                     proxyItems = tmp;
                   } else if (parentType === carefulDataTypes.Array) {
                     const tmp: any[] = [];
-                    (parent as any[]).forEach((val) => tmp.push(createMeta(val)));
+                    const self = parentMeta?.self || [];
+                    (parent as any[]).forEach((val, idx) => {
+                      const proxyItem = createMeta(val, idx);
+                      self[idx] = proxyItem; // 替换掉 proxyVal 里各个子元素，确保forEach遍历时拿到的是代理对象
+                      tmp.push(proxyItem);
+                    });
                     proxyItems = tmp;
                   }
 
@@ -155,6 +162,7 @@ export function buildLimuApis() {
         // 用下标取数组时，可直接返回
         // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
         if (parentType === carefulDataTypes.Array && canBeNum(key)) {
+          console.log('canBeNum(key) return currentChildVal, isDraft: ', isDraft(currentChildVal));
           return currentChildVal;
         }
 
@@ -164,9 +172,9 @@ export function buildLimuApis() {
 
         return currentChildVal;
       },
+      // 进入 set 时，parent 指向的是未代理对象
       set: (parent, key, value) => {
         console.log('Set ', parent, key, value);
-        // console.log('Set ', getKeyPath(parent, key, metaVer));
         copyAndGetDataNode(parent, { key, value, metaVer }, true);
         return true;
       },
@@ -205,11 +213,13 @@ export function buildLimuApis() {
             rootMeta: null,
             parent: null,
             parentMeta: null,
+            parentType: getDataNodeType(baseState),
             self: baseState,
             copy: null,
             modified: false,
             key: '',
             keyPath: [],
+            idx: -1,
             level: 0,
             proxyVal: null,
             proxyItems: null,

@@ -39,8 +39,11 @@ function allowCopyForOp(parentType, op) {
 }
 
 export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
-  const { op, key, value: mayProxyValue, metaVer, parentType } = copyCtx;
+  // passedValueMeta: 透传的 valueMeta
+  const { op, key, value: mayProxyValue, passedValueMeta, metaVer } = copyCtx;
+  // console.log(' [[copyAndGetDataNode]] see copyCtx:', copyCtx);
   const parentDataNodeMeta = getMeta(parentDataNode, metaVer);
+  // console.log(' [[copyAndGetDataNode]] see parentDataNodeMeta:', parentDataNodeMeta);
 
   /**
    * 防止 value 本身就是一个 Proxy
@@ -65,94 +68,120 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     return;
   }
 
-  const { self, rootMeta } = parentDataNodeMeta;
+  const { self, rootMeta, parentType } = parentDataNodeMeta;
   let { copy: selfCopy } = parentDataNodeMeta;
 
   const allowCopy = allowCopyForOp(parentType, op);
-  try {
-    console.log(`allowCopy ${allowCopy} op ${op}`);
-  } catch (err) {
-    console.log(`allowCopy ${allowCopy} op symbol`);
-    console.log(op);
-  }
+  // try {
+  //   console.log(`allowCopy ${allowCopy} op ${op}`);
+  // } catch (err) {
+  //   console.log(`allowCopy ${allowCopy} op symbol`);
+  //   console.log(op);
+  // }
 
-  if (!selfCopy && allowCopy) {
-    console.log(`start make copy`);
-    selfCopy = makeCopy(parentDataNodeMeta);
-    parentDataNodeMeta.copy = selfCopy;
-    console.log('111');
+  if (allowCopy) {
+    if (!selfCopy) {
+      selfCopy = makeCopy(parentDataNodeMeta);
+      parentDataNodeMeta.copy = selfCopy;
+
+      // 对于下标操作的数据，需要替换掉操作对象
+      if (parentType === 'Array') {
+        let idx = -1;
+        if (['fill', 'sort', 'copyWithin', 'splice', 'forEach', 'reverse', 'map', 'shift'].includes(key)) {
+          idx = (passedValueMeta || parentDataNodeMeta)?.idx;
+        } else if (canBeNum(key)) {
+          idx = key;
+        }
+        if (canBeNum(idx) && parseInt(`${idx}`) !== -1) {
+          // @ts-ignore
+          selfCopy[idx] = value;
+        }
+      }
+
+    } else {
+      if (passedValueMeta) {
+        // 向上复制链路的过程中，把孩子节点的数据备份体替换掉父亲容器的下标下的数据
+        const { copy: childDataNodeCopy, idx } = passedValueMeta;
+        if (idx != -1) selfCopy[idx] = childDataNodeCopy;
+      }
+    }
 
     if (!isPrimitive(value)) {
-      const valueMeta = getMeta(value, metaVer);
-      if (true) {
-        if (valueMeta) {
-          /**
-           * 值的父亲节点和当时欲写值的数据节点层级对不上，说明节点发生了层级移动
-           * 总是记录最新的父节点关系，防止原有的关系被解除
-           * ------------------------------------------------------------
-           * 
-           * // 移动情况
-           * // draft is { a: { b: { c: { d: { e: 1 } } } } }
-           * const dValue = draft.a.b.c.d; // { e: 1 }
-           * const cValue = draft.a.b.c; // cValue: { d: { e: 1 } }，此时 cValue 已被代理，parentLevel = 2
-           * 
-           * // [1]: dataNode: draft, key: 'a', value: cValue
-           * draft.a = cValue; 
-           * // parentLevel = 0, 数据节点层级出现移动
-           * 
-           * // [2]: dataNode: draft.a, key: 'b', value: cValue
-           * draft.a.b = cValue; 
-           * // parentLevel = 1, 数据节点层级出现移动
-           *
-           * // [3]: dataNode: draft.a.b, key: 'c', value: cValue
-           * draft.a.b.c = cValue; 
-           * // parentLevel = 2, 数据节点层级没有出现移动，还保持原来的关系
-           *
-           * ------------------------------------------------------------
-           * // 关系解除情况
-           * // draft is { a: { b: { c: { d: { e: 1 } } } }, a1: 2 }
-           * const d = draft.a.b.c.d;
-           * draft.a1 = d;
-           * draft.a.b.c = null; // d属性数据节点和父亲关系解除
-           */
-          if (valueMeta.parentMeta && valueMeta.parentMeta.level !== parentDataNodeMeta.level) {
-            // 修正 valueMeta 维护的相关数据
-            valueMeta.parent = parentDataNodeMeta.self;
-            valueMeta.level = parentDataNodeMeta.level + 1;
-            valueMeta.key = key;
-            valueMeta.keyPath = getKeyPath(valueMeta.parent, key, metaVer);
-
-            /**
-             * 父亲节点 P 和当时欲写值的数据节点 C 层级相等，也不能保证 C 向上链路的所有父辈们是否有过层级移动
-             * 因为他们发生移动时，是不会去修改所有子孙的元数据的
-             */
-          } else {
-            // thinking
-          }
+      const valueMeta = getMeta(mayProxyValue, metaVer);
+      if (valueMeta) {
+        /**
+         * 值的父亲节点和当时欲写值的数据节点层级对不上，说明节点发生了层级移动
+         * 总是记录最新的父节点关系，防止原有的关系被解除
+         * ------------------------------------------------------------
+         * 
+         * // 移动情况
+         * // draft is { a: { b: { c: { d: { e: 1 } } } } }
+         * const dValue = draft.a.b.c.d; // { e: 1 }
+         * const cValue = draft.a.b.c; // cValue: { d: { e: 1 } }，此时 cValue 已被代理，parentLevel = 2
+         * 
+         * // [1]: dataNode: draft, key: 'a', value: cValue
+         * draft.a = cValue; 
+         * // parentLevel = 0, 数据节点层级出现移动
+         * 
+         * // [2]: dataNode: draft.a, key: 'b', value: cValue
+         * draft.a.b = cValue; 
+         * // parentLevel = 1, 数据节点层级出现移动
+         *
+         * // [3]: dataNode: draft.a.b, key: 'c', value: cValue
+         * draft.a.b.c = cValue; 
+         * // parentLevel = 2, 数据节点层级没有出现移动，还保持原来的关系
+         *
+         * ------------------------------------------------------------
+         * // 关系解除情况
+         * // draft is { a: { b: { c: { d: { e: 1 } } } }, a1: 2 }
+         * const d = draft.a.b.c.d;
+         * draft.a1 = d;
+         * draft.a.b.c = null; // d属性数据节点和父亲关系解除
+         */
+        if (valueMeta.parentMeta && valueMeta.parentMeta.level !== parentDataNodeMeta.level) {
+          // 修正 valueMeta 维护的相关数据
+          valueMeta.parent = parentDataNodeMeta.self;
+          valueMeta.level = parentDataNodeMeta.level + 1;
+          valueMeta.key = key;
+          valueMeta.keyPath = getKeyPath(valueMeta.parent, key, metaVer);
 
           /**
-           * 还没为当前数据节点建立代理，就被替换了
-           * // draft is { a: { b: { c: 1 } } }
-           * draft.a = { b: { c: 100 } };
+           * 父亲节点 P 和当时欲写值的数据节点 C 层级相等，也不能保证 C 向上链路的所有父辈们是否有过层级移动
+           * 因为他们发生移动时，是不会去修改所有子孙的元数据的
            */
         } else {
-          // do nothing，会在将来 get 时触发代理对象创建
+          // thinking
         }
+
+        /**
+         * 还没为当前数据节点建立代理，就被替换了
+         * // draft is { a: { b: { c: 1 } } }
+         * draft.a = { b: { c: 100 } };
+         */
+      } else {
+        // do nothing，会在将来 get 时触发代理对象创建
       }
     }
 
     // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
     if (parentDataNodeMeta.parentMeta) {
-      const copyCtx = { key: parentDataNodeMeta.key, value: selfCopy, metaVer };
-      copyAndGetDataNode(parentDataNodeMeta.parentMeta.self, copyCtx, false,);
+      // console.log(' 向上回溯，复制完整条链路 ');
+      const copyCtx = { key: parentDataNodeMeta.key, value: selfCopy, passedValueMeta: parentDataNodeMeta, metaVer, parentType };
+      copyAndGetDataNode(parentDataNodeMeta.parentMeta.self, copyCtx, false);
     }
   }
 
-  console.log('222');
   // 是 Map, Set, Array 类型的方法操作或者值获取
   const fnKeys = carefulType2fnKeys[parentType] || [];
   const markModified = () => {
+    // const proxyValue = getUnProxyValue(mayProxyValue, metaVer);
+    // const valueMeta = getMeta(proxyValue, metaVer);
+    // console.log('****** value ', proxyValue);
+    // console.log('****** isDraft ', isDraft(mayProxyValue));
+    // 标记当前节点已更新
+    parentDataNodeMeta.modified = true;
     rootMeta && (rootMeta.modified = true);
+    // console.log('标记更新', parentDataNodeMeta);
   };
   // 是函数调用
   if (fnKeys.includes(op) && isFn(mayProxyValue)) {
@@ -169,8 +198,6 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       // @ts-ignore
       return self.slice;
     } else if (selfCopy) {
-  
-      console.log('333');
       // 因为 Map 和 Set 对调里的对象不能直接操作修改，是通过 set调用来修改的
       // 所以无需 bind(parentDataNodeMeta.proxyVal)， 否则会以下情况出现，
       // Method Map.prototype.forEach called on incompatible receiver
@@ -188,6 +215,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
        * ```
        */
       return selfCopy[op].bind(parentDataNodeMeta.proxyVal);
+      // return selfCopy[op].bind(parentDataNodeMeta.proxyItems);
     } else {
       return self[op].bind(self);
     }
@@ -197,11 +225,15 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     return value;
   }
 
-  if (op === 'del') {
-    delete selfCopy[key];
-  } else {
-    selfCopy[key] = value;
+  // 处于递归调用则需要忽略以下逻辑（递归是会传递 isFirstCall 为 false ）
+  if (isFirstCall) {
+    if (op === 'del') {
+      delete selfCopy[key];
+    } else {
+      selfCopy[key] = value;
+    }
   }
+
   markModified();
 }
 

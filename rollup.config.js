@@ -7,7 +7,7 @@ module.exports = {
     typescript({
       exclude: 'node_modules/**',
       typescript: require('typescript'),
-    }), 
+    }),
     // 如不想压缩，不配置 terser() 即可
     terser(),
   ],

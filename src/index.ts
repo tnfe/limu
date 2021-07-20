@@ -1,5 +1,5 @@
 import { buildLimuApis } from './core/build-limu-apis';
-import { getMetaForDraft } from './core/helper';
+import * as helper from './core/helper';
 import { verKey } from './support/symbols';
 import { isPromiseFn } from './support/util';
 import { ObjectLike } from './inner-types';
@@ -27,7 +27,7 @@ export function createDraft<T extends ObjectLike>(base: T): Draft<T> {
 }
 
 export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
-  const draftMeta = getMetaForDraft(draft, draft[verKey]);
+  const draftMeta = helper.getMetaForDraft(draft, draft[verKey]);
   let finishHandler: (FinishDraft | null) = null;
   // @ts-ignore
   if (draftMeta) finishHandler = draftMeta.finishDraft;
@@ -79,7 +79,9 @@ const produceFn = (baseState: any, cb: any) => {
 
 export function getDraftMeta(proxyDraft) {
   const ver = proxyDraft[verKey];
-  return getMetaForDraft(proxyDraft, ver) as ObjectLike;
+  return helper.getMetaForDraft(proxyDraft, ver) as ObjectLike;
 }
+
+export const isDraft = helper.isDraft;
 
 export const produce = produceFn as unknown as IProduce;

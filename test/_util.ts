@@ -1,4 +1,4 @@
-import { createDraft, finishDraft } from '../src/index';
+import { createDraft, finishDraft, produce } from '../src/index';
 
 export const produceTip = (testDescribe: string) => `${testDescribe} (with produce)`;
 
@@ -99,13 +99,13 @@ export function runTestSuit(
       executeAssertLogic(arrNew, arrBase);
     });
 
-    // test(produceTip(testCaseDesc), () => {
-    //   const arrBase = getArrBase();
-    //   const arrNew = produce(arrBase, arrDraft => {
-    //     operateDraft(arrDraft, arrBase);
-    //   });
-    //   executeAssertLogic(arrNew, arrBase);
-    // });
+    test(produceTip(testCaseDesc), () => {
+      const arrBase = getArrBase();
+      const arrNew = produce(arrBase, arrDraft => {
+        operateDraft(arrDraft, arrBase);
+      });
+      executeAssertLogic(arrNew, arrBase);
+    });
   })
 }
 

@@ -19,6 +19,7 @@ function compare(arrNew, arrBase) {
   expect(arrBase).toMatchObject([3, 1, 2, 4, 4, 5]);
 }
 
+
 runTestSuit('test sort', 'sort', getAnArrCanBeSort, sortDraft, compare);
 
 function getAnOrderedArr() {
