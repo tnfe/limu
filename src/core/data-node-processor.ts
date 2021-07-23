@@ -71,7 +71,7 @@ function judgeIfNeedReassign(calledBy: string, parentDataNodeMeta: DraftMeta) {
 
 
 export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
-  const { op, key, value: mayProxyValue, metaVer, calledBy } = copyCtx;
+  const { op, key, value: mayProxyValue, metaVer, calledBy, parentType } = copyCtx;
   const parentDataNodeMeta = getMeta(parentDataNode, metaVer);
 
   /**
@@ -97,7 +97,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     return;
   }
 
-  const { self, rootMeta, parentType } = parentDataNodeMeta;
+  const { self, rootMeta } = parentDataNodeMeta;
   let { copy: parentCopy } = parentDataNodeMeta;
 
   const allowCopy = allowCopyForOp(parentType, op);
@@ -175,8 +175,10 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
     if (parentDataNodeMeta.parentMeta) {
       const copyCtx = {
-        key: parentDataNodeMeta.key, value: parentCopy, metaVer, parentType, calledBy,
+        key: parentDataNodeMeta.key, parentType: parentDataNodeMeta.parentType,
+        value: parentCopy, metaVer, calledBy,
       };
+      // console.log('向上回溯，复制完整条链路', copyCtx);
       copyAndGetDataNode(parentDataNodeMeta.parentMeta.self, copyCtx, false);
     }
   }
@@ -193,8 +195,13 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     rootMeta && (rootMeta.modified = true);
     // console.log('标记更新', parentDataNodeMeta);
   };
+
+  // console.log(`parentType:${parentType}  op:${op}  key:${key}`);
+  // console.log('fnKeys.includes(op) ', fnKeys.includes(op));
+  // console.log('isFn(mayProxyValue) ', isFn(mayProxyValue));
   // 是函数调用
   if (fnKeys.includes(op) && isFn(mayProxyValue)) {
+    // console.log('mayProxyValue isFn true');
     const fnKeysThatNeedMarkModified = carefulType2fnKeysThatNeedMarkModified[parentType];
     if (fnKeysThatNeedMarkModified.includes(op)) {
       markModified();
@@ -217,7 +224,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       if (['map', 'sort'].includes(op)) {
         return parentCopy[op].bind(parentDataNodeMeta.proxyVal);
       }
-      
+
       /**
        * ATTENTION_1
        * 确保回调里的参数能拿到代理对象，如
@@ -226,8 +233,10 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
        * arr.forEach((value, index, arr)=>{...})
        * ```
        */
+      // console.log(`parentCopy ${parentCopy} op ${op}`);
       return parentCopy[op].bind(parentDataNodeMeta.proxyItems);
     } else {
+      // console.log(`self ${self} op ${op}`);
       return self[op].bind(self);
     }
   }

@@ -162,6 +162,7 @@ export function buildLimuApis() {
         }
 
         if (carefulDataTypes[parentType]) {
+          // console.log({ parentType, op: key, key, value: currentChildVal, metaVer, calledBy: 'get' });
           return copyAndGetDataNode(
             parent,
             { parentType, op: key, key, value: currentChildVal, metaVer, calledBy: 'get' },
