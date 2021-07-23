@@ -99,8 +99,7 @@ spend 152 ms
 spend 146 ms
 ```
 
-## todo 
-- performance: compare with `immer`
-- trap `delete` `push` `pop` [done]
-- add test case
-- support Map Set [done]
+
+## License
+
+concent is released under the MIT License. [http://www.opensource.org/licenses/mit-license](http://www.opensource.org/licenses/mit-license)
