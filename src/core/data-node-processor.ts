@@ -18,6 +18,7 @@ import {
   getRealProto,
   setMetasProto,
 } from './helper';
+import { DraftMeta } from '../inner-types';
 
 // slice、concat 以及一些特殊的key取值等操作无需copy副本
 function allowCopyForOp(parentType, op) {
@@ -38,12 +39,40 @@ function allowCopyForOp(parentType, op) {
   return true;
 }
 
+function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta) {
+  const {
+    parentMeta: grandpaMeta, parentType, idx: parentDataNodeIdx, copy: parentDataNodeCopy,
+  } = parentDataNodeMeta;
+  if (!grandpaMeta) return;
+
+  let grandpaCopy = grandpaMeta.copy;
+  // 回溯的过程中，为没有副本的爷爷节点生成副本
+  if (!grandpaCopy) {
+    grandpaCopy = makeCopy(grandpaMeta);
+    grandpaMeta.copy = grandpaCopy;
+  }
+
+  if (parentType === 'Map') {
+    (grandpaCopy as Map<any, any>).set(parentDataNodeIdx, parentDataNodeCopy);
+  } else if (parentType === 'Object') {
+    (grandpaCopy as Record<any, any>)[parentDataNodeIdx] = parentDataNodeCopy;
+  } else if (parentType === 'Array') {
+    (grandpaCopy as any[])[parentDataNodeIdx] = parentDataNodeCopy;
+  }
+}
+
+
+function judgeIfNeedReassign(calledBy: string, parentDataNodeMeta: DraftMeta) {
+  // 对于由 set 陷阱触发的 copyAndGetDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
+  if (calledBy === 'set') {
+    reassignGrandpaAndParent(parentDataNodeMeta);
+  }
+}
+
+
 export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
-  // passedValueMeta: 透传的 valueMeta
-  const { op, key, value: mayProxyValue, passedValueMeta, metaVer } = copyCtx;
-  // console.log(' [[copyAndGetDataNode]] see copyCtx:', copyCtx);
+  const { op, key, value: mayProxyValue, metaVer, calledBy } = copyCtx;
   const parentDataNodeMeta = getMeta(parentDataNode, metaVer);
-  // console.log(' [[copyAndGetDataNode]] see parentDataNodeMeta:', parentDataNodeMeta);
 
   /**
    * 防止 value 本身就是一个 Proxy
@@ -57,53 +86,31 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   }
 
   /**
-    * 链路断裂，此对象未被代理
-    * // draft = { a: { b: { c: 1 } }};
-    * const newData = { n1: { n2: 2 } };
-    * draft.a = newData;
-    * draft.a.n1.n2 = 888; // 此时 n2_DataNode 是未代理对象
-    */
+   * 链路断裂，此对象未被代理
+   * // draft = { a: { b: { c: 1 } }};
+   * const newData = { n1: { n2: 2 } };
+   * draft.a = newData;
+   * draft.a.n1.n2 = 888; // 此时 n2_DataNode 是未代理对象
+   */
   if (!parentDataNodeMeta) {
     parentDataNode[key] = value;
     return;
   }
 
   const { self, rootMeta, parentType } = parentDataNodeMeta;
-  let { copy: selfCopy } = parentDataNodeMeta;
+  let { copy: parentCopy } = parentDataNodeMeta;
 
   const allowCopy = allowCopyForOp(parentType, op);
   // try {
   //   console.log(`allowCopy ${allowCopy} op ${op}`);
   // } catch (err) {
   //   console.log(`allowCopy ${allowCopy} op symbol`);
-  //   console.log(op);
   // }
 
   if (allowCopy) {
-    if (!selfCopy) {
-      selfCopy = makeCopy(parentDataNodeMeta);
-      parentDataNodeMeta.copy = selfCopy;
-
-      // 对于下标操作的数据，需要替换掉操作对象
-      if (parentType === 'Array') {
-        let idx = -1;
-        if (['fill', 'sort', 'copyWithin', 'splice', 'forEach', 'reverse', 'map', 'shift'].includes(key)) {
-          idx = (passedValueMeta || parentDataNodeMeta)?.idx;
-        } else if (canBeNum(key)) {
-          idx = key;
-        }
-        if (canBeNum(idx) && parseInt(`${idx}`) !== -1) {
-          // @ts-ignore
-          selfCopy[idx] = value;
-        }
-      }
-
-    } else {
-      if (passedValueMeta) {
-        // 向上复制链路的过程中，把孩子节点的数据备份体替换掉父亲容器的下标下的数据
-        const { copy: childDataNodeCopy, idx } = passedValueMeta;
-        if (idx != -1) selfCopy[idx] = childDataNodeCopy;
-      }
+    if (!parentCopy) {
+      parentCopy = makeCopy(parentDataNodeMeta);
+      parentDataNodeMeta.copy = parentCopy;
     }
 
     if (!isPrimitive(value)) {
@@ -163,10 +170,13 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       }
     }
 
+    judgeIfNeedReassign(calledBy, parentDataNodeMeta);
+
     // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
     if (parentDataNodeMeta.parentMeta) {
-      // console.log(' 向上回溯，复制完整条链路 ');
-      const copyCtx = { key: parentDataNodeMeta.key, value: selfCopy, passedValueMeta: parentDataNodeMeta, metaVer, parentType };
+      const copyCtx = {
+        key: parentDataNodeMeta.key, value: parentCopy, metaVer, parentType, calledBy,
+      };
       copyAndGetDataNode(parentDataNodeMeta.parentMeta.self, copyCtx, false);
     }
   }
@@ -190,21 +200,18 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       markModified();
     }
 
-    // avoid error: X.prototype.y called on incompatible type
-    // see https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Errors/Called_on_incompatible_type
-
-    // slice 操作无需使用copy，返回自身即可
+    // slice 操作无需使用 copy，返回自身即可
     if ('slice' === op) {
       // @ts-ignore
       return self.slice;
-    } else if (selfCopy) {
+    } else if (parentCopy) {
       // 因为 Map 和 Set 对调里的对象不能直接操作修改，是通过 set调用来修改的
       // 所以无需 bind(parentDataNodeMeta.proxyVal)， 否则会以下情况出现，
       // Method Map.prototype.forEach called on incompatible receiver
       // Method Set.prototype.forEach called on incompatible receiver
       // see https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Errors/Called_on_incompatible_type
       if (parentType === carefulDataTypes.Set || parentType === carefulDataTypes.Map) {
-        return selfCopy[op].bind(selfCopy);
+        return parentCopy[op].bind(parentCopy);
       }
       /**
        * ATTENTION_1
@@ -214,23 +221,24 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
        * arr.forEach((value, index, arr)=>{...})
        * ```
        */
-      return selfCopy[op].bind(parentDataNodeMeta.proxyVal);
+      return parentCopy[op].bind(parentDataNodeMeta.proxyVal);
       // return selfCopy[op].bind(parentDataNodeMeta.proxyItems);
     } else {
       return self[op].bind(self);
     }
   }
 
-  if (!selfCopy) {
+  if (!parentCopy) {
     return value;
   }
 
   // 处于递归调用则需要忽略以下逻辑（递归是会传递 isFirstCall 为 false ）
   if (isFirstCall) {
     if (op === 'del') {
-      delete selfCopy[key];
+      delete parentCopy[key];
     } else {
-      selfCopy[key] = value;
+      parentCopy[key] = value;
+      judgeIfNeedReassign(calledBy, parentDataNodeMeta);
     }
   }
 

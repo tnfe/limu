@@ -19,6 +19,7 @@ export const desc2dataType = {
   [mapDesc]: carefulDataTypes.Map,
   [setDesc]: carefulDataTypes.Set,
   [arrDesc]: carefulDataTypes.Array,
+  [objDesc]: 'Object',
 };
 
 
@@ -57,8 +58,8 @@ export const arrIgnoreFnOrAttributeKeys = [
 ];
 
 export const mapIgnoreFnKeys = [
-  // 'forEach',
-  'entries', 'keys', 'values', 'has', 'get',
+  // 'forEach', 'get',
+  'entries', 'keys', 'values', 'has', 
 ];
 export const mapIgnoreFnOrAttributeKeys = [
   ...mapIgnoreFnKeys,
@@ -88,7 +89,7 @@ export const carefulType2fnKeysThatNeedMarkModified = {
 };
 
 export const carefulType2proxyItemFnKeys = {
-  [carefulDataTypes.Map]: ['forEach'],
+  [carefulDataTypes.Map]: ['forEach', 'get'],
   [carefulDataTypes.Set]: ['forEach'],
   [carefulDataTypes.Array]: ['forEach', 'map'],
 };

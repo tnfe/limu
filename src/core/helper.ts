@@ -6,7 +6,6 @@ import { carefulType2proxyItemFnKeys } from '../support/consts';
 import { DraftMeta } from '../inner-types';
 
 
-
 export function shouldUseProxyItems(parentType, key) {
   // !!! 对于Array，直接生成 proxyItems
   if (parentType === 'Array') return true;
@@ -63,6 +62,27 @@ export function makeCopy(meta: DraftMeta) {
     return meta.proxyItems || new Set(metaOwner);
   }
   throw new Error(`data ${metaOwner} try trigger getCopy, its type is ${typeof meta}`)
+}
+
+/**
+ * 尝试生成copy
+ * @param val 
+ * @returns 
+ */
+export function tryMakeCopy(val: any) {
+  if (Array.isArray(val)) {
+    return val.slice();
+  }
+  if (val && isObject(val)) {
+    return { ...val };
+  }
+  if (isMap(val)) {
+    return new Map(val);
+  }
+  if (isSet(val)) {
+    return new Set(val);
+  }
+  return val;
 }
 
 
