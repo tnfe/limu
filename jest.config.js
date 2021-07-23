@@ -3,12 +3,14 @@ const jestConfig = {
   roots: ['<rootDir>'],
   testEnvironment: "node",
   collectCoverageFrom: [
-    'test/**/*.{ts}',
+    '<rootDir>/src/**/*.ts',
+    '!<rootDir>/src/inner-types.ts',
   ],
   setupFilesAfterEnv: [
   ],
   testMatch: [
     '<rootDir>/test/**/*.ts',
+    // '<rootDir>/test/api.ts',
     // '<rootDir>/test/array-base/map.ts',
     // '<rootDir>/test/array-base/copyWithin.ts',
     // '<rootDir>/test/array-base/fill.ts',

@@ -60,6 +60,7 @@
   "scripts": {
     "build": "tsc & rollup -c",
     "test": "jest",
+    "cov": "jest --coverage",
     "debug": "ts-node ./debug/array-slice.ts",
     "dev": "tsc --watch",
     "lint": "eslint ./src --fix --ext js,ts,tsx",

@@ -64,7 +64,6 @@ export function getSetObjBase() {
  * new and base should be equal
  */
 export function shouldBeEqual(stateNew, stateBase) {
-  console.log('shouldBeEqual');
   expect(stateNew === stateBase).toBeTruthy();
 }
 /**
@@ -133,13 +132,13 @@ export function runMapTestSuit(
       executeAssertLogic(mapNew, mapBase);
     });
 
-    // test(produceTip(testCaseDesc), () => {
-    //   const mapBase = getMapBase();
-    //   const mapNew = produce(mapBase, mapDraft => {
-    //     operateDraft(mapDraft, mapBase);
-    //   });
-    //   executeAssertLogic(mapNew, mapBase);
-    // });
+    test(produceTip(testCaseDesc), () => {
+      const mapBase = getMapBase();
+      const mapNew = produce(mapBase, mapDraft => {
+        operateDraft(mapDraft, mapBase);
+      });
+      executeAssertLogic(mapNew, mapBase);
+    });
   })
 }
 
@@ -167,12 +166,12 @@ export function runSetTestSuit(
       executeAssertLogic(setNew, setBase);
     });
 
-    // test(produceTip(testCaseDesc), () => {
-    //   const mapBase = getMapBase();
-    //   const mapNew = produce(mapBase, mapDraft => {
-    //     operateDraft(mapDraft, mapBase);
-    //   });
-    //   executeAssertLogic(mapNew, mapBase);
-    // });
+    test(produceTip(testCaseDesc), () => {
+      const setBase = getSetBase();
+      const setNew = produce(setBase, setDraft => {
+        operateDraft(setDraft, setBase);
+      });
+      executeAssertLogic(setNew, setBase);
+    });
   })
 }
