@@ -53,8 +53,8 @@ console.log(nextState.c === baseState.c); // true
 
 ![performance](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu-benchmark.jpg)
 
-## performance
-It's almost two times faster than `immer`
+## performance ⚡️
+It is more than 2 times faster than `immer`.
 
 Run Code below:
 ```js
