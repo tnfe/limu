@@ -43,11 +43,6 @@ export function makeCopy(meta: DraftMeta) {
   const metaOwner: any = meta.self;
 
   if (Array.isArray(metaOwner)) {
-    // if (meta.proxyItems) {
-    //   console.log('基于 meta.proxyItems');
-    // } else {
-    //   console.log('基于 metaOwner.slice');
-    // }
     const copy = meta.proxyItems || metaOwner.slice();
     return copy;
   }
@@ -58,7 +53,6 @@ export function makeCopy(meta: DraftMeta) {
     return meta.proxyItems || new Map(metaOwner);
   }
   if (isSet(metaOwner)) {
-    console.log('meta.proxyItems for Set', meta.proxyItems);
     return meta.proxyItems || new Set(metaOwner);
   }
   throw new Error(`data ${metaOwner} try trigger getCopy, its type is ${typeof meta}`)

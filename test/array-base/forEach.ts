@@ -20,3 +20,12 @@ function noopDraftItem(arrDraft) {
 }
 
 runTestSuit('test forEach noop', 'forEach', getArrBase, noopDraftItem, shouldBeEqual);
+
+
+function changeDraftWithCbArr(arrDraft: any[]) {
+  arrDraft.forEach((item, i, arr) => {
+    arr[i] = 100 + item;
+  });
+}
+
+runTestSuit('test forEach noop', 'changeDraftWithCbArr', getArrBase, changeDraftWithCbArr, shouldBeEqual);

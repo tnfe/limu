@@ -213,6 +213,11 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       if (parentType === carefulDataTypes.Set || parentType === carefulDataTypes.Map) {
         return parentCopy[op].bind(parentCopy);
       }
+
+      if (['map', 'sort'].includes(op)) {
+        return parentCopy[op].bind(parentDataNodeMeta.proxyVal);
+      }
+      
       /**
        * ATTENTION_1
        * 确保回调里的参数能拿到代理对象，如
@@ -221,8 +226,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
        * arr.forEach((value, index, arr)=>{...})
        * ```
        */
-      return parentCopy[op].bind(parentDataNodeMeta.proxyVal);
-      // return selfCopy[op].bind(parentDataNodeMeta.proxyItems);
+      return parentCopy[op].bind(parentDataNodeMeta.proxyItems);
     } else {
       return self[op].bind(self);
     }

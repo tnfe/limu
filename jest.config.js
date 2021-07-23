@@ -16,7 +16,7 @@ const jestConfig = {
     // '<rootDir>/test/array-base/fill.ts',
     // '<rootDir>/test/array-base/shift.ts',
     // '<rootDir>/test/array-base/sort.ts',
-    // '<rootDir>/test/array-base/map.ts',
+    // '<rootDir>/test/array-base/forEach.ts',
     // '<rootDir>/test/array-other/object-item.ts',
     // '<rootDir>/test/array-other/object-item-nested.ts',
     // '<rootDir>/test/array-other/object-item-2.ts',

@@ -139,7 +139,7 @@ export function runMapTestSuit(
       });
       executeAssertLogic(mapNew, mapBase);
     });
-  })
+  });
 }
 
 /**
@@ -173,5 +173,5 @@ export function runSetTestSuit(
       });
       executeAssertLogic(setNew, setBase);
     });
-  })
+  });
 }
