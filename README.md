@@ -53,8 +53,8 @@ console.log(nextState.c === baseState.c); // true
 
 ![performance](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu-benchmark.jpg)
 
-## performance
-It's almost three times faster than `immer`
+## performance ⚡️
+It is more than 2 times faster than `immer`.
 
 Run Code below:
 ```js
@@ -92,15 +92,14 @@ spend 352 ms
 
 run 5 times with `limu`
 ```bash
-spend 125 ms
-spend 128 ms
-spend 129 ms
-spend 118 ms
-spend 119 ms
+spend 148 ms
+spend 150 ms
+spend 142 ms
+spend 152 ms
+spend 146 ms
 ```
 
-## todo 
-- performance: compare with `immer`
-- trap `delete` `push` `pop` [done]
-- add test case
-- support Map Set [done]
+
+## License
+
+concent is released under the MIT License. [http://www.opensource.org/licenses/mit-license](http://www.opensource.org/licenses/mit-license)
