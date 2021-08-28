@@ -1,4 +1,13 @@
-import { createDraft, finishDraft, produce } from '../src/index';
+import * as limu from '../src/index';
+// 本地 jest 运行时为了方便定位console上显示的错误代码位置，可使用 dist的源码做调试，注意要先执行 npm run build
+// import * as limu from '../dist/limu.js';
+
+export const createDraft = limu.createDraft;
+export const finishDraft = limu.finishDraft;
+export const produce = limu.produce;
+
+// const RUN_PRODUCE = false;
+const RUN_PRODUCE = true;
 
 export const produceTip = (testDescribe: string) => `${testDescribe} (with produce)`;
 
@@ -8,7 +17,7 @@ export const createDraftTip = (testDescribe: string) => `${testDescribe} (with c
  * allow noop pass any params
  */
 export function noop(...args: any[]) {
-  if (args === []) console?.log(args);
+  return args;
 }
 
 /**
@@ -98,13 +107,45 @@ export function runTestSuit(
       executeAssertLogic(arrNew, arrBase);
     });
 
-    test(produceTip(testCaseDesc), () => {
-      const arrBase = getArrBase();
-      const arrNew = produce(arrBase, arrDraft => {
-        operateDraft(arrDraft, arrBase);
+    if (RUN_PRODUCE) {
+      test(produceTip(testCaseDesc), () => {
+        const arrBase = getArrBase();
+        const arrNew = produce(arrBase, arrDraft => {
+          operateDraft(arrDraft, arrBase);
+        });
+        executeAssertLogic(arrNew, arrBase);
       });
-      executeAssertLogic(arrNew, arrBase);
+    }
+  })
+}
+
+type Dict = any;
+
+export function runObjectTestSuit(
+  testSuitDesc: string,
+  testCaseDesc: string,
+  getObjectBase: () => Dict,
+  operateDraft: (objDraft: Dict, objBase: Dict) => void,
+  executeAssertLogic: (objNew: Dict, objBase: Dict) => void,
+) {
+  describe(testSuitDesc, () => {
+    test(createDraftTip(testCaseDesc), () => {
+      const objBase = getObjectBase();
+      const objDraft = createDraft(objBase);
+      operateDraft(objDraft, objBase);
+      const objNew = finishDraft(objDraft);
+      executeAssertLogic(objNew, objBase);
     });
+
+    if (RUN_PRODUCE) {
+      test(produceTip(testCaseDesc), () => {
+        const objBase = getObjectBase();
+        const objNew = produce(objBase, objDraft => {
+          operateDraft(objDraft, objBase);
+        });
+        executeAssertLogic(objNew, objBase);
+      });
+    }
   })
 }
 
@@ -132,13 +173,15 @@ export function runMapTestSuit(
       executeAssertLogic(mapNew, mapBase);
     });
 
-    test(produceTip(testCaseDesc), () => {
-      const mapBase = getMapBase();
-      const mapNew = produce(mapBase, mapDraft => {
-        operateDraft(mapDraft, mapBase);
+    if (RUN_PRODUCE) {
+      test(produceTip(testCaseDesc), () => {
+        const mapBase = getMapBase();
+        const mapNew = produce(mapBase, mapDraft => {
+          operateDraft(mapDraft, mapBase);
+        });
+        executeAssertLogic(mapNew, mapBase);
       });
-      executeAssertLogic(mapNew, mapBase);
-    });
+    }
   });
 }
 
@@ -166,12 +209,14 @@ export function runSetTestSuit(
       executeAssertLogic(setNew, setBase);
     });
 
-    test(produceTip(testCaseDesc), () => {
-      const setBase = getSetBase();
-      const setNew = produce(setBase, setDraft => {
-        operateDraft(setDraft, setBase);
+    if (RUN_PRODUCE) {
+      test(produceTip(testCaseDesc), () => {
+        const setBase = getSetBase();
+        const setNew = produce(setBase, setDraft => {
+          operateDraft(setDraft, setBase);
+        });
+        executeAssertLogic(setNew, setBase);
       });
-      executeAssertLogic(setNew, setBase);
-    });
+    }
   });
 }

@@ -58,7 +58,9 @@
     "url": "git+https://github.com/tnfe/immut.git"
   },
   "scripts": {
-    "build": "tsc & rollup -c",
+    "build": "npm run build:umd && npm run build:umd-min",
+    "build:umd": "tsc & rollup -c",
+    "build:umd-min": "MIN=true tsc & rollup -c",
     "test": "jest",
     "cov": "jest --coverage",
     "debug": "ts-node ./debug/array-slice.ts",
@@ -66,7 +68,6 @@
     "lint": "eslint ./src --fix --ext js,ts,tsx",
     "pub": "npm publish --registry=https://registry.npmjs.org"
   },
-  "version": "1.0.14",
-  "dependencies": {
-  }
+  "version": "1.0.16",
+  "dependencies": {}
 }

@@ -6,8 +6,8 @@ import { carefulType2proxyItemFnKeys } from '../support/consts';
 import { DraftMeta } from '../inner-types';
 
 
-export function shouldUseProxyItems(parentType, key) {
-  // !!! 对于Array，直接生成 proxyItems
+export function shouldGenerateProxyItems(parentType, key) {
+  // !!! 对于 Array，直接生成 proxyItems
   if (parentType === 'Array') return true;
   const proxyItemFnKeys = carefulType2proxyItemFnKeys[parentType] || [];
   return proxyItemFnKeys.includes(key);
@@ -39,21 +39,20 @@ export function getMetas(mayMetasProtoObj) {
 }
 
 // 调用处已保证 meta 不为空
-export function makeCopy(meta: DraftMeta) {
+export function makeCopy(meta: DraftMeta, alwaysNew = false) {
   const metaOwner: any = meta.self;
 
   if (Array.isArray(metaOwner)) {
-    const copy = meta.proxyItems || metaOwner.slice();
-    return copy;
+    return meta.proxyItems || metaOwner.slice();
   }
   if (isObject(metaOwner)) {
     return { ...metaOwner };
   }
   if (isMap(metaOwner)) {
-    return meta.proxyItems || new Map(metaOwner);
+    return alwaysNew ? new Map(metaOwner) : (meta.proxyItems || new Map(metaOwner));
   }
   if (isSet(metaOwner)) {
-    return meta.proxyItems || new Set(metaOwner);
+    return alwaysNew ? new Set(metaOwner) : (meta.proxyItems || new Set(metaOwner));
   }
   throw new Error(`data ${metaOwner} try trigger getCopy, its type is ${typeof meta}`)
 }

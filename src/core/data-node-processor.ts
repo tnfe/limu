@@ -17,6 +17,7 @@ import {
   makeCopy,
   getRealProto,
   setMetasProto,
+  // isDraft,
 } from './helper';
 import { DraftMeta } from '../inner-types';
 
@@ -41,30 +42,53 @@ function allowCopyForOp(parentType, op) {
 
 function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta) {
   const {
-    parentMeta: grandpaMeta, parentType, idx: parentDataNodeIdx, copy: parentDataNodeCopy,
+    parentMeta: grandpaMeta, parentType, idx: parentDataNodeIdx,
+    copy: parentDataNodeCopy,
   } = parentDataNodeMeta;
   if (!grandpaMeta) return;
 
   let grandpaCopy = grandpaMeta.copy;
-  // 回溯的过程中，为没有副本的爷爷节点生成副本
+  // 回溯过程中，为没拷贝体的爷爷节点生成拷贝对象
   if (!grandpaCopy) {
     grandpaCopy = makeCopy(grandpaMeta);
     grandpaMeta.copy = grandpaCopy;
   }
 
+  let needMarkModified = false;
+
+  // console.log(' ************ [[ DEBUG ]] reassignGrandpaAndParent for ' + parentType, ' ,K:', parentDataNodeIdx, ' ,V:', parentDataNodeCopy);
   if (parentType === 'Map') {
     (grandpaCopy as Map<any, any>).set(parentDataNodeIdx, parentDataNodeCopy);
+    needMarkModified = true;
   } else if (parentType === 'Object') {
     (grandpaCopy as Record<any, any>)[parentDataNodeIdx] = parentDataNodeCopy;
   } else if (parentType === 'Array') {
     (grandpaCopy as any[])[parentDataNodeIdx] = parentDataNodeCopy;
+    needMarkModified = true;
+  } else if (parentType === 'Set') {
+    // Set 无法做 reassign，这里仅标记 needMarkModified，在 finishDraft 步骤里会最 Set的重计算
+    needMarkModified = true;
+  }
+
+  const proxyItems = grandpaMeta.proxyItems;
+  if (needMarkModified && proxyItems) {
+    // @ts-ignore
+    proxyItems.__modified = true;
+    // @ts-ignore
+    // !!! 方便在 finishDraft 里，遇到 Set 结构还可以指回来
+    proxyItems.__parent = grandpaMeta.parentMeta?.copy;
+    // @ts-ignore
+    proxyItems.__key = grandpaMeta.key;
   }
 }
 
 
-function judgeIfNeedReassign(calledBy: string, parentDataNodeMeta: DraftMeta) {
+function mayReassign(options: { calledBy: string, parentDataNodeMeta: DraftMeta, op: string, parentType: string }) {
+  const { calledBy, parentDataNodeMeta, op, parentType } = options;
   // 对于由 set 陷阱触发的 copyAndGetDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
-  if (calledBy === 'set') {
+  if (calledBy === 'set'
+    || (calledBy === 'get' && op === 'add' && parentType === 'Set') // 针对 Set.add
+  ) {
     reassignGrandpaAndParent(parentDataNodeMeta);
   }
 }
@@ -72,6 +96,8 @@ function judgeIfNeedReassign(calledBy: string, parentDataNodeMeta: DraftMeta) {
 
 export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   const { op, key, value: mayProxyValue, metaVer, calledBy, parentType } = copyCtx;
+  // console.log('[[ DEBUG ]] copyAndGetDataNode:', copyCtx, 'isFirstCall:' + isFirstCall);
+  // console.log('[[ DEBUG ]] copyAndGetDataNode:', 'isFirstCall:' + isFirstCall);
   const parentDataNodeMeta = getMeta(parentDataNode, metaVer);
 
   /**
@@ -170,16 +196,18 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       }
     }
 
-    judgeIfNeedReassign(calledBy, parentDataNodeMeta);
+    // console.log('[[ DEBUG ]] mayReassign ', `calledBy:${calledBy}  parentType:${parentType} op:${op}`);
+    mayReassign({ calledBy, parentDataNodeMeta, op, parentType });
 
     // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
-    if (parentDataNodeMeta.parentMeta) {
+    const grandpaMeta = parentDataNodeMeta.parentMeta;
+    if (grandpaMeta) {
       const copyCtx = {
         key: parentDataNodeMeta.key, parentType: parentDataNodeMeta.parentType,
         value: parentCopy, metaVer, calledBy,
       };
       // console.log('向上回溯，复制完整条链路', copyCtx);
-      copyAndGetDataNode(parentDataNodeMeta.parentMeta.self, copyCtx, false);
+      copyAndGetDataNode(grandpaMeta.self, copyCtx, false);
     }
   }
 
@@ -212,7 +240,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       // @ts-ignore
       return self.slice;
     } else if (parentCopy) {
-      // 因为 Map 和 Set 对调里的对象不能直接操作修改，是通过 set调用来修改的
+      // 因为 Map 和 Set 里的对象不能直接操作修改，是通过 set 调用来修改的
       // 所以无需 bind(parentDataNodeMeta.proxyVal)， 否则会以下情况出现，
       // Method Map.prototype.forEach called on incompatible receiver
       // Method Set.prototype.forEach called on incompatible receiver
@@ -222,6 +250,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       }
 
       if (['map', 'sort'].includes(op)) {
+        // return parentCopy[op].bind(parentDataNodeMeta.proxyItems || parentDataNodeMeta.proxyVal);
         return parentCopy[op].bind(parentDataNodeMeta.proxyVal);
       }
 
@@ -250,12 +279,16 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     if (op === 'del') {
       delete parentCopy[key];
     } else {
+      // console.log('before modify ', parentCopy, key, value);
       parentCopy[key] = value;
-      judgeIfNeedReassign(calledBy, parentDataNodeMeta);
+      // console.log('after modify ', parentCopy, key, value);
+      // mayReassign(calledBy, parentDataNodeMeta);
     }
   }
 
-  markModified();
+  if (['set', 'deleteProperty'].includes(calledBy)) {
+    markModified();
+  }
 }
 
 

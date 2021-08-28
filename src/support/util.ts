@@ -7,6 +7,7 @@ export function noop(...args: any[]) {
 }
 
 export function isObject(val) {
+  // 注意，null 是 [object Null]
   return toString.call(val) === objDesc;
 }
 

@@ -20,6 +20,11 @@ export interface DraftMeta {
   level: number,
   proxyVal: null | ObjectLike,
   proxyItems: null | Map<any, any> | Set<any>,
+  proxyItemsMgr: null | {
+    Map: Array<Map<any, any>>,
+    Set: Array<Set<any>>,
+    Array: Array<Array<any>>,
+  },
   finishDraft: (proxyDraft: ObjectLike) => ObjectLike,
   ver: number,
 }

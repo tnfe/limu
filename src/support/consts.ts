@@ -51,7 +51,7 @@ export const arrFnKeysThatNoTriggerCopy = [
 export const arrIgnoreFnOrAttributeKeys = [
   // 'forEach', 'map', 'sort', 'copyWithin', 'reverse',
   'length',
-  'slice', 'concat', 'find', 'findIndex', 'filter', 'flat', 'flatMap', 'includes', 
+  'slice', 'concat', 'find', 'findIndex', 'filter', 'flat', 'flatMap', 'includes',
   'indexOf', 'every', 'some', 'constructor', 'join', 'keys', 'lastIndexOf', 'reduce',
   'reduceRight', 'values', 'entries',
   'valueOf',
@@ -59,7 +59,7 @@ export const arrIgnoreFnOrAttributeKeys = [
 
 export const mapIgnoreFnKeys = [
   // 'forEach', 'get',
-  'entries', 'keys', 'values', 'has', 
+  'entries', 'keys', 'values', 'has',
 ];
 export const mapIgnoreFnOrAttributeKeys = [
   ...mapIgnoreFnKeys,

@@ -17,16 +17,26 @@ const jestConfig = {
     // '<rootDir>/test/array-base/shift.ts',
     // '<rootDir>/test/array-base/sort.ts',
     // '<rootDir>/test/array-base/forEach.ts',
+    // '<rootDir>/test/array-base/delete.ts',
     // '<rootDir>/test/array-other/case-push.ts',
     // '<rootDir>/test/array-other/object-item-nested.ts',
     // '<rootDir>/test/array-other/object-item-2.ts',
     // '<rootDir>/test/array-other/object-item-3.ts',
+    // '<rootDir>/test/array-other/object-list.ts',
     // '<rootDir>/test/map-other/case-nested-object.ts',
     // '<rootDir>/test/map-other/case1.ts',
+
+    // '<rootDir>/test/array-other/object-list.ts',
+    // '<rootDir>/test/map-other/object-map.ts',
+
     // '<rootDir>/test/map-base/get.ts',
     // '<rootDir>/test/map-base/forEach.ts',
-    // '<rootDir>/test/set-base/forEach.ts',
+
+    // '<rootDir>/test/set-base/clear.ts',
     // '<rootDir>/test/set-other/update-object-item.ts',
+    // '<rootDir>/test/set-other/object-set.ts',
+    // '<rootDir>/test/set-other/object-set-primitive-item.ts',
+    // '<rootDir>/test/set-other/object-set-add.ts',
   ],
   testPathIgnorePatterns: [
     '<rootDir>/test/_util.ts',
