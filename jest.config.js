@@ -9,7 +9,7 @@ const jestConfig = {
   setupFilesAfterEnv: [
   ],
   testMatch: [
-    '<rootDir>/test/**/*.ts',
+    // '<rootDir>/test/**/*.ts',
     // '<rootDir>/test/api.ts',
     // '<rootDir>/test/array-base/map.ts',
     // '<rootDir>/test/array-base/copyWithin.ts',
@@ -37,6 +37,8 @@ const jestConfig = {
     // '<rootDir>/test/set-other/object-set.ts',
     // '<rootDir>/test/set-other/object-set-primitive-item.ts',
     // '<rootDir>/test/set-other/object-set-add.ts',
+
+    '<rootDir>/test/complex/case1.ts',
   ],
   testPathIgnorePatterns: [
     '<rootDir>/test/_util.ts',
