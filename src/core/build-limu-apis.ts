@@ -50,8 +50,7 @@ export function buildLimuApis() {
 
         const parentType = getDataNodeType(parent);
         const parentMeta = getMeta(parent, metaVer);
-        // console.log(`Get parentType:${parentType} key:${key}`);
-        // console.log('Read', getKeyPath(parent, key, metaVer));
+        // console.log(`Get parentType:${parentType} key:${key} `, 'Read KeyPath', getKeyPath(parent, key, metaVer));
 
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
@@ -63,7 +62,7 @@ export function buildLimuApis() {
         let currentChildVal = parent[key];
         // 第 2+ 次进入 key 的 get 函数，已为 parent 生成了代理
         if (parentMeta && !NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
-        // if (parentMeta) {
+          // if (parentMeta) {
           const { self, copy } = parentMeta;
           const originalChildVal = self[key];
           // 存在 copy，则从 copy 上获取
@@ -113,7 +112,6 @@ export function buildLimuApis() {
                   finishDraft: noop,
                   ver: metaVer,
                 };
-                // console.log('currentChildVal', currentChildVal);
 
                 const parentMeta = getMeta(parent, metaVer);
                 if (parentMeta) {
@@ -166,7 +164,6 @@ export function buildLimuApis() {
                 if (parentType === carefulDataTypes.Map, key === 'get') {
                   // createMeta(parent.get(), tryMakeCopy(val), key)
                 }
-
                 // console.log('===> get keyPath(3) ', getMeta(currentChildVal, metaVer)?.keyPath, ' key is', key);
               }
 
@@ -365,7 +362,7 @@ export function buildLimuApis() {
 }
 
 
-/**
+/** 规划中的接口
  interface TrapInfo{
    method: 'get' | 'set' | 'delete'
    key: 'string',
@@ -375,6 +372,4 @@ export function buildLimuApis() {
  }
 
  trapListener: (trapInfo:TrapInfo)=>void;
-
-
  */

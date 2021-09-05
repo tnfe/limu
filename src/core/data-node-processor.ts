@@ -134,7 +134,13 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   // }
 
   if (allowCopy) {
-    if (!parentCopy) {
+    // 没有 copy 同构 makeCopy 造一个 copy
+    // 有了 copy 也要看parentType类型，如果是 'Map', 'Set' 的话，也需要 makeCopy
+    // 因为此时 parentDataNodeMeta 携带的 proxyItems 才是正确的 copy 体
+    // 否则在 test/complex/case1.ts 示例里，先调用了 mixArr.push，为 mixArr 每一个 item 项生成的copy
+    // Map 的 copy 是 Proxy { Map: name=> {name:'bj'} }
+    // 而我们需要的是 { Map: name=> Proxy {name:'bj'} }，否则导致测试失败
+    if (!parentCopy || ['Map', 'Set'].includes(parentType)) {
       parentCopy = makeCopy(parentDataNodeMeta);
       parentDataNodeMeta.copy = parentCopy;
     }
