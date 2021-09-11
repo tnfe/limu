@@ -11,6 +11,8 @@ const jestConfig = {
   testMatch: [
     '<rootDir>/test/**/*.ts',
     // '<rootDir>/test/api.ts',
+    // '<rootDir>/test/array-base/valueOf.ts',
+    // '<rootDir>/test/array-base/values.ts',
     // '<rootDir>/test/array-base/map.ts',
     // '<rootDir>/test/array-base/copyWithin.ts',
     // '<rootDir>/test/array-base/flat.ts',
@@ -31,8 +33,16 @@ const jestConfig = {
     // '<rootDir>/test/map-other/object-map.ts',
 
     // '<rootDir>/test/map-base/get.ts',
+    // '<rootDir>/test/map-base/has.ts',
+    // '<rootDir>/test/map-base/keys.ts',
+    // '<rootDir>/test/map-base/set.ts',
+    // '<rootDir>/test/map-base/values.ts',
     // '<rootDir>/test/map-base/forEach.ts',
 
+    // '<rootDir>/test/set-base/add.ts',
+    // '<rootDir>/test/set-base/keys.ts',
+    // '<rootDir>/test/set-base/size.ts',
+    // '<rootDir>/test/set-base/values.ts',
     // '<rootDir>/test/set-base/clear.ts',
     // '<rootDir>/test/set-other/update-object-item.ts',
     // '<rootDir>/test/set-other/object-set.ts',
@@ -40,6 +50,7 @@ const jestConfig = {
     // '<rootDir>/test/set-other/object-set-add.ts',
 
     // '<rootDir>/test/complex/case1.ts',
+    // '<rootDir>/test/complex/case-push.ts',
   ],
   testPathIgnorePatterns: [
     '<rootDir>/test/_util.ts',

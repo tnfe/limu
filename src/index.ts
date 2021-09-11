@@ -68,7 +68,7 @@ interface IProduce {
 
 const produceFn = (baseState: any, cb: any) => {
   if (!cb) {
-    // expect baseState to be a cb
+    // expect baseState to be a cb, support curried invocation
     checkCb(baseState);
     return (state) => {
       return innerProduce(state, baseState, false);

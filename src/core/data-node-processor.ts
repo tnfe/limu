@@ -17,6 +17,7 @@ import {
   makeCopy,
   getRealProto,
   setMetasProto,
+  reassignGrandpaAndParent,
   // isDraft,
 } from './helper';
 import { DraftMeta } from '../inner-types';
@@ -40,54 +41,20 @@ function allowCopyForOp(parentType, op) {
   return true;
 }
 
-function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta) {
-  const {
-    parentMeta: grandpaMeta, parentType, idx: parentDataNodeIdx,
-    copy: parentDataNodeCopy,
-  } = parentDataNodeMeta;
-  if (!grandpaMeta) return;
 
-  let grandpaCopy = grandpaMeta.copy;
-  // 回溯过程中，为没拷贝体的爷爷节点生成拷贝对象
-  if (!grandpaCopy) {
-    grandpaCopy = makeCopy(grandpaMeta);
-    grandpaMeta.copy = grandpaCopy;
-  }
-
-  let needMarkModified = false;
-
-  // console.log(' ************ [[ DEBUG ]] reassignGrandpaAndParent for ' + parentType, ' ,K:', parentDataNodeIdx, ' ,V:', parentDataNodeCopy);
-  if (parentType === 'Map') {
-    (grandpaCopy as Map<any, any>).set(parentDataNodeIdx, parentDataNodeCopy);
-    needMarkModified = true;
-  } else if (parentType === 'Object') {
-    (grandpaCopy as Record<any, any>)[parentDataNodeIdx] = parentDataNodeCopy;
-  } else if (parentType === 'Array') {
-    (grandpaCopy as any[])[parentDataNodeIdx] = parentDataNodeCopy;
-    needMarkModified = true;
-  } else if (parentType === 'Set') {
-    // Set 无法做 reassign，这里仅标记 needMarkModified，在 finishDraft 步骤里会最 Set的重计算
-    needMarkModified = true;
-  }
-
-  const proxyItems = grandpaMeta.proxyItems;
-  if (needMarkModified && proxyItems) {
-    // @ts-ignore
-    proxyItems.__modified = true;
-    // @ts-ignore
-    // !!! 方便在 finishDraft 里，遇到 Set 结构还可以指回来
-    proxyItems.__parent = grandpaMeta.parentMeta?.copy;
-    // @ts-ignore
-    proxyItems.__key = grandpaMeta.key;
-  }
-}
-
-
+const SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'unshift', 'reverse', 'copyWithin', 'delete', 'fill'];
+const SHOULD_REASSIGN_MAP_METHODS = ['clear', 'delete', 'set'];
+const SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
 function mayReassign(options: { calledBy: string, parentDataNodeMeta: DraftMeta, op: string, parentType: string }) {
   const { calledBy, parentDataNodeMeta, op, parentType } = options;
   // 对于由 set 陷阱触发的 copyAndGetDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
-  if (calledBy === 'set'
-    || (calledBy === 'get' && op === 'add' && parentType === 'Set') // 针对 Set.add
+  if (['deleteProperty', 'set'].includes(calledBy)
+    ||
+    (calledBy === 'get' && (
+      (parentType === 'Set' && SHOULD_REASSIGN_SET_METHODS.includes(op)) // 针对 Set.add
+      || (parentType === 'Array' && SHOULD_REASSIGN_ARR_METHODS.includes(op)) // 针对 Array 一系列的改变操作
+      || (parentType === 'Map' && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Array 一系列的改变操作
+    ))
   ) {
     reassignGrandpaAndParent(parentDataNodeMeta);
   }
@@ -141,7 +108,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     // Map 的 copy 是 Proxy { Map: name=> {name:'bj'} }
     // 而我们需要的是 { Map: name=> Proxy {name:'bj'} }，否则导致测试失败
     if (!parentCopy || ['Map', 'Set'].includes(parentType)) {
-      parentCopy = makeCopy(parentDataNodeMeta);
+      parentCopy = makeCopy(parentDataNodeMeta, parentCopy);
       parentDataNodeMeta.copy = parentCopy;
     }
 
@@ -252,11 +219,10 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       // Method Set.prototype.forEach called on incompatible receiver
       // see https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Errors/Called_on_incompatible_type
       if (parentType === carefulDataTypes.Set || parentType === carefulDataTypes.Map) {
+        // 注意 forEach 等方法已提前生成了 proxyItems，这里 bind 的目标优先取 proxyItems
         return parentCopy[op].bind(parentCopy);
       }
-
       if (['map', 'sort'].includes(op)) {
-        // return parentCopy[op].bind(parentDataNodeMeta.proxyItems || parentDataNodeMeta.proxyVal);
         return parentCopy[op].bind(parentDataNodeMeta.proxyVal);
       }
 
@@ -284,6 +250,9 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   if (isFirstCall) {
     if (op === 'del') {
       delete parentCopy[key];
+    } else if (op === 'toJSON' && !mayProxyValue) {
+      // 兼容 JSON.stringify 调用 
+      return;
     } else {
       // console.log('before modify ', parentCopy, key, value);
       parentCopy[key] = value;

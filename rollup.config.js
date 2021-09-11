@@ -13,7 +13,6 @@ let umdOutput = {
   file: 'dist/limu.js',
 };
 
-
 if (process.env.MIN === 'true') {
   plugins.push(terser());
   umdOutput.file = 'dist/limu.min.js';

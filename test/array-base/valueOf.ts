@@ -6,4 +6,17 @@ function changeDraft(arrDraft: any[]) {
   expect(result).toMatchObject([1, 2, 3]);
 }
 
-runTestSuit('test valueOf', 'valueOf', getArrBase, changeDraft, shouldBeEqual);
+runTestSuit('arr is base', 'valueOf', getArrBase, changeDraft, shouldBeEqual);
+
+runTestSuit('arr in base obj', 'valueOf',
+  () => { // get base state
+    return { arr: getArrBase() };
+  },
+  (draft) => { // change draft
+    changeDraft(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final === base).toBeTruthy();
+    shouldBeEqual(final.arr, base.arr);
+  },
+);

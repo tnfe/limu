@@ -100,36 +100,38 @@ export function shouldBeNotEqual(stateNew, stateBase) {
 }
 
 /**
- * 
+ * use (createDraftTip,finishDraft) and (produce) to test target case
  * @param testSuitDesc 
  * @param testCaseDesc 
- * @param getArrBase
+ * @param getBase
  * @param operateDraft
  * @param executeAssertLogic
  */
-export function runTestSuit(
+export function runTestSuit<T = any>(
   testSuitDesc: string,
   testCaseDesc: string,
-  getArrBase: () => any[],
-  operateDraft: (arrDraft: any[], arrBase: any[]) => void,
-  executeAssertLogic: (arrNew: any[], arrBase: any[]) => void,
+  getBase: () => T,
+  operateDraft: (draft: T, base: T) => void,
+  executeAssertLogic?: (final: T, base: T) => void,
+  skip?: boolean,
 ) {
+  if (skip) return;
   describe(testSuitDesc, () => {
     test(createDraftTip(testCaseDesc), () => {
-      const arrBase = getArrBase();
-      const arrDraft = createDraft(arrBase);
-      operateDraft(arrDraft, arrBase);
-      const arrNew = finishDraft(arrDraft);
-      executeAssertLogic(arrNew, arrBase);
+      const base = getBase();
+      const draft = createDraft(base);
+      operateDraft(draft, base);
+      const final = finishDraft(draft);
+      if (executeAssertLogic) executeAssertLogic(final, base);
     });
 
     if (RUN_PRODUCE) {
       test(produceTip(testCaseDesc), () => {
-        const arrBase = getArrBase();
-        const arrNew = produce(arrBase, arrDraft => {
-          operateDraft(arrDraft, arrBase);
+        const base = getBase();
+        const final = produce(base, draft => {
+          operateDraft(draft, base);
         });
-        executeAssertLogic(arrNew, arrBase);
+        if (executeAssertLogic) executeAssertLogic(final, base);
       });
     }
   })

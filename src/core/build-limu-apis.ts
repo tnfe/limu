@@ -9,6 +9,7 @@ import {
   isDraft,
   shouldGenerateProxyItems,
   tryMakeCopy,
+  replaceSetOrMapMethods,
 } from './helper';
 import { finishHandler, verKey } from '../support/symbols';
 import { carefulDataTypes } from '../support/consts';
@@ -40,12 +41,18 @@ export function buildLimuApis() {
           return metaVer;
         }
 
+        let currentChildVal = parent[key];
         if (key === '__proto__' || key === finishHandler) {
-          return parent[key];
+          return currentChildVal;
         }
 
         if (isSymbol(key)) {
-          return parent[key];
+          // 防止直接对 draft 时报错：Method xx.yy called on incompatible receiver
+          // 例如 Array.from(draft)
+          if (isFn(currentChildVal)) {
+            return currentChildVal.bind(parent);
+          }
+          return currentChildVal;
         }
 
         const parentType = getDataNodeType(parent);
@@ -59,7 +66,6 @@ export function buildLimuApis() {
           return parentMeta.copy ? parentMeta.copy[key] : parentMeta.self[key];
         }
 
-        let currentChildVal = parent[key];
         // 第 2+ 次进入 key 的 get 函数，已为 parent 生成了代理
         if (parentMeta && !NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
           // if (parentMeta) {
@@ -137,21 +143,17 @@ export function buildLimuApis() {
                   if (parentType === carefulDataTypes.Set) {
                     const tmp = new Set();
                     (parent as Set<any>).forEach((val) => tmp.add(createMeta(val, tryMakeCopy(val))));
+                    replaceSetOrMapMethods('Set', tmp, meta, parent, metaVer);
                     proxyItems = tmp;
                   } else if (parentType === carefulDataTypes.Map) {
                     const tmp = new Map();
                     (parent as Map<any, any>).forEach((val, key) => tmp.set(key, createMeta(val, tryMakeCopy(val), key)));
+                    replaceSetOrMapMethods('Map', tmp, meta, parent, metaVer);
                     proxyItems = tmp;
                   } else if (parentType === carefulDataTypes.Array) {
                     const tmp: any[] = [];
                     (parent as any[]).forEach((val, idx) => tmp.push(createMeta(val, tryMakeCopy(val), idx)));
                     proxyItems = tmp;
-                    // const self = parentMeta?.self || [];
-                    // (parent as any[]).forEach((val, idx) => {
-                    //   const proxyItem = createMeta(val, tryMakeCopy(val), idx);
-                    //   self[idx] = proxyItem; // 替换掉 proxyVal 里各个子元素，确保forEach遍历时拿到的是代理对象
-                    //   tmp.push(proxyItem);
-                    // });
                   }
 
                   meta.proxyItems = proxyItems;
@@ -207,7 +209,7 @@ export function buildLimuApis() {
         return true;
       },
       deleteProperty: (parent, key) => {
-        console.log('Delete ', parent, key);
+        // console.log('Delete ', parent, key);
         copyAndGetDataNode(parent, { op: 'del', key, value: '', metaVer, calledBy: 'deleteProperty' }, true);
         return true;
       },
@@ -293,39 +295,57 @@ export function buildLimuApis() {
           final = rootMeta.copy;
           // @ts-ignore
           const mapProxyItemsList = rootMeta.proxyItemsMgr['Map'];
+          let mayRootMap: Map<any, any> | null = null;
           // 用于辅助跑通  /test/map-other/object-map.ts
           mapProxyItemsList.forEach(proxyItems => {
             // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
             if (proxyItems.__modified) {
+              const tmpMap = new Map();
+              mayRootMap = tmpMap;
               proxyItems.forEach((val, key) => {
                 const meta = getMeta(val, metaVer);
-                if (meta && !meta.modified) {
-                  proxyItems.set(key, meta.self);
+                if (meta) {
+                  let toSetItem = !meta.modified ? meta.self : meta.copy;
+                  tmpMap.set(key, toSetItem);
                 }
-              })
+              });
+              // @ts-ignore，指回来
+              if (proxyItems.__parent) {
+                // @ts-ignore
+                proxyItems.__parent[proxyItems.__dataIndex] = tmpMap;
+              }
             }
           });
+          // 根对象就是 Map 时，直接将 final 指向可能做好的新 Map
+          if (rootMeta.parentType === 'Map') {
+            final = mayRootMap || final;
+          }
 
           // @ts-ignore
           const setProxyItemsList = rootMeta.proxyItemsMgr['Set'];
+          let mayRootSetArr: Array<any> | null = null;
           setProxyItemsList.forEach(proxyItems => {
             // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
             if (proxyItems.__modified) {
               const arr = Array.from(proxyItems);
+              mayRootSetArr = arr;
               arr.forEach((val, idx) => {
                 const meta = getMeta(val, metaVer);
                 if (meta) {
                   arr[idx] = !meta.modified ? meta.self : meta.copy;
                 }
               });
-              // @ts-ignore, Set 数据不像 Map Array 那样方便对下标值做替换
-              // 此处借助 proxyItems.__parent 和 proxyItems.__key 来重指向一个新的 Set
+              // @ts-ignore，指回来
               if (proxyItems.__parent) {
                 // @ts-ignore
-                proxyItems.__parent[proxyItems.__key] = new Set(arr);
+                proxyItems.__parent[proxyItems.__dataIndex] = new Set(arr);
               }
             }
           });
+          // 根对象就是 Set 时，直接将 final 指向可能做好的新 Set
+          if (rootMeta.parentType === 'Set') {
+            final = mayRootSetArr ? new Set(mayRootSetArr) : final;
+          }
 
           // @ts-ignore
           const arrProxyItemsList = rootMeta.proxyItemsMgr['Array'];

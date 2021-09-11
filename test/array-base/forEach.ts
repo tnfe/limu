@@ -11,7 +11,21 @@ function compare(arrNew, arrBase) {
   expect(arrNew).toMatchObject([101, 102, 103]);
 }
 
-runTestSuit('test forEach change item', 'forEach', getArrBase, changeDraft, compare);
+runTestSuit('arr is base', 'forEach change item with draft', getArrBase, changeDraft, compare);
+
+
+runTestSuit('arr in base obj', 'forEach change item with draft',
+  () => { // get base state
+    return { arr: getArrBase() };
+  },
+  (draft) => { // change draft
+    changeDraft(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final !== base).toBeTruthy();
+    compare(final.arr, base.arr);
+  },
+);
 
 function noopDraftItem(arrDraft) {
   arrDraft.forEach((item) => {
@@ -19,7 +33,21 @@ function noopDraftItem(arrDraft) {
   });
 }
 
-runTestSuit('test forEach noop', 'forEach', getArrBase, noopDraftItem, shouldBeEqual);
+runTestSuit('arr is base', 'forEach do nothing', getArrBase, noopDraftItem, shouldBeEqual);
+
+
+runTestSuit('arr in base obj', 'forEach do nothing',
+  () => { // get base state
+    return { arr: getArrBase() };
+  },
+  (draft) => { // change draft
+    noopDraftItem(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final === base).toBeTruthy();
+    shouldBeEqual(final.arr, base.arr);
+  },
+);
 
 
 function changeDraftWithCbArr(arrDraft: any[]) {
@@ -28,4 +56,19 @@ function changeDraftWithCbArr(arrDraft: any[]) {
   });
 }
 
-runTestSuit('test forEach noop', 'changeDraftWithCbArr', getArrBase, changeDraftWithCbArr, shouldBeEqual);
+runTestSuit('arr is base', 'forEach change item with 3th arr param', getArrBase, changeDraftWithCbArr, shouldBeEqual);
+
+
+runTestSuit('arr in base obj', 'forEach change item with 3th arr param',
+  () => { // get base state
+    return { arr: getArrBase() };
+  },
+  (draft) => { // change draft
+    changeDraftWithCbArr(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final === base).toBeTruthy();
+    shouldBeEqual(final.arr, base.arr);
+  },
+);
+

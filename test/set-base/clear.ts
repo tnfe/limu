@@ -1,17 +1,27 @@
-import { runSetTestSuit, getSetBase } from '../_util';
+import { runTestSuit, getSetBase } from '../_util';
 
 function changeDraft(setDraft: Set<any>) {
-  console.log('setDraft.size', setDraft.size);
   setDraft.clear();
-  console.log('setDraft.size', setDraft.size);
   expect(setDraft.size).toEqual(0);
 }
 
 function compare(setNew, setBase) {
-  console.log(setNew.size, setBase.size);
-  // expect(setNew !== setBase).toBeTruthy();
-  // expect(setNew.size).toEqual(0);
-  // expect(setBase.size).toEqual(3);
+  expect(setNew !== setBase).toBeTruthy();
+  expect(setNew.size).toEqual(0);
+  expect(setBase.size).toEqual(3);
 }
 
-runSetTestSuit('test set clear', 'clear', getSetBase, changeDraft, compare);
+runTestSuit('set is base', 'clear', getSetBase, changeDraft, compare);
+
+runTestSuit('set in base obj', 'clear',
+  () => { // get base state
+    return { set: getSetBase() };
+  },
+  (draft) => { // change draft
+    changeDraft(draft.set);
+  },
+  (final, base) => { // assert
+    expect(final !== base).toBeTruthy();
+    compare(final.set, base.set);
+  },
+);

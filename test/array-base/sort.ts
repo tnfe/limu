@@ -20,7 +20,20 @@ function compare(arrNew, arrBase) {
 }
 
 
-runTestSuit('test sort', 'sort', getAnArrCanBeSort, sortDraft, compare);
+runTestSuit('arr is base', 'sort', getAnArrCanBeSort, sortDraft, compare);
+
+runTestSuit('arr in base obj', 'sort',
+  () => { // get base state
+    return { arr: getAnArrCanBeSort() };
+  },
+  (draft) => { // change draft
+    sortDraft(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final !== base).toBeTruthy();
+    compare(final.arr, base.arr);
+  },
+);
 
 function getAnOrderedArr() {
   return [1, 2, 3, 4, 5];
@@ -32,4 +45,17 @@ function sortOrderedDraft(arrDraft: any[]) {
   expect(arrDraft).toMatchObject([1, 2, 3, 4, 5]);
 }
 
-runTestSuit('test ordered sort', 'sort', getAnOrderedArr, sortOrderedDraft, shouldBeNotEqual);
+runTestSuit('arr is base', 'ordered sort', getAnOrderedArr, sortOrderedDraft, shouldBeNotEqual);
+
+runTestSuit('arr in base obj', 'ordered sort',
+  () => { // get base state
+    return { arr: getAnOrderedArr() };
+  },
+  (draft) => { // change draft
+    sortOrderedDraft(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final !== base).toBeTruthy();
+    shouldBeNotEqual(final.arr, base.arr);
+  },
+);

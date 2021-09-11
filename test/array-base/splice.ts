@@ -11,4 +11,17 @@ function compare(arrNew, arrBase) {
   expect(arrNew).toMatchObject([2, 3]);
 }
 
-runTestSuit('test splice', 'splice', getArrBase, changeDraft, compare);
+runTestSuit('arr is base', 'splice', getArrBase, changeDraft, compare);
+
+runTestSuit('arr in base obj', 'splice',
+  () => { // get base state
+    return { arr: getArrBase() };
+  },
+  (draft) => { // change draft
+    changeDraft(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final !== base).toBeTruthy();
+    compare(final.arr, base.arr);
+  },
+);
