@@ -26,7 +26,7 @@ runTestSuit('map in base obj', 'forEach',
   },
 );
 
-function changeMapWithCb3thParam(mapDraft: Map<any, any>) {
+function changeMapWithCbDraft(mapDraft: Map<any, any>) {
   mapDraft.forEach((val, key, map) => {
     map.set(key, `new_${val}`);
   });
@@ -42,14 +42,14 @@ function compare(mapNew, mapBase) {
   expect(mapNew !== mapBase).toBeTruthy();
 }
 
-runTestSuit('map is base', 'changeMapWithCb3thParam', getMapBase, changeMapWithCb3thParam, compare);
+runTestSuit('map is base', 'changeMapWithCbDraft', getMapBase, changeMapWithCbDraft, compare);
 
-runTestSuit('map in base obj', 'changeMapWithCb3thParam',
+runTestSuit('map in base obj', 'changeMapWithCbDraft',
   () => { // get base state
     return { map: getMapBase() };
   },
   (draft) => { // change draft
-    changeMapWithCb3thParam(draft.map);
+    changeMapWithCbDraft(draft.map);
   },
   (final, base) => { // assert
     expect(final !== base).toBeTruthy();
