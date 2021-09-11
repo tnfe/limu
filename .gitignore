@@ -6,7 +6,6 @@
 debug
 coverage
 node_modules
-dist
 lib
 es/*
 
