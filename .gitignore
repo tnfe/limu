@@ -3,6 +3,7 @@
 .vscode
 .coveralls.yml
 
+debug
 coverage
 node_modules
 dist

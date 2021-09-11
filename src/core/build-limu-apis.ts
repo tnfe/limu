@@ -216,7 +216,7 @@ export function buildLimuApis() {
 
       // trap function call
       apply: function (target, thisArg, argumentsList) {
-        console.log(`Apply `, target, thisArg, argumentsList);
+        // console.log(`Apply `, target, thisArg, argumentsList);
         // expected output: "Calculate sum: 1,2"
 
         // return target(argumentsList[0], argumentsList[1]) * 10;
