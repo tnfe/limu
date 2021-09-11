@@ -54,7 +54,7 @@ console.log(nextState.c === baseState.c); // true
 ![performance](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu-benchmark.jpg)
 
 ## performance ⚡️
-It is more than 2 times faster than `immer`.
+It is more than 3 times faster than `immer`.
 
 Run Code below:
 ```js
@@ -92,11 +92,11 @@ spend 352 ms
 
 run 5 times with `limu`
 ```bash
-spend 148 ms
-spend 150 ms
-spend 142 ms
-spend 152 ms
-spend 146 ms
+spend 106 ms
+spend 110 ms
+spend 107 ms
+spend 121 ms
+spend 108 ms
 ```
 
 
