@@ -56,7 +56,7 @@ console.log(nextState.c === baseState.c); // true
 ## performance ⚡️
 It is nearly more than 3 times faster than `immer`.
 
-Run Code below:
+Run [Code](https://github.com/tnfe/limu/blob/main/benchmark/case1.js) below:
 ```js
 // const im = require('immer');
 const im = require('limu'); // or require('../dist/limu.min')
@@ -98,7 +98,7 @@ for (let i = 0; i < 10; i++) {
 }
 ```
 
-run 5 times with `immer`
+run 10 times with `immer`
 ```bash
 spend 432 ms
 spend 360 ms
@@ -112,7 +112,7 @@ spend 344 ms
 spend 351 ms
 ```
 
-run 5 times with `limu`
+run 10 times with `limu`
 ```bash
 spend 233 ms
 spend 173 ms
