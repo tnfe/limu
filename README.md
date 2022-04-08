@@ -54,49 +54,76 @@ console.log(nextState.c === baseState.c); // true
 ![performance](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu-benchmark.jpg)
 
 ## performance ⚡️
-It is more than 3 times faster than `immer`.
+It is nearly more than 3 times faster than `immer`.
 
-Run Code below:
+Run [Code](https://github.com/tnfe/limu/blob/main/benchmark/case1.js) below:
 ```js
-const im = require('immer');
-// const im = require('limu');
+// const im = require('immer');
+const im = require('limu'); // or require('../dist/limu.min')
 
-var base = { a: { b: { c: 1 } }, b: null, c: [1, 2, 3] };
-base.b = base.a.b;
-base.b.c = 888;
+const base = { a: { b: { c: 1 } }, b: null, c: [1, 2, 3] };
 
-var start = Date.now();
-for (let i = 0; i < 10000; i++) {
-  var draft = im.createDraft(base);
-  draft.b.c = 999;
-  const final = im.finishDraft(draft);
+function oneBenchmark() {
+  const start = Date.now();
+  for (let i = 0; i < 10000; i++) {
+    const draft = im.createDraft(base);
+    draft.a.b.c = 999;
+    const final = im.finishDraft(draft);
+    if (final === base) {
+      throw new Error('should not be equal');
+    }
+    if (final.c !== base.c) {
+      throw new Error('should be equal');
+    }
 
-  var draft2 = im.createDraft(base);
-  draft2.b.c = 1000;
-  delete draft2.b.e;
-  draft2.c.push(1000);
-  draft2.c.pop();
-  const final2 = im.finishDraft(draft2);
+    const draft2 = im.createDraft(base);
+    draft2.a.b.c = 1000;
+    delete draft2.b;
+    draft2.c.push(1000);
+    draft2.c.pop();
+    const final2 = im.finishDraft(draft2);
+    if (final2 === base) {
+      throw new Error('should not be equal');
+    }
+    if (final2.c === base.c) {
+      throw new Error('c arr should not be equal');
+    }
+  }
+
+  console.log(`spend ${Date.now() - start} ms`);
 }
-console.log(`spend ${Date.now() - start} ms`);
+
+for (let i = 0; i < 10; i++) {
+  oneBenchmark();
+}
 ```
 
-run 5 times with `immer`
+run 10 times with `immer`
 ```bash
-spend 335 ms
-spend 333 ms
-spend 342 ms
-spend 338 ms
+spend 432 ms
+spend 360 ms
+spend 347 ms
 spend 352 ms
+spend 379 ms
+spend 365 ms
+spend 344 ms
+spend 330 ms
+spend 344 ms
+spend 351 ms
 ```
 
-run 5 times with `limu`
+run 10 times with `limu`
 ```bash
-spend 106 ms
-spend 110 ms
-spend 107 ms
-spend 121 ms
-spend 108 ms
+spend 233 ms
+spend 173 ms
+spend 145 ms
+spend 136 ms
+spend 133 ms
+spend 131 ms
+spend 135 ms
+spend 134 ms
+spend 133 ms
+spend 134 ms
 ```
 
 
