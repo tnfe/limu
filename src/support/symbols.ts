@@ -6,3 +6,5 @@ export const verKey = Symbol('verKey');
 export const metasKey = Symbol('metas');
 
 export const finishHandler = Symbol('finishHandler');
+
+export const isModifiedKey = Symbol('isModifiedKey');

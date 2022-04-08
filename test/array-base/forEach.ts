@@ -1,4 +1,7 @@
-import { runTestSuit, getArrBase, shouldBeEqual, noop } from '../_util';
+import { runTestSuit, getArrBase, shouldBeEqual, shouldBeNotEqual, noop } from '../_util';
+
+// const caseSkips = [false, false, false, false, false ,false];
+const caseSkips = [true, true, true, true, true, false];
 
 function changeDraft(arrDraft: any[]) {
   arrDraft.forEach((item, i) => {
@@ -11,7 +14,7 @@ function compare(arrNew, arrBase) {
   expect(arrNew).toMatchObject([101, 102, 103]);
 }
 
-runTestSuit('arr is base', 'forEach change item with draft', getArrBase, changeDraft, compare);
+runTestSuit('arr is base', 'forEach change item with draft', getArrBase, changeDraft, compare, caseSkips[0]);
 
 
 runTestSuit('arr in base obj', 'forEach change item with draft',
@@ -25,6 +28,7 @@ runTestSuit('arr in base obj', 'forEach change item with draft',
     expect(final !== base).toBeTruthy();
     compare(final.arr, base.arr);
   },
+  caseSkips[1],
 );
 
 function noopDraftItem(arrDraft) {
@@ -33,7 +37,7 @@ function noopDraftItem(arrDraft) {
   });
 }
 
-runTestSuit('arr is base', 'forEach do nothing', getArrBase, noopDraftItem, shouldBeEqual);
+runTestSuit('arr is base', 'forEach do nothing', getArrBase, noopDraftItem, shouldBeEqual, caseSkips[2]);
 
 
 runTestSuit('arr in base obj', 'forEach do nothing',
@@ -47,6 +51,7 @@ runTestSuit('arr in base obj', 'forEach do nothing',
     expect(final === base).toBeTruthy();
     shouldBeEqual(final.arr, base.arr);
   },
+  caseSkips[3],
 );
 
 
@@ -56,7 +61,7 @@ function changeDraftWithCbArr(arrDraft: any[]) {
   });
 }
 
-runTestSuit('arr is base', 'forEach change item with 3th arr param', getArrBase, changeDraftWithCbArr, shouldBeEqual);
+runTestSuit('arr is base', 'forEach change item with 3th arr param', getArrBase, changeDraftWithCbArr, shouldBeEqual, caseSkips[4]);
 
 
 runTestSuit('arr in base obj', 'forEach change item with 3th arr param',
@@ -67,8 +72,9 @@ runTestSuit('arr in base obj', 'forEach change item with 3th arr param',
     changeDraftWithCbArr(draft.arr);
   },
   (final, base) => { // assert
-    expect(final === base).toBeTruthy();
-    shouldBeEqual(final.arr, base.arr);
+    expect(final !== base).toBeTruthy();
+    shouldBeNotEqual(final.arr, base.arr);
   },
+  caseSkips[5],
 );
 

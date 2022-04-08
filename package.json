@@ -45,6 +45,7 @@
     "immutable js",
     "immutable-js",
     "immer",
+    "replace immer",
     "limu"
   ],
   "license": "MIT",

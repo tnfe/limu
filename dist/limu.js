@@ -61,7 +61,7 @@
         'reverse', 'shift', 'unshift', 'slice', 'some', 'sort', 'splice', 'values', 'valueOf',
     ];
     var arrFnKeysThatNeedMarkModified = [
-        'concat', 'copyWithin', 'fill', 'flat', 'flatMap', 'pop', 'push', 'reverse', 'shift', 'unshift', 'splice',
+        'copyWithin', 'fill', 'pop', 'push', 'reverse', 'shift', 'unshift', 'splice',
     ];
     var mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has', 'keys', 'set', 'values'];
     var mapFnKeysThatNeedMarkModified = [
@@ -155,6 +155,7 @@
     var verKey = Symbol('verKey');
     var metasKey = Symbol('metas');
     var finishHandler = Symbol('finishHandler');
+    var isModifiedKey = Symbol('isModifiedKey');
 
     var ver2MetasList = {};
     var verWrap = { value: 0 };
@@ -284,11 +285,20 @@
         var dataType = desc2dataType[strDesc];
         return dataType;
     }
-    function reassignGrandpaAndParent(parentDataNodeMeta) {
+    function reassignGrandpaAndParent(parentDataNodeMeta, calledBy, setKey) {
         var _a;
-        var grandpaMeta = parentDataNodeMeta.parentMeta, parentType = parentDataNodeMeta.parentType, parentDataNodeIdx = parentDataNodeMeta.idx, parentDataNodeCopy = parentDataNodeMeta.copy;
-        if (!grandpaMeta)
+        var grandpaMeta = parentDataNodeMeta.parentMeta, parentType = parentDataNodeMeta.parentType, selfType = parentDataNodeMeta.selfType, parentDataNodeIdx = parentDataNodeMeta.idx, parentDataNodeCopy = parentDataNodeMeta.copy;
+        // 数组操作比较特殊，有2种方式，包括了(1方法修改) 和 (2自身通过索引直接修改)，这里处理到第2种
+        if (calledBy === 'set' && canBeNum(setKey) && selfType === 'Array') {
+            var proxyItems_1 = parentDataNodeMeta.proxyItems;
+            if (proxyItems_1) {
+                // @ts-ignore
+                proxyItems_1[isModifiedKey] = true;
+            }
+        }
+        if (!grandpaMeta) {
             return;
+        }
         var grandpaCopy = grandpaMeta.copy;
         // 回溯过程中，为没拷贝体的爷爷节点生成拷贝对象
         if (!grandpaCopy) {
@@ -305,6 +315,7 @@
             grandpaCopy[parentDataNodeIdx] = parentDataNodeCopy;
         }
         else if (parentType === 'Array') {
+            // 数组操作比较特殊，有2种方式，包括了1方法修改和2自身通过索引直接修改，这里处理到第1种
             grandpaCopy[parentDataNodeIdx] = parentDataNodeCopy;
             needMarkModified = true;
         }
@@ -315,7 +326,8 @@
         var proxyItems = grandpaMeta.proxyItems;
         if (needMarkModified && proxyItems) {
             // @ts-ignore
-            proxyItems.__modified = true;
+            // proxyItems.__modified = true;
+            proxyItems[isModifiedKey] = true;
             // @ts-ignore
             // !!! 方便在 finishDraft 里，遇到 Set 结构还可以指回来
             proxyItems.__parent = (_a = grandpaMeta.parentMeta) === null || _a === void 0 ? void 0 : _a.copy;
@@ -411,7 +423,7 @@
     var SHOULD_REASSIGN_MAP_METHODS = ['clear', 'delete', 'set'];
     var SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
     function mayReassign(options) {
-        var calledBy = options.calledBy, parentDataNodeMeta = options.parentDataNodeMeta, op = options.op, parentType = options.parentType;
+        var calledBy = options.calledBy, parentDataNodeMeta = options.parentDataNodeMeta, op = options.op, parentType = options.parentType, key = options.key;
         // 对于由 set 陷阱触发的 copyAndGetDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
         if (['deleteProperty', 'set'].includes(calledBy)
             ||
@@ -419,7 +431,7 @@
                     || (parentType === 'Array' && SHOULD_REASSIGN_ARR_METHODS.includes(op)) // 针对 Array 一系列的改变操作
                     || (parentType === 'Map' && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Array 一系列的改变操作
                 ))) {
-            reassignGrandpaAndParent(parentDataNodeMeta);
+            reassignGrandpaAndParent(parentDataNodeMeta, calledBy, key);
         }
     }
     function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
@@ -457,7 +469,7 @@
         //   console.log(`allowCopy ${allowCopy} op symbol`);
         // }
         if (allowCopy) {
-            // 没有 copy 同构 makeCopy 造一个 copy
+            // 没有 copy 就通过 makeCopy 造一个 copy
             // 有了 copy 也要看parentType类型，如果是 'Map', 'Set' 的话，也需要 makeCopy
             // 因为此时 parentDataNodeMeta 携带的 proxyItems 才是正确的 copy 体
             // 否则在 test/complex/case1.ts 示例里，先调用了 mixArr.push，为 mixArr 每一个 item 项生成的copy
@@ -518,7 +530,7 @@
                 }
             }
             // console.log('[[ DEBUG ]] mayReassign ', `calledBy:${calledBy}  parentType:${parentType} op:${op}`);
-            mayReassign({ calledBy: calledBy, parentDataNodeMeta: parentDataNodeMeta, op: op, parentType: parentType });
+            mayReassign({ calledBy: calledBy, parentDataNodeMeta: parentDataNodeMeta, op: op, key: key, parentType: parentType });
             // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
             var grandpaMeta = parentDataNodeMeta.parentMeta;
             if (grandpaMeta) {
@@ -654,7 +666,7 @@
                         return metaVer;
                     }
                     var currentChildVal = parent[key];
-                    if (key === '__proto__' || key === finishHandler) {
+                    if (key === '__proto__' || key === finishHandler || key === isModifiedKey) {
                         return currentChildVal;
                     }
                     if (isSymbol(key)) {
@@ -675,26 +687,34 @@
                         return parentMeta.copy ? parentMeta.copy[key] : parentMeta.self[key];
                     }
                     // 第 2+ 次进入 key 的 get 函数，已为 parent 生成了代理
-                    if (parentMeta && !NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
-                        // if (parentMeta) {
+                    if (parentMeta) {
                         var self = parentMeta.self, copy = parentMeta.copy;
                         var originalChildVal = self[key];
-                        // 存在 copy，则从 copy 上获取
-                        if (copy) {
-                            currentChildVal = copy[key];
+                        var needCareCopy = false;
+                        // if (Array.isArray(originalChildVal)) {
+                        //   needCareCopy = true;
+                        // } else 
+                        if (!NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
+                            needCareCopy = true;
                         }
-                        // 产生了节点替换情况（此时currentChildVal应该是从 copy 里 获取的）
-                        // 直接返回 currentChildVal 即可
-                        // 因为 currentChildVal 已经是一个全新的值，无需对它做代理
-                        // ori: { a: 1 },     cur: 1 
-                        // ori: 1,            cur: { a: 1 } 
-                        // ori: 1,            cur: 2 
-                        // ori: { a: 1 }      cur: { a: 1 } 
-                        if (originalChildVal !== currentChildVal) {
-                            // console.log(` parentType${parentType} originalChildVal:${originalChildVal} currentChildVal:${currentChildVal}`);
-                            // 返回出去的值因未做代理，之后对它的取值行为不会再进入到 get 函数中
-                            // todo：后续版本考虑 createDraft 加参数来控制是否为这种已替换节点也做代理
-                            return currentChildVal;
+                        if (needCareCopy) {
+                            // 存在 copy，则从 copy 上获取
+                            if (copy) {
+                                currentChildVal = copy[key];
+                            }
+                            // 产生了节点替换情况（此时currentChildVal应该是从 copy 里 获取的）
+                            // 直接返回 currentChildVal 即可
+                            // 因为 currentChildVal 已经是一个全新的值，无需对它做代理
+                            // ori: { a: 1 },     cur: 1 
+                            // ori: 1,            cur: { a: 1 } 
+                            // ori: 1,            cur: 2 
+                            // ori: { a: 1 }      cur: { a: 1 } 
+                            if (originalChildVal !== currentChildVal) {
+                                // console.log(` parentType${parentType} originalChildVal:${originalChildVal} currentChildVal:${currentChildVal}`);
+                                // 返回出去的值因未做代理，之后对它的取值行为不会再进入到 get 函数中
+                                // todo：后续版本考虑 createDraft 加参数来控制是否为这种已替换节点也做代理
+                                return currentChildVal;
+                            }
                         }
                     }
                     var createMeta = function (currentChildVal, copy, parentDataIdx) {
@@ -711,6 +731,7 @@
                                         parentMeta: null,
                                         parent: parent,
                                         parentType: parentType,
+                                        selfType: getDataNodeType(currentChildVal),
                                         self: currentChildVal,
                                         key: key,
                                         idx: parentDataIdx,
@@ -757,9 +778,13 @@
                                             proxyItems = tmp_2;
                                         }
                                         else if (parentType === carefulDataTypes.Array) {
-                                            var tmp_3 = [];
+                                            // const tmp: any[] = [];
+                                            // (parent as any[]).forEach((val, idx) => tmp.push(createMeta(val, tryMakeCopy(val), idx)));
+                                            // proxyItems = tmp;
+                                            var tmp_3 = (meta.copy || []);
+                                            meta.copy = tmp_3;
                                             parent.forEach(function (val, idx) { return tmp_3.push(createMeta(val, tryMakeCopy(val), idx)); });
-                                            proxyItems = tmp_3;
+                                            proxyItems = meta.proxyVal;
                                         }
                                         meta.proxyItems = proxyItems;
                                         var targetMgr = (_b = (_a = meta.rootMeta) === null || _a === void 0 ? void 0 : _a.proxyItemsMgr) === null || _b === void 0 ? void 0 : _b[parentType];
@@ -794,8 +819,13 @@
                 // parent 指向的是代理之前的对象
                 set: function (parent, key, value) {
                     // console.log('Set ', parent, key, value);
-                    copyAndGetDataNode(parent, { key: key, value: value, metaVer: metaVer, calledBy: 'set' }, true);
-                    getMeta(parent, metaVer);
+                    if (key === isModifiedKey) {
+                        parent.__proto__[isModifiedKey] = value;
+                    }
+                    else {
+                        copyAndGetDataNode(parent, { key: key, value: value, metaVer: metaVer, calledBy: 'set' }, true);
+                        getMeta(parent, metaVer);
+                    }
                     return true;
                 },
                 deleteProperty: function (parent, key) {
@@ -826,11 +856,13 @@
                     ensureDataNodeMetasProtoLayer(baseState, metaVer, true);
                     var meta = getMeta(baseState, metaVer);
                     if (!meta) {
+                        var baseStateType = getDataNodeType(baseState);
                         meta = {
                             rootMeta: null,
                             parent: null,
                             parentMeta: null,
-                            parentType: getDataNodeType(baseState),
+                            parentType: baseStateType,
+                            selfType: baseStateType,
                             self: baseState,
                             copy: null,
                             modified: false,
@@ -879,7 +911,7 @@
                         // 用于辅助跑通  /test/map-other/object-map.ts
                         mapProxyItemsList.forEach(function (proxyItems) {
                             // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-                            if (proxyItems.__modified) {
+                            if (proxyItems[isModifiedKey]) {
                                 var tmpMap_1 = new Map();
                                 mayRootMap_1 = tmpMap_1;
                                 proxyItems.forEach(function (val, key) {
@@ -905,7 +937,7 @@
                         var mayRootSetArr_1 = null;
                         setProxyItemsList.forEach(function (proxyItems) {
                             // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-                            if (proxyItems.__modified) {
+                            if (proxyItems[isModifiedKey]) {
                                 var arr_1 = Array.from(proxyItems);
                                 mayRootSetArr_1 = arr_1;
                                 arr_1.forEach(function (val, idx) {
@@ -927,17 +959,27 @@
                         }
                         // @ts-ignore
                         var arrProxyItemsList = rootMeta.proxyItemsMgr['Array'];
+                        var mayRootArr_1 = [];
                         arrProxyItemsList.forEach(function (proxyItems) {
                             // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-                            if (proxyItems.__modified) {
-                                proxyItems.forEach(function (val, idx) {
+                            if (proxyItems[isModifiedKey]) {
+                                var proxyItemsMeta = getMeta(proxyItems, metaVer);
+                                var items = (proxyItemsMeta === null || proxyItemsMeta === void 0 ? void 0 : proxyItemsMeta.copy) || proxyItems;
+                                items.forEach(function (val, idx) {
                                     var meta = getMeta(val, metaVer);
-                                    if (meta && !meta.modified) {
-                                        proxyItems[idx] = meta.self;
+                                    if (meta) {
+                                        mayRootArr_1[idx] = !meta.modified ? meta.self : meta.copy;
+                                    }
+                                    else {
+                                        mayRootArr_1[idx] = val;
                                     }
                                 });
                             }
                         });
+                        // 根对象就是 Array 时，直接将 final 指向可能做好的新 Array
+                        if (rootMeta.parentType === 'Array' && mayRootArr_1.length) {
+                            final = mayRootArr_1;
+                        }
                     }
                     // todo: 留着这个参数，解决多引用问题
                     // var base = { a: { b: { c: 1 } }, b: null };

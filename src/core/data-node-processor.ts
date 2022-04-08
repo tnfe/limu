@@ -45,8 +45,8 @@ function allowCopyForOp(parentType, op) {
 const SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'unshift', 'reverse', 'copyWithin', 'delete', 'fill'];
 const SHOULD_REASSIGN_MAP_METHODS = ['clear', 'delete', 'set'];
 const SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
-function mayReassign(options: { calledBy: string, parentDataNodeMeta: DraftMeta, op: string, parentType: string }) {
-  const { calledBy, parentDataNodeMeta, op, parentType } = options;
+function mayReassign(options: { calledBy: string, parentDataNodeMeta: DraftMeta, op: string, parentType: string, key: string | number }) {
+  const { calledBy, parentDataNodeMeta, op, parentType, key } = options;
   // 对于由 set 陷阱触发的 copyAndGetDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
   if (['deleteProperty', 'set'].includes(calledBy)
     ||
@@ -56,7 +56,7 @@ function mayReassign(options: { calledBy: string, parentDataNodeMeta: DraftMeta,
       || (parentType === 'Map' && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Array 一系列的改变操作
     ))
   ) {
-    reassignGrandpaAndParent(parentDataNodeMeta);
+    reassignGrandpaAndParent(parentDataNodeMeta, calledBy, key);
   }
 }
 
@@ -101,7 +101,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   // }
 
   if (allowCopy) {
-    // 没有 copy 同构 makeCopy 造一个 copy
+    // 没有 copy 就通过 makeCopy 造一个 copy
     // 有了 copy 也要看parentType类型，如果是 'Map', 'Set' 的话，也需要 makeCopy
     // 因为此时 parentDataNodeMeta 携带的 proxyItems 才是正确的 copy 体
     // 否则在 test/complex/case1.ts 示例里，先调用了 mixArr.push，为 mixArr 每一个 item 项生成的copy
@@ -170,7 +170,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     }
 
     // console.log('[[ DEBUG ]] mayReassign ', `calledBy:${calledBy}  parentType:${parentType} op:${op}`);
-    mayReassign({ calledBy, parentDataNodeMeta, op, parentType });
+    mayReassign({ calledBy, parentDataNodeMeta, op, key, parentType });
 
     // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
     const grandpaMeta = parentDataNodeMeta.parentMeta;

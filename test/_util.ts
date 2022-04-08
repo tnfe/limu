@@ -22,8 +22,8 @@ export const createDraft = limu.createDraft;
 export const finishDraft = limu.finishDraft;
 export const produce = limu.produce;
 
-// const RUN_PRODUCE = false;
-const RUN_PRODUCE = true;
+const RUN_PRODUCE = false;
+// const RUN_PRODUCE = true;
 
 export const produceTip = (testDescribe: string) => `${testDescribe} (with produce)`;
 
@@ -65,6 +65,10 @@ export function getMapObjBase() {
  * @returns
  */
 export function getArrBase() {
+  // const arr = new Array(10).fill('');
+  // // @ts-ignore
+  // arr.forEach((val, idx, arr) => arr[idx] = idx);
+  // return arr;
   return [1, 2, 3];
 }
 

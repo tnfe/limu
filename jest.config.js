@@ -11,11 +11,20 @@ const jestConfig = {
   testMatch: [
     '<rootDir>/test/**/*.ts',
     // '<rootDir>/test/api.ts',
+
+
+    // '<rootDir>/test/array-base/push.ts',
+    // '<rootDir>/test/array-other/object-item.ts',
+    // '<rootDir>/test/array-other/object-list.ts',
+    // '<rootDir>/test/array-base/concat.ts',
+    // '<rootDir>/test/array-base/flatMap.ts',
+
     // '<rootDir>/test/array-base/valueOf.ts',
     // '<rootDir>/test/array-base/values.ts',
     // '<rootDir>/test/array-base/map.ts',
     // '<rootDir>/test/array-base/copyWithin.ts',
     // '<rootDir>/test/array-base/flat.ts',
+    // '<rootDir>/test/array-base/unshift.ts',
     // '<rootDir>/test/array-base/shift.ts',
     // '<rootDir>/test/array-base/sort.ts',
     // '<rootDir>/test/array-base/forEach.ts',
@@ -25,11 +34,10 @@ const jestConfig = {
     // '<rootDir>/test/array-other/object-item.ts',
     // '<rootDir>/test/array-other/object-item-2.ts',
     // '<rootDir>/test/array-other/object-item-3.ts',
-    // '<rootDir>/test/array-other/object-list.ts',
     // '<rootDir>/test/map-other/case-nested-object.ts',
     // '<rootDir>/test/map-other/case1.ts',
 
-    // '<rootDir>/test/array-other/object-list.ts',
+
     // '<rootDir>/test/map-other/object-map.ts',
 
     // '<rootDir>/test/map-base/get.ts',

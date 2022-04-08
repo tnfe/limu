@@ -1,9 +1,9 @@
-import { isObject, isMap, isSet, getValStrDesc, isFn, noop } from '../support/util';
+import { isObject, isMap, isSet, getValStrDesc, isFn, noop, canBeNum } from '../support/util';
 import {
   desc2dataType, carefulType2fnKeys, carefulType2proxyItemFnKeys,
   carefulType2fnKeysThatNeedMarkModified,
 } from '../support/consts';
-import { metasKey, verKey } from '../support/symbols';
+import { metasKey, verKey, isModifiedKey } from '../support/symbols';
 import { verWrap } from '../support/inner-data';
 import { DraftMeta } from '../inner-types';
 
@@ -154,12 +154,24 @@ export function mayMarkModified(parentType: string, op: any, val: any, markModif
   }
 }
 
-export function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta) {
+export function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta, calledBy?: string, setKey?: string | number) {
   const {
-    parentMeta: grandpaMeta, parentType, idx: parentDataNodeIdx,
-    copy: parentDataNodeCopy,
+    parentMeta: grandpaMeta, parentType, selfType,
+    idx: parentDataNodeIdx, copy: parentDataNodeCopy,
   } = parentDataNodeMeta;
-  if (!grandpaMeta) return;
+
+  // 数组操作比较特殊，有2种方式，包括了(1方法修改) 和 (2自身通过索引直接修改)，这里处理到第2种
+  if (calledBy === 'set' && canBeNum(setKey) && selfType === 'Array') {
+    const proxyItems = parentDataNodeMeta.proxyItems;
+    if (proxyItems) {
+      // @ts-ignore
+      proxyItems[isModifiedKey] = true;
+    }
+  }
+
+  if (!grandpaMeta) {
+    return;
+  };
 
   let grandpaCopy = grandpaMeta.copy;
   // 回溯过程中，为没拷贝体的爷爷节点生成拷贝对象
@@ -177,6 +189,7 @@ export function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta) {
   } else if (parentType === 'Object') {
     (grandpaCopy as Record<any, any>)[parentDataNodeIdx] = parentDataNodeCopy;
   } else if (parentType === 'Array') {
+    // 数组操作比较特殊，有2种方式，包括了1方法修改和2自身通过索引直接修改，这里处理到第1种
     (grandpaCopy as any[])[parentDataNodeIdx] = parentDataNodeCopy;
     needMarkModified = true;
   } else if (parentType === 'Set') {
@@ -187,14 +200,17 @@ export function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta) {
   const proxyItems = grandpaMeta.proxyItems;
   if (needMarkModified && proxyItems) {
     // @ts-ignore
-    proxyItems.__modified = true;
+    // proxyItems.__modified = true;
+    proxyItems[isModifiedKey] = true;
     // @ts-ignore
     // !!! 方便在 finishDraft 里，遇到 Set 结构还可以指回来
     proxyItems.__parent = grandpaMeta.parentMeta?.copy;
     // @ts-ignore
     proxyItems.__dataIndex = grandpaMeta.idx;
   }
+
 }
+
 
 export function markRootModifiedAndReassign(meta: DraftMeta, parent, metaVer) {
   if (meta?.rootMeta) {

@@ -11,6 +11,7 @@ export interface DraftMeta {
   parentMeta: null | DraftMeta,
   parent: null | ObjectLike,
   parentType: string,
+  selfType: string,
   self: ObjectLike,
   copy: null | ObjectLike,
   modified: boolean,

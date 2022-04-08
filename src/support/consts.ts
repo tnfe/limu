@@ -30,7 +30,7 @@ export const arrFnKeys = [
   'reverse', 'shift', 'unshift', 'slice', 'some', 'sort', 'splice', 'values', 'valueOf',
 ];
 export const arrFnKeysThatNeedMarkModified = [
-  'concat', 'copyWithin', 'fill', 'flat', 'flatMap', 'pop', 'push', 'reverse', 'shift', 'unshift', 'splice',
+  'copyWithin', 'fill', 'pop', 'push', 'reverse', 'shift', 'unshift', 'splice',
 ];
 
 export const mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has', 'keys', 'set', 'values'];

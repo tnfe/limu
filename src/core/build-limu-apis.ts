@@ -11,7 +11,7 @@ import {
   tryMakeCopy,
   replaceSetOrMapMethods,
 } from './helper';
-import { finishHandler, verKey } from '../support/symbols';
+import { finishHandler, verKey, isModifiedKey } from '../support/symbols';
 import { carefulDataTypes } from '../support/consts';
 import { isPrimitive, canBeNum, isFn, noop, isSymbol } from '../support/util';
 import { copyAndGetDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer } from './data-node-processor';
@@ -34,7 +34,7 @@ export function buildLimuApis() {
     let called = false;
     let revoke: null | (() => void) = null;
 
-    var copyOnWriteTraps = {
+    const copyOnWriteTraps = {
       // parent指向的是代理之前的对象
       get: (parent, key) => {
         if (key === verKey) {
@@ -42,7 +42,7 @@ export function buildLimuApis() {
         }
 
         let currentChildVal = parent[key];
-        if (key === '__proto__' || key === finishHandler) {
+        if (key === '__proto__' || key === finishHandler || key === isModifiedKey) {
           return currentChildVal;
         }
 
@@ -66,28 +66,36 @@ export function buildLimuApis() {
           return parentMeta.copy ? parentMeta.copy[key] : parentMeta.self[key];
         }
 
+
         // 第 2+ 次进入 key 的 get 函数，已为 parent 生成了代理
-        if (parentMeta && !NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
-          // if (parentMeta) {
+        if (parentMeta) {
           const { self, copy } = parentMeta;
           const originalChildVal = self[key];
-          // 存在 copy，则从 copy 上获取
-          if (copy) {
-            currentChildVal = copy[key];
+
+          let needCareCopy = false;
+          if (!NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
+            needCareCopy = true;
           }
 
-          // 产生了节点替换情况（此时currentChildVal应该是从 copy 里 获取的）
-          // 直接返回 currentChildVal 即可
-          // 因为 currentChildVal 已经是一个全新的值，无需对它做代理
-          // ori: { a: 1 },     cur: 1 
-          // ori: 1,            cur: { a: 1 } 
-          // ori: 1,            cur: 2 
-          // ori: { a: 1 }      cur: { a: 1 } 
-          if (originalChildVal !== currentChildVal) {
-            // console.log(` parentType${parentType} originalChildVal:${originalChildVal} currentChildVal:${currentChildVal}`);
-            // 返回出去的值因未做代理，之后对它的取值行为不会再进入到 get 函数中
-            // todo：后续版本考虑 createDraft 加参数来控制是否为这种已替换节点也做代理
-            return currentChildVal;
+          if (needCareCopy) {
+            // 存在 copy，则从 copy 上获取
+            if (copy) {
+              currentChildVal = copy[key];
+            }
+
+            // 产生了节点替换情况（此时currentChildVal应该是从 copy 里 获取的）
+            // 直接返回 currentChildVal 即可
+            // 因为 currentChildVal 已经是一个全新的值，无需对它做代理
+            // ori: { a: 1 },     cur: 1 
+            // ori: 1,            cur: { a: 1 } 
+            // ori: 1,            cur: 2 
+            // ori: { a: 1 }      cur: { a: 1 } 
+            if (originalChildVal !== currentChildVal) {
+              // console.log(` parentType${parentType} originalChildVal:${originalChildVal} currentChildVal:${currentChildVal}`);
+              // 返回出去的值因未做代理，之后对它的取值行为不会再进入到 get 函数中
+              // todo：后续版本考虑 createDraft 加参数来控制是否为这种已替换节点也做代理
+              return currentChildVal;
+            }
           }
         }
 
@@ -105,6 +113,7 @@ export function buildLimuApis() {
                   parentMeta: null,
                   parent,
                   parentType,
+                  selfType: getDataNodeType(currentChildVal),
                   self: currentChildVal,
                   key,
                   idx: parentDataIdx,
@@ -151,9 +160,10 @@ export function buildLimuApis() {
                     replaceSetOrMapMethods('Map', tmp, meta, parent, metaVer);
                     proxyItems = tmp;
                   } else if (parentType === carefulDataTypes.Array) {
-                    const tmp: any[] = [];
+                    const tmp: any[] = (meta.copy || []) as any[];
+                    meta.copy = tmp;
                     (parent as any[]).forEach((val, idx) => tmp.push(createMeta(val, tryMakeCopy(val), idx)));
-                    proxyItems = tmp;
+                    proxyItems = meta.proxyVal;
                   }
 
                   meta.proxyItems = proxyItems;
@@ -163,9 +173,6 @@ export function buildLimuApis() {
                   }
                 }
               } else {
-                if (parentType === carefulDataTypes.Map, key === 'get') {
-                  // createMeta(parent.get(), tryMakeCopy(val), key)
-                }
                 // console.log('===> get keyPath(3) ', getMeta(currentChildVal, metaVer)?.keyPath, ' key is', key);
               }
 
@@ -201,10 +208,14 @@ export function buildLimuApis() {
       // parent 指向的是代理之前的对象
       set: (parent, key, value) => {
         // console.log('Set ', parent, key, value);
-        copyAndGetDataNode(parent, { key, value, metaVer, calledBy: 'set' }, true);
-        const meta = getMeta(parent, metaVer);
-        if (meta) {
-          // console.log('set meta.keyPath ', [...meta.keyPath, key], ' key is', key, ' value is', value);
+        if (key === isModifiedKey) {
+          parent.__proto__[isModifiedKey] = value;
+        } else {
+          copyAndGetDataNode(parent, { key, value, metaVer, calledBy: 'set' }, true);
+          const meta = getMeta(parent, metaVer);
+          if (meta) {
+            // console.log('set meta.keyPath ', [...meta.keyPath, key], ' key is', key, ' value is', value);
+          }
         }
         return true;
       },
@@ -241,11 +252,13 @@ export function buildLimuApis() {
         ensureDataNodeMetasProtoLayer(baseState, metaVer, true);
         let meta = getMeta(baseState, metaVer);
         if (!meta) {
+          const baseStateType = getDataNodeType(baseState);
           meta = {
             rootMeta: null,
             parent: null,
             parentMeta: null,
-            parentType: getDataNodeType(baseState),
+            parentType: baseStateType,
+            selfType: baseStateType,
             self: baseState,
             copy: null,
             modified: false,
@@ -299,7 +312,7 @@ export function buildLimuApis() {
           // 用于辅助跑通  /test/map-other/object-map.ts
           mapProxyItemsList.forEach(proxyItems => {
             // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-            if (proxyItems.__modified) {
+            if (proxyItems[isModifiedKey]) {
               const tmpMap = new Map();
               mayRootMap = tmpMap;
               proxyItems.forEach((val, key) => {
@@ -326,7 +339,7 @@ export function buildLimuApis() {
           let mayRootSetArr: Array<any> | null = null;
           setProxyItemsList.forEach(proxyItems => {
             // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-            if (proxyItems.__modified) {
+            if (proxyItems[isModifiedKey]) {
               const arr = Array.from(proxyItems);
               mayRootSetArr = arr;
               arr.forEach((val, idx) => {
@@ -349,17 +362,26 @@ export function buildLimuApis() {
 
           // @ts-ignore
           const arrProxyItemsList = rootMeta.proxyItemsMgr['Array'];
+          let mayRootArr: Array<any> = [];
           arrProxyItemsList.forEach(proxyItems => {
             // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-            if (proxyItems.__modified) {
-              proxyItems.forEach((val, idx) => {
+            if (proxyItems[isModifiedKey]) {
+              const proxyItemsMeta = getMeta(proxyItems, metaVer);
+              const items = proxyItemsMeta?.copy || proxyItems;
+              items.forEach((val, idx) => {
                 const meta = getMeta(val, metaVer);
-                if (meta && !meta.modified) {
-                  proxyItems[idx] = meta.self;
+                if (meta) {
+                  mayRootArr[idx] = !meta.modified ? meta.self : meta.copy;
+                } else {
+                  mayRootArr[idx] = val;
                 }
               });
             }
           });
+          // 根对象就是 Array 时，直接将 final 指向可能做好的新 Array
+          if (rootMeta.parentType === 'Array' && mayRootArr.length) {
+            final = mayRootArr;
+          }
         }
 
         // todo: 留着这个参数，解决多引用问题
