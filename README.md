@@ -128,5 +128,6 @@ spend 134 ms
 
 
 ## License
+Copyright (c) Tencent Corporation. All rights reserved.
 
-concent is released under the MIT License. [http://www.opensource.org/licenses/mit-license](http://www.opensource.org/licenses/mit-license)
+Limu is released under the MIT License(https://opensource.org/licenses/MIT)

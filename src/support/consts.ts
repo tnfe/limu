@@ -1,9 +1,10 @@
-
-export const carefulDataTypes = {
-  Map: 'Map',
-  Set: 'Set',
-  Array: 'Array',
-};
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Tencent Corporation. All rights reserved.
+ *  Licensed under the MIT License.
+ * 
+ *  @Author: fantasticsoul
+ *--------------------------------------------------------------------------------------------*/
+export const carefulDataTypes = { Map: 'Map', Set: 'Set', Array: 'Array' };
 
 export const objDesc = '[object Object]';
 
@@ -21,7 +22,6 @@ export const desc2dataType = {
   [arrDesc]: carefulDataTypes.Array,
   [objDesc]: 'Object',
 };
-
 
 
 export const arrFnKeys = [

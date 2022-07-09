@@ -1,0 +1,16 @@
+{
+  "name": "limu-benchmark",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "100000-len-arr.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "immer": "^9.0.15",
+    "limu": "^1.2.0"
+  }
+}

@@ -11,6 +11,10 @@ exports.produce = limu.produce;
 
 let RUN_PRODUCE = false;
 
+exports.noop = function noop(...args) {
+  return args;
+}
+
 exports.setRunProduce = function setRunProduce(val) {
   RUN_PRODUCE = val;
 }

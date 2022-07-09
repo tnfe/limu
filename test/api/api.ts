@@ -1,7 +1,7 @@
-import { Limu, produce, getDraftMeta, createDraft, finishDraft } from '../src';
+import { Limu, produce, getDraftMeta, createDraft, finishDraft } from '../../src';
 
 describe('check apis', () => {
-  test('Limu', () => {
+  test('new Limu', () => {
     const limuApis = new Limu();
     expect(limuApis.createDraft).toBeTruthy();
     expect(limuApis.finishDraft).toBeTruthy();
@@ -30,15 +30,30 @@ describe('check apis', () => {
     try {
       // @ts-ignore
       produce(2);
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toMatch(/(?=produce callback is not a function)/);
     }
 
     try {
-      // @ts-ignore
-      produce(async () => { });
-    } catch (e) {
+      const curryCb = produce(async () => { });
+      curryCb({ tip: 'react base state' });
+    } catch (e: any) {
       expect(e.message).toMatch(/(?=produce callback can not be a promise function)/);
+    }
+
+    try {
+      const curryCb = produce((draft: any) => { draft.a = 1 });
+      curryCb(2);
+    } catch (e: any) {
+      expect(e.message).toMatch(/(?=base state type can only be object\(except null\) or array)/);
+    }
+  });
+
+  test('wrong finishDraft', () => {
+    try {
+      finishDraft({ a: 1 });
+    } catch (e: any) {
+      expect(e.message).toMatch(/(?=oops, not a Limu draft)/);
     }
   });
 

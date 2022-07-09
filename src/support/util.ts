@@ -1,3 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Tencent Corporation. All rights reserved.
+ *  Licensed under the MIT License.
+ * 
+ *  @Author: fantasticsoul
+ *--------------------------------------------------------------------------------------------*/
 import { objDesc, arrDesc, mapDesc, setDesc, fnDesc } from './consts';
 
 const toString = Object.prototype.toString;
@@ -7,7 +13,7 @@ export function noop(...args: any[]) {
 }
 
 export function isObject(val) {
-  // 注意，null 是 [object Null]
+  // attention，null desc is '[object Null]'
   return toString.call(val) === objDesc;
 }
 
@@ -32,16 +38,26 @@ export function isPrimitive(val) {
   return ![objDesc, arrDesc, mapDesc, setDesc, fnDesc].includes(desc);
 }
 
+
 export function isPromiseFn(obj) {
   return obj.constructor.name === 'AsyncFunction' || 'function' === typeof obj.then;
 }
+
+
+export function isPromiseResult(result: any) {
+  return typeof Promise !== "undefined" && result instanceof Promise;
+}
+
 
 export function canHaveProto(val) {
   return !isPrimitive(val);
 }
 
 export function canBeNum(val) {
-  return /^[0-9]*$/.test(val);
+  var valType = typeof val;
+  if (valType === 'number') return true;
+  if (valType === 'string') return /^[0-9]*$/.test(val);
+  return false;
 }
 
 export function isSymbol(maySymbol) {

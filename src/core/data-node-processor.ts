@@ -1,3 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Tencent Corporation. All rights reserved.
+ *  Licensed under the MIT License.
+ * 
+ *  @Author: fantasticsoul
+ *--------------------------------------------------------------------------------------------*/
 import { isPrimitive, canHaveProto, canBeNum, isSymbol, isFn } from '../support/util';
 import { ver2MetasList } from '../support/inner-data';
 import { metasKey } from '../support/symbols';
@@ -7,8 +13,6 @@ import {
   mapIgnoreFnOrAttributeKeys,
   setIgnoreFnOrAttributeKeys,
   carefulType2fnKeysThatNeedMarkModified,
-  // carefulType2proxyItemFnKeys, arrFnKeysThatNoTriggerCopy,
-  // mapIgnoreFnKeys, setIgnoreFnKeys,
 } from '../support/consts';
 import {
   getMeta,
@@ -63,8 +67,6 @@ function mayReassign(options: { calledBy: string, parentDataNodeMeta: DraftMeta,
 
 export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   const { op, key, value: mayProxyValue, metaVer, calledBy, parentType } = copyCtx;
-  // console.log('[[ DEBUG ]] copyAndGetDataNode:', copyCtx, 'isFirstCall:' + isFirstCall);
-  // console.log('[[ DEBUG ]] copyAndGetDataNode:', 'isFirstCall:' + isFirstCall);
   const parentDataNodeMeta = getMeta(parentDataNode, metaVer);
 
   /**
@@ -94,11 +96,6 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   let { copy: parentCopy } = parentDataNodeMeta;
 
   const allowCopy = allowCopyForOp(parentType, op);
-  // try {
-  //   console.log(`allowCopy ${allowCopy} op ${op}`);
-  // } catch (err) {
-  //   console.log(`allowCopy ${allowCopy} op symbol`);
-  // }
 
   if (allowCopy) {
     // 没有 copy 就通过 makeCopy 造一个 copy
@@ -187,22 +184,13 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   // 是 Map, Set, Array 类型的方法操作或者值获取
   const fnKeys = carefulType2fnKeys[parentType] || [];
   const markModified = () => {
-    // const proxyValue = getUnProxyValue(mayProxyValue, metaVer);
-    // const valueMeta = getMeta(proxyValue, metaVer);
-    // console.log('****** value ', proxyValue);
-    // console.log('****** isDraft ', isDraft(mayProxyValue));
     // 标记当前节点已更新
     parentDataNodeMeta.modified = true;
     rootMeta && (rootMeta.modified = true);
-    // console.log('标记更新', parentDataNodeMeta);
   };
 
-  // console.log(`parentType:${parentType}  op:${op}  key:${key}`);
-  // console.log('fnKeys.includes(op) ', fnKeys.includes(op));
-  // console.log('isFn(mayProxyValue) ', isFn(mayProxyValue));
   // 是函数调用
   if (fnKeys.includes(op) && isFn(mayProxyValue)) {
-    // console.log('mayProxyValue isFn true');
     const fnKeysThatNeedMarkModified = carefulType2fnKeysThatNeedMarkModified[parentType];
     if (fnKeysThatNeedMarkModified.includes(op)) {
       markModified();
@@ -234,10 +222,8 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
        * arr.forEach((value, index, arr)=>{...})
        * ```
        */
-      // console.log(`parentCopy ${parentCopy} op ${op}`);
       return parentCopy[op].bind(parentDataNodeMeta.proxyItems);
     } else {
-      // console.log(`self ${self} op ${op}`);
       return self[op].bind(self);
     }
   }
@@ -254,10 +240,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
       // 兼容 JSON.stringify 调用 
       return;
     } else {
-      // console.log('before modify ', parentCopy, key, value);
       parentCopy[key] = value;
-      // console.log('after modify ', parentCopy, key, value);
-      // mayReassign(calledBy, parentDataNodeMeta);
     }
   }
 
@@ -266,6 +249,9 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
   }
 }
 
+export function createMetaList(metaVer) {
+  ver2MetasList[metaVer] = [];
+}
 
 export function clearAllDataNodeMeta(metaVer) {
   var metasList = ver2MetasList[metaVer];
@@ -282,11 +268,21 @@ export function ensureDataNodeMetasProtoLayer(val, metaVer, throwError = false) 
       metas = val[metasKey];
     }
 
-    // 记录 metas map
-    let metasList = ver2MetasList[metaVer];
-    if (!metasList) metasList = ver2MetasList[metaVer] = [];
-    metasList.push(metas);
+    ver2MetasList[metaVer].push(metas);
     return;
   }
-  if (throwError) throw new Error('type can only be object(except null) or array');
+  if (throwError) throw new Error('base state type can only be object(except null) or array');
+}
+
+/**
+ * 节省一些判定，提高性能之用
+ */
+export function ensureDataNodeMetasProtoLayerFast(val, metaVer) {
+  let metas = val[metasKey];
+  if (!metas) {
+    setMetasProto(val, getRealProto(val));
+    metas = val[metasKey];
+  }
+
+  ver2MetasList[metaVer].push(metas);
 }

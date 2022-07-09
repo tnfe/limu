@@ -23,5 +23,7 @@ draft.mixArr[0] = 100;
 draft.mixArr[2].get('name').addr = 'sz';
 const final = finishDraft(draft);
 
+console.log('final item 0: ', final.mixArr[0]);
+
 console.log('final: ', final.mixArr[2].get('name').addr);
 console.log('base: ', base.mixArr[2].get('name').addr);

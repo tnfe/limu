@@ -1,12 +1,31 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Tencent Corporation. All rights reserved.
+ *  Licensed under the MIT License.
+ * 
+ *  @Author: fantasticsoul
+ *--------------------------------------------------------------------------------------------*/
 import { buildLimuApis } from './core/build-limu-apis';
 import * as helper from './core/helper';
 import { verKey } from './support/symbols';
-import { isPromiseFn } from './support/util';
+import { isPromiseFn, isPromiseResult } from './support/util';
 import { ObjectLike } from './inner-types';
 
 export type Draft<T> = T;
 export type CreateDraft = <T extends ObjectLike >(base: T) => Draft<T>;
 export type FinishDraft = <T extends ObjectLike >(draft: T) => T;
+export type ProduceCb<T> = (draft: Draft<T>) => void;
+export type GenNewStateCb<T> = (state: T) => T;
+export interface IProduce {
+  <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>): T;
+  /**
+   * use in react:
+   * setState(produce(draft=>{
+   *    draft.name = 2;
+   * }));
+   */
+  <T extends ObjectLike>(cb: ProduceCb<T>): GenNewStateCb<T>;
+}
+
 
 export class Limu {
   public createDraft: CreateDraft;
@@ -21,10 +40,12 @@ export class Limu {
   }
 }
 
+
 export function createDraft<T extends ObjectLike>(base: T): Draft<T> {
   const apis = new Limu();
   return apis.createDraft(base);
 }
+
 
 export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
   const draftMeta = helper.getMetaForDraft(draft, draft[verKey]);
@@ -32,56 +53,55 @@ export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
   // @ts-ignore
   if (draftMeta) finishHandler = draftMeta.finishDraft;
   if (!finishHandler) {
-    throw new Error(`opps, not an Limu draft!`);
+    throw new Error(`oops, not a Limu draft!`);
   }
   return finishHandler(draft);
 }
 
-function checkCb(cb) {
+
+function checkCbFn(cb) {
   if (typeof cb !== 'function') {
     throw new Error('produce callback is not a function');
   }
-  if (isPromiseFn(cb)) {
+}
+
+
+// see issue https://github.com/tnfe/limu/issues/5
+function checkCbPromise(cb, result: any) {
+  if (isPromiseFn(cb) || isPromiseResult(result)) {
     throw new Error('produce callback can not be a promise function');
   }
 }
 
-function innerProduce(baseState, cb, check = true) {
-  if (check) checkCb(cb);
+
+function innerProduce(baseState, cb) {
+  checkCbFn(cb);
   const draft = createDraft(baseState);
-  cb(draft);
+  const result = cb(draft);
+  checkCbPromise(cb, result)
   return finishDraft(draft);
 }
 
-type ProduceCb<T> = (draft: Draft<T>) => void;
-type GenNewStateCb<T> = (state: T) => T;
-interface IProduce {
-  <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>): T;
-  /**
-   * use in react:
-   * setState(produce(draft=>{
-   *    draft.name = 2;
-   * }));
-   */
-  <T extends ObjectLike>(cb: ProduceCb<T>): GenNewStateCb<T>;
-}
 
 const produceFn = (baseState: any, cb: any) => {
   if (!cb) {
-    // expect baseState to be a cb, support curried invocation
-    checkCb(baseState);
+    // expect baseState to be a callback, support curried invocation
+    checkCbFn(baseState);
     return (state) => {
-      return innerProduce(state, baseState, false);
-    }
+      return innerProduce(state, baseState);
+    };
   }
   return innerProduce(baseState, cb) as any;
 };
+
 
 export function getDraftMeta(proxyDraft) {
   const ver = proxyDraft[verKey];
   return helper.getMetaForDraft(proxyDraft, ver) as ObjectLike;
 }
 
+
 export const isDraft = helper.isDraft;
+
 
 export const produce = produceFn as unknown as IProduce;

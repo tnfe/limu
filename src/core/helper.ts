@@ -1,10 +1,16 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Tencent Corporation. All rights reserved.
+ *  Licensed under the MIT License.
+ * 
+ *  @Author: fantasticsoul
+ *--------------------------------------------------------------------------------------------*/
 import { isObject, isMap, isSet, getValStrDesc, isFn, noop, canBeNum } from '../support/util';
 import {
   desc2dataType, carefulType2fnKeys, carefulType2proxyItemFnKeys,
   carefulType2fnKeysThatNeedMarkModified,
 } from '../support/consts';
 import { metasKey, verKey, isModifiedKey } from '../support/symbols';
-import { verWrap } from '../support/inner-data';
+import { verWrap, ver2MetasList } from '../support/inner-data';
 import { DraftMeta } from '../inner-types';
 
 
@@ -14,6 +20,7 @@ export function shouldGenerateProxyItems(parentType, key) {
   const proxyItemFnKeys = carefulType2proxyItemFnKeys[parentType] || [];
   return proxyItemFnKeys.includes(key);
 }
+
 
 export function getKeyPath(mayContainMetaObj, curKey, metaVer) {
   const pathArr = [curKey];
@@ -25,11 +32,13 @@ export function getKeyPath(mayContainMetaObj, curKey, metaVer) {
   return pathArr;
 }
 
+
 export function getMeta(mayMetasProtoObj, metaVer): DraftMeta | null {
   const metas = getMetas(mayMetasProtoObj);
   if (metas) return metas[metaVer];
   return null;
 }
+
 
 export function getMetaForDraft(draft, metaVer) {
   if (!draft) return null;
@@ -40,6 +49,7 @@ export function getMetas(mayMetasProtoObj) {
   if (!mayMetasProtoObj) return null;
   return mayMetasProtoObj[metasKey]
 }
+
 
 // 调用处已保证 meta 不为空
 export function makeCopy(meta: DraftMeta, mayACopy?: any) {
@@ -59,6 +69,7 @@ export function makeCopy(meta: DraftMeta, mayACopy?: any) {
   }
   throw new Error(`data ${metaOwner} try trigger getCopy, its type is ${typeof meta}`)
 }
+
 
 /**
  * 尝试生成copy
@@ -93,16 +104,21 @@ export function getUnProxyValue(value, metaVer) {
   return copy;
 }
 
+
 // 外部已确保是obj
 export function setMeta(obj, meta, metaVer) {
   const metas = getMetas(obj);
   metas && (metas[metaVer] = meta);
 }
 
+
 export function getMetaVer() {
   verWrap.value += 1;
-  return verWrap.value;
+  const metaVer = verWrap.value;
+  ver2MetasList[metaVer] = [];
+  return metaVer;
 }
+
 
 export function getNextMetaLevel(mayContainMetaObj, metaVer) {
   const meta = getMeta(mayContainMetaObj, metaVer);
@@ -116,11 +132,12 @@ export function getRealProto(val) {
   return Object.getPrototypeOf(val);
 }
 
+
 export function setMetasProto(val, realProto) {
   // 把 metas 放到单独的 __proto__ 层里，确保写入的数据不会污染 Object.prototype
-  //__proto__:
-  //  Symbol('metas'): { ... }
-  //  __proto__: Object | Array
+  //  __proto__:
+  //    Symbol('metas'): { ... }
+  //    __proto__: Object | Array
   const metaProto = Object.create(null);
   Object.setPrototypeOf(metaProto, realProto);
   // 故意多写一层 __proto__ 容器
@@ -128,21 +145,24 @@ export function setMetasProto(val, realProto) {
   val.__proto__[metasKey] = {};
 }
 
+
 /**
  * 是否是 proxy 代理的草稿对象
  * @param mayDraft
  * @returns 
  */
 export function isDraft(mayDraft) {
-  const ver = mayDraft[verKey];
+  const ver = mayDraft?.[verKey];
   return !!ver;
 }
+
 
 export function getDataNodeType(dataNode) {
   var strDesc = getValStrDesc(dataNode);
   const dataType = desc2dataType[strDesc];
   return dataType;
 }
+
 
 export function mayMarkModified(parentType: string, op: any, val: any, markModified: Function) {
   const fnKeys = carefulType2fnKeys[parentType] || [];
@@ -153,6 +173,7 @@ export function mayMarkModified(parentType: string, op: any, val: any, markModif
     }
   }
 }
+
 
 export function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta, calledBy?: string, setKey?: string | number) {
   const {
@@ -221,6 +242,7 @@ export function markRootModifiedAndReassign(meta: DraftMeta, parent, metaVer) {
     }
   };
 };
+
 
 /**
  * 拦截 set delete clear add

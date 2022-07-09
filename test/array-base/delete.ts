@@ -1,4 +1,4 @@
-import { runTestSuit, getArrBase } from '../_util';
+import { runTestSuit, getArrBase, noop } from '../_util';
 
 function changeDraft(arrDraft) {
   delete arrDraft['0'];
@@ -6,6 +6,7 @@ function changeDraft(arrDraft) {
 }
 
 function compare(final, base) {
+  noop(final, base);
   expect(final !== base).toBeTruthy();
   expect(final[0] === undefined).toBeTruthy();
   expect(base[0] === 1).toBeTruthy();

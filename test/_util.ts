@@ -1,4 +1,5 @@
 import * as limu from '../src/index';
+// import * as limu from '../benchmark/node_modules/limu';
 
 // 本地 jest 运行时为了方便定位console上显示的错误代码位置，可使用 dist的源码做调试，注意要先执行 npm run build
 // 如果为了调试源码，可去 debug 目录加用例并测试，debug 配置参考如下
@@ -12,9 +13,7 @@ import * as limu from '../src/index';
   "console": "integratedTerminal"
 }
 */
-
 // import * as limu from '../dist/limu.js';
-
 // import * as limu from 'immer';
 // limu.enableMapSet();
 
