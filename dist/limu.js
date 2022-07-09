@@ -44,6 +44,8 @@
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     var carefulDataTypes = { Map: 'Map', Set: 'Set', Array: 'Array' };
     var objDesc = '[object Object]';
@@ -115,6 +117,8 @@
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     var toString = Object.prototype.toString;
     function noop() {
@@ -168,6 +172,8 @@
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     // 用于验证 proxyDraft 和 finishDraft函数 是否能够匹配
     var verKey = Symbol('verKey');
@@ -178,6 +184,8 @@
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     var ver2MetasList = {};
     var verWrap = { value: 0 };
@@ -426,6 +434,8 @@
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     // slice、concat 以及一些特殊的key取值等操作无需copy副本
     function allowCopyForOp(parentType, op) {
@@ -464,8 +474,6 @@
     }
     function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
         var op = copyCtx.op, key = copyCtx.key, mayProxyValue = copyCtx.value, metaVer = copyCtx.metaVer, calledBy = copyCtx.calledBy, parentType = copyCtx.parentType;
-        // console.log('[[ DEBUG ]] copyAndGetDataNode:', copyCtx, 'isFirstCall:' + isFirstCall);
-        // console.log('[[ DEBUG ]] copyAndGetDataNode:', 'isFirstCall:' + isFirstCall);
         var parentDataNodeMeta = getMeta(parentDataNode, metaVer);
         /**
          * 防止 value 本身就是一个 Proxy
@@ -491,11 +499,6 @@
         var self = parentDataNodeMeta.self, rootMeta = parentDataNodeMeta.rootMeta;
         var parentCopy = parentDataNodeMeta.copy;
         var allowCopy = allowCopyForOp(parentType, op);
-        // try {
-        //   console.log(`allowCopy ${allowCopy} op ${op}`);
-        // } catch (err) {
-        //   console.log(`allowCopy ${allowCopy} op symbol`);
-        // }
         if (allowCopy) {
             // 没有 copy 就通过 makeCopy 造一个 copy
             // 有了 copy 也要看parentType类型，如果是 'Map', 'Set' 的话，也需要 makeCopy
@@ -575,21 +578,12 @@
         // 是 Map, Set, Array 类型的方法操作或者值获取
         var fnKeys = carefulType2fnKeys[parentType] || [];
         var markModified = function () {
-            // const proxyValue = getUnProxyValue(mayProxyValue, metaVer);
-            // const valueMeta = getMeta(proxyValue, metaVer);
-            // console.log('****** value ', proxyValue);
-            // console.log('****** isDraft ', isDraft(mayProxyValue));
             // 标记当前节点已更新
             parentDataNodeMeta.modified = true;
             rootMeta && (rootMeta.modified = true);
-            // console.log('标记更新', parentDataNodeMeta);
         };
-        // console.log(`parentType:${parentType}  op:${op}  key:${key}`);
-        // console.log('fnKeys.includes(op) ', fnKeys.includes(op));
-        // console.log('isFn(mayProxyValue) ', isFn(mayProxyValue));
         // 是函数调用
         if (fnKeys.includes(op) && isFn(mayProxyValue)) {
-            // console.log('mayProxyValue isFn true');
             var fnKeysThatNeedMarkModified = carefulType2fnKeysThatNeedMarkModified[parentType];
             if (fnKeysThatNeedMarkModified.includes(op)) {
                 markModified();
@@ -620,11 +614,9 @@
                  * arr.forEach((value, index, arr)=>{...})
                  * ```
                  */
-                // console.log(`parentCopy ${parentCopy} op ${op}`);
                 return parentCopy[op].bind(parentDataNodeMeta.proxyItems);
             }
             else {
-                // console.log(`self ${self} op ${op}`);
                 return self[op].bind(self);
             }
         }
@@ -641,10 +633,7 @@
                 return;
             }
             else {
-                // console.log('before modify ', parentCopy, key, value);
                 parentCopy[key] = value;
-                // console.log('after modify ', parentCopy, key, value);
-                // mayReassign(calledBy, parentDataNodeMeta);
             }
         }
         if (['set', 'deleteProperty'].includes(calledBy)) {
@@ -685,6 +674,8 @@
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     // size 直接返回，
     // 避免 Cannot set property size of #<Map> which has only a getter
@@ -810,7 +801,7 @@
                     }
                     var parentType = getDataNodeType(parent);
                     var parentMeta = getMeta(parent, metaVer);
-                    console.log("Get parentType:".concat(parentType, " key:").concat(key, " "), 'Read KeyPath', getKeyPath(parent, key, metaVer));
+                    // console.log(`Get parentType:${parentType} key:${key} `, 'Read KeyPath', getKeyPath(parent, key, metaVer));
                     // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
                     // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
                     // 是为了配合 data-node-processor 里的 ATTENTION_1
@@ -835,7 +826,6 @@
                             // ori: 1,            cur: 2 
                             // ori: { a: 1 }      cur: { a: 1 } 
                             if (originalChildVal !== currentChildVal) {
-                                // console.log(` parentType${parentType} originalChildVal:${originalChildVal} currentChildVal:${currentChildVal}`);
                                 // 返回出去的值因未做代理，之后对它的取值行为不会再进入到 get 函数中
                                 // todo：后续版本考虑 createDraft 加参数来控制是否为这种已替换节点也做代理
                                 if (Array.isArray(originalChildVal) && Array.isArray(currentChildVal)) {
@@ -887,7 +877,6 @@
                                     }
                                     setMeta(currentChildVal, meta, metaVer);
                                 }
-                                // console.log('===> get keyPath(1) ', meta.keyPath, ' key is', key, ' val ', currentChildVal);
                                 return meta.proxyVal;
                             }
                             else {
@@ -896,7 +885,6 @@
                                     if (!meta) {
                                         throw new Error('[[ createMeta ]]: oops, meta should not be null');
                                     }
-                                    // console.log('===> get keyPath(2) ', meta.keyPath, ' key is', key);
                                     if (!meta.proxyItems) {
                                         // 提前完成遍历，为所有 item 生成代理
                                         var proxyItems = [];
@@ -949,7 +937,7 @@
                 },
                 // parent 指向的是代理之前的对象
                 set: function (parent, key, value) {
-                    console.log('Set ', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
+                    // console.log('Set ', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
                     if (key === isModifiedKey) {
                         parent.__proto__[isModifiedKey] = value;
                         return true;
@@ -966,9 +954,6 @@
                         meta.__callSet = true;
                     }
                     copyAndGetDataNode(parent, { key: key, value: value, metaVer: metaVer, calledBy: 'set' }, true);
-                    // if (meta) {
-                    //   // console.log('set meta.keyPath ', [...meta.keyPath, key], ' key is', key, ' value is', value);
-                    // }
                     return true;
                 },
                 deleteProperty: function (parent, key) {
@@ -1072,6 +1057,8 @@
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     var Limu = /** @class */ (function () {
         function Limu() {
