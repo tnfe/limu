@@ -12,7 +12,7 @@ function getBase() {
 
 function oneBenchmark(/** @type {import('immer')} */lib, /** @type {ReturnType<typeof getBase>} */base) {
   const start = Date.now();
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 1; i++) {
     const draft = lib.createDraft(base);
     draft.a.b.c = 999;
     draft.d.d1.d2.d3.d4.d5.d6 = 1000;
@@ -66,7 +66,7 @@ function oneBenchmark(/** @type {import('immer')} */lib, /** @type {ReturnType<t
 
 console.log(' ------------- immer benchmark ------------- ');
 const base1 = getBase();
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 1; i++) {
   oneBenchmark(immer, base1);
 }
 
@@ -74,6 +74,6 @@ for (let i = 0; i < 10; i++) {
 // 否则会导致 #<Object> is not extensible 错误，因为 immer 会冻结对象
 console.log('\n ------------- limu benchmark ------------- ');
 const base2 = getBase();
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 1; i++) {
   oneBenchmark(limu, base2);
 }
