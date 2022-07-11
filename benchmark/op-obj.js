@@ -23,9 +23,9 @@ function oneBenchmark(/** @type {import('immer')} */lib, /** @type {ReturnType<t
     if (base.d.d1.d2.d3.d4.d5.d6 !== 1) {
       throw new Error('draft.d.d1.d2.d3.d4.d5.d6 should be 1');
     }
-    draft.d.d1.d2 = 888;
-    if (draft.d.d1.d2 !== 888) {
-      throw new Error('draft.d.d1.d2 should be 888');
+    draft.d.d1.d2.d3.d4 = 888;
+    if (draft.d.d1.d2.d3.d4 !== 888) {
+      throw new Error('draft.d.d1.d2.d3.d4 should be 888');
     }
     if (base.d.d1.d2.d3.d4.d5.d6 !== 1) {
       throw new Error('draft.d.d1.d2.d3.d4.d5.d6 should be 1');
@@ -33,32 +33,32 @@ function oneBenchmark(/** @type {import('immer')} */lib, /** @type {ReturnType<t
 
     const final = lib.finishDraft(draft);
 
-    if (final === base) {
-      throw new Error('should not be equal');
-    }
-    if (final.c !== base.c) {
-      throw new Error('should be equal');
-    }
+    // if (final === base) {
+    //   throw new Error('should not be equal');
+    // }
+    // if (final.c !== base.c) {
+    //   throw new Error('should be equal');
+    // }
 
-    if (final === base) {
-      throw new Error('should not be equal');
-    }
-    if (final.d === base.d) {
-      throw new Error('should not be equal');
-    }
+    // if (final === base) {
+    //   throw new Error('should not be equal');
+    // }
+    // if (final.d === base.d) {
+    //   throw new Error('should not be equal');
+    // }
 
-    const draft2 = lib.createDraft(base);
-    draft2.a.b.c = 1000;
-    delete draft2.b;
-    draft2.c.push(1000);
-    draft2.c.pop();
-    const final2 = lib.finishDraft(draft2);
-    if (final2 === base) {
-      throw new Error('should not be equal');
-    }
-    if (final2.c === base.c) {
-      throw new Error('c arr should not be equal');
-    }
+    // const draft2 = lib.createDraft(base);
+    // draft2.a.b.c = 1000;
+    // delete draft2.b;
+    // draft2.c.push(1000);
+    // draft2.c.pop();
+    // const final2 = lib.finishDraft(draft2);
+    // if (final2 === base) {
+    //   throw new Error('should not be equal');
+    // }
+    // if (final2.c === base.c) {
+    //   throw new Error('c arr should not be equal');
+    // }
   }
 
   console.log(`spend ${Date.now() - start} ms`);

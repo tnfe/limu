@@ -168,6 +168,12 @@
     function isSymbol(maySymbol) {
         return typeof maySymbol === 'symbol';
     }
+    function isFrozenObj(mayObj) {
+        if (mayObj && !isPrimitive(mayObj)) {
+            return Object.isFrozen(mayObj);
+        }
+        return false;
+    }
 
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
@@ -189,6 +195,9 @@
      *--------------------------------------------------------------------------------------------*/
     var ver2MetasList = {};
     var verWrap = { value: 0 };
+    var limuConfig = {
+        autoFreeze: true,
+    };
 
     function shouldGenerateProxyItems(parentType, key) {
         // !!! 对于 Array，直接生成 proxyItems
@@ -316,6 +325,21 @@
         var strDesc = getValStrDesc(dataNode);
         var dataType = desc2dataType[strDesc];
         return dataType;
+    }
+    function deepFreeze(obj) {
+        if (Array.isArray(obj) || isSet(obj) || isMap(obj)) {
+            return Object.freeze(obj);
+        }
+        // get all properties
+        var propertyNames = Object.getOwnPropertyNames(obj);
+        // 遍历
+        propertyNames.forEach(function (name) {
+            var value = obj[name];
+            if (value instanceof Object && value !== null) {
+                deepFreeze(value);
+            }
+        });
+        return Object.freeze(obj);
     }
     function reassignGrandpaAndParent(parentDataNodeMeta, calledBy, setKey) {
         var _a;
@@ -508,6 +532,7 @@
             // 而我们需要的是 { Map: name=> Proxy {name:'bj'} }，否则导致测试失败
             if (!parentCopy || ['Map', 'Set'].includes(parentType)) {
                 parentCopy = makeCopy(parentDataNodeMeta, parentCopy);
+                // console.log('re parentCopy');
                 parentDataNodeMeta.copy = parentCopy;
             }
             if (!isPrimitive(value)) {
@@ -684,6 +709,7 @@
     var TYPE_BLACK_LIST = [carefulDataTypes.Array, carefulDataTypes.Set, carefulDataTypes.Map];
     // 这些类型不关心 copy
     var NO_CARE_COPY_TYPE_LIST = [carefulDataTypes.Set, carefulDataTypes.Map];
+    var unforzenDataMap = new Map();
     var inner = {
         handleMap: function (rootMeta, metaVer, final) {
             // @ts-ignore
@@ -775,6 +801,13 @@
             }
             return final;
         },
+        /** reuse fronzen ata */
+        getUnfrozenData: function (key) {
+            return unforzenDataMap.get(key);
+        },
+        setUnfrozenData: function (key, data) {
+            unforzenDataMap.set(key, data);
+        }
     };
     function buildLimuApis() {
         var limuApis = (function () {
@@ -801,6 +834,15 @@
                     }
                     var parentType = getDataNodeType(parent);
                     var parentMeta = getMeta(parent, metaVer);
+                    // unfrozen this part data
+                    if (limuConfig.autoFreeze && isFrozenObj(currentChildVal)) {
+                        // @ts-ignore
+                        currentChildVal = makeCopy({ self: currentChildVal });
+                        parent[key] = currentChildVal;
+                        if (parentMeta && parentMeta.copy) {
+                            parentMeta.copy[key] = currentChildVal;
+                        }
+                    }
                     // console.log(`Get parentType:${parentType} key:${key} `, 'Read KeyPath', getKeyPath(parent, key, metaVer));
                     // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
                     // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
@@ -813,7 +855,6 @@
                         var self = parentMeta.self, copy = parentMeta.copy;
                         var originalChildVal = self[key];
                         if (!NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
-                            noop(metasKey, ensureDataNodeMetasProtoLayerFast);
                             // 存在 copy，则从 copy 上获取
                             if (copy) {
                                 currentChildVal = copy[key];
@@ -825,20 +866,19 @@
                             // ori: 1,            cur: { a: 1 } 
                             // ori: 1,            cur: 2 
                             // ori: { a: 1 }      cur: { a: 1 } 
-                            if (originalChildVal !== currentChildVal) {
+                            if (originalChildVal !== currentChildVal
+                                && Array.isArray(originalChildVal)
+                                && Array.isArray(currentChildVal)
+                                && parentMeta
+                                && !currentChildVal[metasKey]) {
                                 // 返回出去的值因未做代理，之后对它的取值行为不会再进入到 get 函数中
                                 // todo：后续版本考虑 createDraft 加参数来控制是否为这种已替换节点也做代理
-                                if (Array.isArray(originalChildVal) && Array.isArray(currentChildVal)) {
-                                    if (parentMeta && !currentChildVal[metasKey]) {
-                                        var childMeta = getMeta(parent[key], metaVer);
-                                        if (childMeta) {
-                                            ensureDataNodeMetasProtoLayerFast(currentChildVal, metaVer);
-                                            setMeta(currentChildVal, childMeta, metaVer);
-                                            return childMeta.proxyVal;
-                                        }
-                                    }
+                                var childMeta = getMeta(parent[key], metaVer);
+                                if (childMeta) {
+                                    ensureDataNodeMetasProtoLayerFast(currentChildVal, metaVer);
+                                    setMeta(currentChildVal, childMeta, metaVer);
+                                    return childMeta.proxyVal;
                                 }
-                                return currentChildVal;
                             }
                         }
                     }
@@ -975,11 +1015,25 @@
                         throw new Error('can not call new Limu().createDraft twice');
                     }
                     var baseState = mayDraft;
+                    var originalBase = mayDraft;
                     called = true;
                     if (isDraft$1(mayDraft)) {
                         var draftMeta = getMetaForDraft(mayDraft, mayDraft[verKey]);
                         // @ts-ignore
                         baseState = draftMeta.self;
+                        // @ts-ignore
+                        originalBase = draftMeta.self;
+                    }
+                    // in case of baseState is already a frozen data
+                    if (limuConfig.autoFreeze && !isFrozenObj(baseState)) {
+                        deepFreeze(baseState);
+                    }
+                    if (isFrozenObj(baseState)) {
+                        // @ts-ignore
+                        // baseState = makeCopy({ self: baseState });
+                        // @ts-ignore speed up benchmark/readme-demo.js 4x
+                        baseState = inner.getUnfrozenData(originalBase) || makeCopy({ self: baseState });
+                        inner.setUnfrozenData(originalBase, baseState);
                     }
                     ensureDataNodeMetasProtoLayer(baseState, metaVer, true);
                     var meta = getMeta(baseState, metaVer);
@@ -992,6 +1046,7 @@
                             parentType: baseStateType,
                             selfType: baseStateType,
                             self: baseState,
+                            originalSelf: originalBase,
                             copy: null,
                             modified: false,
                             key: '',
@@ -1029,7 +1084,7 @@
                     if (!rootMeta) {
                         throw new Error('oops, rootMeta should not be null!');
                     }
-                    var final = rootMeta.self;
+                    var final = rootMeta.originalSelf || rootMeta.self;
                     // 有 copy 不一定有修改行为，这里需做双重判断
                     if (rootMeta.copy && rootMeta.modified) {
                         final = rootMeta.copy;
@@ -1040,7 +1095,6 @@
                     // todo: 留着这个参数，解决多引用问题
                     // var base = { a: { b: { c: 1 } }, b: null };
                     // base.b = base.a.b;
-                    // var im = new Limu();
                     // var d = im.createDraft(base);
                     // d.b.c = 888;
                     // if (options.multiRef && rootMeta.copy) {
@@ -1071,14 +1125,16 @@
     }());
     function createDraft(base) {
         var apis = new Limu();
+        // @ts-ignore , add as just for click to see implement
         return apis.createDraft(base);
     }
     function finishDraft(draft) {
         var draftMeta = getMetaForDraft(draft, draft[verKey]);
         var finishHandler = null;
-        // @ts-ignore
-        if (draftMeta)
+        if (draftMeta) {
+            // @ts-ignore , add as just for click to see implement
             finishHandler = draftMeta.finishDraft;
+        }
         if (!finishHandler) {
             throw new Error("oops, not a Limu draft!");
         }
@@ -1118,6 +1174,9 @@
     }
     var isDraft = isDraft$1;
     var produce = produceFn;
+    function setAutoFreeze(autoFreeze) {
+        limuConfig.autoFreeze = autoFreeze;
+    }
 
     exports.Limu = Limu;
     exports.createDraft = createDraft;
@@ -1125,6 +1184,7 @@
     exports.getDraftMeta = getDraftMeta;
     exports.isDraft = isDraft;
     exports.produce = produce;
+    exports.setAutoFreeze = setAutoFreeze;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

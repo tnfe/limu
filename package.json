@@ -72,5 +72,5 @@
     "lint": "eslint ./src --fix --ext js,ts,tsx",
     "pub": "npm publish --registry=https://registry.npmjs.org"
   },
-  "version": "1.3.0"
+  "version": "1.3.1"
 }

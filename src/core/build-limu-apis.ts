@@ -15,11 +15,14 @@ import {
   isDraft,
   shouldGenerateProxyItems,
   tryMakeCopy,
+  makeCopy,
   replaceSetOrMapMethods,
+  deepFreeze,
 } from './helper';
 import { finishHandler, verKey, isModifiedKey, metasKey } from '../support/symbols';
 import { carefulDataTypes } from '../support/consts';
-import { isPrimitive, canBeNum, isFn, noop, isSymbol } from '../support/util';
+import { limuConfig } from '../support/inner-data';
+import { isPrimitive, canBeNum, isFn, noop, isSymbol, isFrozenObj } from '../support/util';
 import { copyAndGetDataNode, clearAllDataNodeMeta, ensureDataNodeMetasProtoLayer, ensureDataNodeMetasProtoLayerFast } from './data-node-processor';
 import { ObjectLike, DraftMeta } from '../inner-types';
 
@@ -32,6 +35,7 @@ const TYPE_BLACK_LIST = [carefulDataTypes.Array, carefulDataTypes.Set, carefulDa
 // 这些类型不关心 copy
 const NO_CARE_COPY_TYPE_LIST = [carefulDataTypes.Set, carefulDataTypes.Map];
 
+const unforzenDataMap = new Map();
 
 const inner = {
   handleMap(rootMeta: DraftMeta, metaVer: number, final: any) {
@@ -126,6 +130,15 @@ const inner = {
     }
     return final;
   },
+
+  /** reuse fronzen ata */
+  getUnfrozenData(key) {
+    return unforzenDataMap.get(key);
+  },
+
+  setUnfrozenData(key, data) {
+    unforzenDataMap.set(key, data);
+  }
 };
 
 export function buildLimuApis() {
@@ -158,6 +171,17 @@ export function buildLimuApis() {
 
         const parentType = getDataNodeType(parent);
         const parentMeta = getMeta(parent, metaVer);
+
+        // unfrozen this part data
+        if (limuConfig.autoFreeze && isFrozenObj(currentChildVal)) {
+          // @ts-ignore
+          currentChildVal = makeCopy({ self: currentChildVal });
+          parent[key] = currentChildVal;
+          if (parentMeta && parentMeta.copy) {
+            parentMeta.copy[key] = currentChildVal;
+          }
+        }
+
         // console.log(`Get parentType:${parentType} key:${key} `, 'Read KeyPath', getKeyPath(parent, key, metaVer));
 
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
@@ -173,7 +197,6 @@ export function buildLimuApis() {
           const originalChildVal = self[key];
 
           if (!NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
-            noop(metasKey, ensureDataNodeMetasProtoLayerFast);
             // 存在 copy，则从 copy 上获取
             if (copy) {
               currentChildVal = copy[key];
@@ -186,21 +209,20 @@ export function buildLimuApis() {
             // ori: 1,            cur: { a: 1 } 
             // ori: 1,            cur: 2 
             // ori: { a: 1 }      cur: { a: 1 } 
-            if (originalChildVal !== currentChildVal) {
+            if (originalChildVal !== currentChildVal
+              && Array.isArray(originalChildVal)
+              && Array.isArray(currentChildVal)
+              && parentMeta
+              && !currentChildVal[metasKey]
+            ) {
               // 返回出去的值因未做代理，之后对它的取值行为不会再进入到 get 函数中
               // todo：后续版本考虑 createDraft 加参数来控制是否为这种已替换节点也做代理
-
-              if (Array.isArray(originalChildVal) && Array.isArray(currentChildVal)) {
-                if (parentMeta && !currentChildVal[metasKey]) {
-                  const childMeta = getMeta(parent[key], metaVer);
-                  if (childMeta) {
-                    ensureDataNodeMetasProtoLayerFast(currentChildVal, metaVer);
-                    setMeta(currentChildVal, childMeta, metaVer);
-                    return childMeta.proxyVal;
-                  }
-                }
+              const childMeta = getMeta(parent[key], metaVer);
+              if (childMeta) {
+                ensureDataNodeMetasProtoLayerFast(currentChildVal, metaVer);
+                setMeta(currentChildVal, childMeta, metaVer);
+                return childMeta.proxyVal;
               }
-              return currentChildVal;
             }
           }
         }
@@ -351,12 +373,29 @@ export function buildLimuApis() {
           throw new Error('can not call new Limu().createDraft twice');
         }
         let baseState = mayDraft;
+        let originalBase = mayDraft;
         called = true;
 
         if (isDraft(mayDraft)) {
           const draftMeta = getMetaForDraft(mayDraft, mayDraft[verKey]);
           // @ts-ignore
           baseState = draftMeta.self;
+          // @ts-ignore
+          originalBase = draftMeta.self;
+        }
+
+        // in case of baseState is already a frozen data
+        if (limuConfig.autoFreeze && !isFrozenObj(baseState)) {
+          deepFreeze(baseState);
+        }
+
+        if (isFrozenObj(baseState)) {
+          // @ts-ignore
+          // baseState = makeCopy({ self: baseState });
+
+          // @ts-ignore speed up benchmark/readme-demo.js 4x
+          baseState = inner.getUnfrozenData(originalBase) || makeCopy({ self: baseState });
+          inner.setUnfrozenData(originalBase, baseState);
         }
 
         ensureDataNodeMetasProtoLayer(baseState, metaVer, true);
@@ -370,6 +409,7 @@ export function buildLimuApis() {
             parentType: baseStateType,
             selfType: baseStateType,
             self: baseState,
+            originalSelf: originalBase,
             copy: null,
             modified: false,
             key: '',
@@ -412,7 +452,7 @@ export function buildLimuApis() {
           throw new Error('oops, rootMeta should not be null!');
         }
 
-        let final = rootMeta.self;
+        let final = rootMeta.originalSelf || rootMeta.self;
         // 有 copy 不一定有修改行为，这里需做双重判断
         if (rootMeta.copy && rootMeta.modified) {
           final = rootMeta.copy;
@@ -424,7 +464,6 @@ export function buildLimuApis() {
         // todo: 留着这个参数，解决多引用问题
         // var base = { a: { b: { c: 1 } }, b: null };
         // base.b = base.a.b;
-        // var im = new Limu();
         // var d = im.createDraft(base);
         // d.b.c = 888;
         // if (options.multiRef && rootMeta.copy) {

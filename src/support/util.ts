@@ -63,3 +63,10 @@ export function canBeNum(val) {
 export function isSymbol(maySymbol) {
   return typeof maySymbol === 'symbol';
 }
+
+export function isFrozenObj(mayObj) {
+  if (mayObj && !isPrimitive(mayObj)) {
+    return Object.isFrozen(mayObj);
+  }
+  return false;
+}

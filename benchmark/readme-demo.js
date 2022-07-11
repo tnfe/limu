@@ -4,7 +4,8 @@
 const immer = require('immer');
 const limu = require('limu');
 
-immer.setAutoFreeze(false);
+immer.setAutoFreeze(true);
+limu.setAutoFreeze(true);
 
 function getBase() {
   const base = { a: { b: { c: { d: { e: { f: { g: 1 } } } } } }, b: null };

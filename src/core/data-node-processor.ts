@@ -106,6 +106,7 @@ export function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
     // 而我们需要的是 { Map: name=> Proxy {name:'bj'} }，否则导致测试失败
     if (!parentCopy || ['Map', 'Set'].includes(parentType)) {
       parentCopy = makeCopy(parentDataNodeMeta, parentCopy);
+      // console.log('re parentCopy');
       parentDataNodeMeta.copy = parentCopy;
     }
 

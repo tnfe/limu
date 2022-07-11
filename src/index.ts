@@ -7,8 +7,11 @@
 import { buildLimuApis } from './core/build-limu-apis';
 import * as helper from './core/helper';
 import { verKey } from './support/symbols';
+import { limuConfig } from './support/inner-data';
 import { isPromiseFn, isPromiseResult } from './support/util';
 import { ObjectLike } from './inner-types';
+
+type BuLimu = ReturnType<typeof buildLimuApis>;
 
 export type Draft<T> = T;
 export type CreateDraft = <T extends ObjectLike >(base: T) => Draft<T>;
@@ -43,15 +46,18 @@ export class Limu {
 
 export function createDraft<T extends ObjectLike>(base: T): Draft<T> {
   const apis = new Limu();
-  return apis.createDraft(base);
+  // @ts-ignore , add as just for click to see implement
+  return apis.createDraft(base) as BuLimu['createDraft'];
 }
 
 
 export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
   const draftMeta = helper.getMetaForDraft(draft, draft[verKey]);
   let finishHandler: (FinishDraft | null) = null;
-  // @ts-ignore
-  if (draftMeta) finishHandler = draftMeta.finishDraft;
+  if (draftMeta) {
+    // @ts-ignore , add as just for click to see implement
+    finishHandler = draftMeta.finishDraft as BuLimu['finishDraft'];
+  }
   if (!finishHandler) {
     throw new Error(`oops, not a Limu draft!`);
   }
@@ -105,3 +111,8 @@ export const isDraft = helper.isDraft;
 
 
 export const produce = produceFn as unknown as IProduce;
+
+
+export function setAutoFreeze(autoFreeze: boolean) {
+  limuConfig.autoFreeze = autoFreeze;
+}

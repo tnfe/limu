@@ -175,6 +175,24 @@ export function mayMarkModified(parentType: string, op: any, val: any, markModif
 }
 
 
+export function deepFreeze(obj) {
+  if (Array.isArray(obj) || isSet(obj) || isMap(obj)) {
+    return Object.freeze(obj);
+  }
+
+  // get all properties
+  const propertyNames = Object.getOwnPropertyNames(obj);
+  // 遍历
+  propertyNames.forEach(name => {
+    const value = obj[name];
+    if (value instanceof Object && value !== null) {
+      deepFreeze(value);
+    }
+  })
+  return Object.freeze(obj);
+}
+
+
 export function reassignGrandpaAndParent(parentDataNodeMeta: DraftMeta, calledBy?: string, setKey?: string | number) {
   const {
     parentMeta: grandpaMeta, parentType, selfType,

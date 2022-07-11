@@ -17,6 +17,7 @@ const jestConfig = {
     // '<rootDir>/test/array-other/object-list.ts',
     // '<rootDir>/test/array-base/concat.ts',
     // '<rootDir>/test/array-base/flatMap.ts',
+    // '<rootDir>/test/array-base/filter.ts',
 
     // '<rootDir>/test/array-base/valueOf.ts',
     // '<rootDir>/test/array-base/values.ts',
