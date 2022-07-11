@@ -54,7 +54,9 @@ console.log(nextState.c === baseState.c); // true
 ![performance](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu-benchmark.jpg)
 
 ## performance ⚡️
-It is nearly more than 3 times faster than `immer`.
+It is nearly more than 2 or 3 times faster than `immer`.
+
+Execute `cd benchmark` and `node ./readme-demo.js` bash command.
 
 Run [Code](https://github.com/tnfe/limu/blob/main/benchmark/case1.js) below:
 ```js
@@ -67,16 +69,6 @@ function getBase() {
   const base = { a: { b: { c: { d: { e: { f: { g: 1 } } } } } }, b: null };
   return base;
 };
-
-
-const base = { a: { b: { c: { d: { e: { f: { g: 1 } } } } } }, b: null };
-const draft = lib.createDraft(base); // lib 是 limu 或 immer
-draft.a.b.c.d.e.f.g = 999;
-
-const draft2 = lib.createDraft(base);
-delete draft2.b;
-
-
 
 function oneBenchmark(lib, base) {
   const start = Date.now();
@@ -115,32 +107,32 @@ for (let i = 0; i < 10; i++) {
 }
 ```
 
-run 10 times with `immer`
-```bash
-spend 432 ms
-spend 360 ms
-spend 347 ms
-spend 352 ms
-spend 379 ms
-spend 365 ms
-spend 344 ms
-spend 330 ms
-spend 344 ms
-spend 351 ms
-```
+at `MacBook 2021 m1 max`
 
-run 10 times with `limu`
 ```bash
-spend 233 ms
-spend 173 ms
-spend 145 ms
-spend 136 ms
-spend 133 ms
-spend 131 ms
-spend 135 ms
-spend 134 ms
-spend 133 ms
-spend 134 ms
+ ------------- immer benchmark ------------- 
+spend 137 ms
+spend 118 ms
+spend 109 ms
+spend 109 ms
+spend 108 ms
+spend 111 ms
+spend 109 ms
+spend 108 ms
+spend 111 ms
+spend 109 ms
+
+ ------------- limu benchmark ------------- 
+spend 82 ms
+spend 64 ms
+spend 61 ms
+spend 60 ms
+spend 58 ms
+spend 59 ms
+spend 59 ms
+spend 58 ms
+spend 59 ms
+spend 58 ms
 ```
 
 

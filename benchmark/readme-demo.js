@@ -11,16 +11,6 @@ function getBase() {
   return base;
 };
 
-
-const base = { a: { b: { c: { d: { e: { f: { g: 1 } } } } } }, b: null };
-const draft = lib.createDraft(base); // lib 是 limu 或 immer
-draft.a.b.c.d.e.f.g = 999;
-
-const draft2 = lib.createDraft(base);
-delete draft2.b;
-
-
-
 function oneBenchmark(lib, base) {
   const start = Date.now();
   for (let i = 0; i < 10000; i++) {
