@@ -58,43 +58,60 @@ It is nearly more than 3 times faster than `immer`.
 
 Run [Code](https://github.com/tnfe/limu/blob/main/benchmark/case1.js) below:
 ```js
-// const im = require('immer');
-const im = require('limu'); // or require('../dist/limu.min')
+const immer = require('immer');
+const limu = require('limu');
 
-const base = { a: { b: { c: 1 } }, b: null, c: [1, 2, 3] };
+immer.setAutoFreeze(false);
 
-function oneBenchmark() {
+function getBase() {
+  const base = { a: { b: { c: { d: { e: { f: { g: 1 } } } } } }, b: null };
+  return base;
+};
+
+
+const base = { a: { b: { c: { d: { e: { f: { g: 1 } } } } } }, b: null };
+const draft = lib.createDraft(base); // lib 是 limu 或 immer
+draft.a.b.c.d.e.f.g = 999;
+
+const draft2 = lib.createDraft(base);
+delete draft2.b;
+
+
+
+function oneBenchmark(lib, base) {
   const start = Date.now();
   for (let i = 0; i < 10000; i++) {
-    const draft = im.createDraft(base);
-    draft.a.b.c = 999;
-    const final = im.finishDraft(draft);
+    const draft = lib.createDraft(base);
+    draft.a.b.c.d.e.f.g = 999;
+    const final = lib.finishDraft(draft);
     if (final === base) {
       throw new Error('should not be equal');
     }
-    if (final.c !== base.c) {
-      throw new Error('should be equal');
-    }
 
-    const draft2 = im.createDraft(base);
-    draft2.a.b.c = 1000;
+    const draft2 = lib.createDraft(base);
     delete draft2.b;
-    draft2.c.push(1000);
-    draft2.c.pop();
-    const final2 = im.finishDraft(draft2);
+    const final2 = lib.finishDraft(draft2);
     if (final2 === base) {
       throw new Error('should not be equal');
     }
-    if (final2.c === base.c) {
-      throw new Error('c arr should not be equal');
+    if (base.b !== null) {
+      throw new Error('base.b should be null');
     }
   }
 
   console.log(`spend ${Date.now() - start} ms`);
 }
 
+console.log(' ------------- immer benchmark ------------- ');
+const base1 = getBase();
 for (let i = 0; i < 10; i++) {
-  oneBenchmark();
+  oneBenchmark(immer, base1);
+}
+
+console.log('\n ------------- limu benchmark ------------- ');
+const base2 = getBase();
+for (let i = 0; i < 10; i++) {
+  oneBenchmark(limu, base2);
 }
 ```
 
