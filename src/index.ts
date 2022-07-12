@@ -19,7 +19,7 @@ export type FinishDraft = <T extends ObjectLike >(draft: T) => T;
 export type ProduceCb<T> = (draft: Draft<T>) => void;
 export type GenNewStateCb<T> = (state: T) => T;
 export interface IProduce {
-  <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>): T;
+  <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>): any;
   /**
    * use in react:
    * setState(produce(draft=>{

@@ -11,6 +11,7 @@ const jestConfig = {
   testMatch: [
     '<rootDir>/test/**/*.ts',
     // '<rootDir>/test/api/api.ts',
+    // '<rootDir>/test/api/setAutoFreeze.ts',
 
     // '<rootDir>/test/array-base/push.ts',
     // '<rootDir>/test/array-other/object-item.ts',

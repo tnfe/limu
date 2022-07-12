@@ -5,6 +5,7 @@ const immer = require('immer');
 const limu = require('limu');
 
 immer.setAutoFreeze(false);
+limu.setAutoFreeze(false);
 
 function getBase() {
   return {
@@ -27,11 +28,11 @@ function oneBenchmark(lib, base, label) {
 console.log(' ------------- immer benchmark ------------- ');
 const base1 = getBase();
 for (let i = 0; i < 10; i++) {
-  oneBenchmark(immer, base1);
+  oneBenchmark(immer, base1, 'immer');
 }
 
 console.log('\n ------------- limu benchmark ------------- ');
 const base2 = getBase();
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 10; i++, 'limu') {
   oneBenchmark(limu, base2);
 }

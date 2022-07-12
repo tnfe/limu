@@ -42,7 +42,7 @@ const inner = {
     // @ts-ignore
     const mapProxyItemsList = rootMeta.proxyItemsMgr['Map'];
     let mayRootMap: Map<any, any> | null = null;
-    // 用于辅助跑通  /test/map-other/object-map.ts
+    // see test case:  /test/map-other/object-map.ts
     mapProxyItemsList.forEach(proxyItems => {
       // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
       if (proxyItems[isModifiedKey]) {
@@ -119,7 +119,7 @@ const inner = {
         // @ts-ignore
         const itemsParent = items.__parent;
         if (itemsParent) {
-          // @ts-ignore 将拆proxy后的结果指回去 CHANGED
+          // @ts-ignore 将去 proxy 后的结果指回去
           itemsParent[items.__dataIndex] = mayRootArr;
         }
       }
@@ -174,7 +174,6 @@ export function buildLimuApis() {
 
         // unfrozen this part data
         if (limuConfig.autoFreeze && isFrozenObj(currentChildVal)) {
-          // @ts-ignore
           currentChildVal = makeCopy({ self: currentChildVal });
           parent[key] = currentChildVal;
           if (parentMeta && parentMeta.copy) {
@@ -390,10 +389,9 @@ export function buildLimuApis() {
         }
 
         if (isFrozenObj(baseState)) {
-          // @ts-ignore
           // baseState = makeCopy({ self: baseState });
 
-          // @ts-ignore speed up benchmark/readme-demo.js 4x
+          //speed up benchmark/readme-demo.js 4x
           baseState = inner.getUnfrozenData(originalBase) || makeCopy({ self: baseState });
           inner.setUnfrozenData(originalBase, baseState);
         }
@@ -435,7 +433,7 @@ export function buildLimuApis() {
         revoke = revokeHandler;
         return proxyDraft;
       },
-      // finishDraft: (proxyDraft, options = {}) => {
+      // finishDraft: (proxyDraft, options = {}) => { // in v2.0, support options
       finishDraft: (proxyDraft) => {
         // attention: if pass a revoked proxyDraft
         // it will throw: Cannot perform 'set' on a proxy that has been revoked
@@ -447,7 +445,6 @@ export function buildLimuApis() {
         }
 
         const rootMeta = getMetaForDraft(proxyDraft, metaVer);
-
         if (!rootMeta) {
           throw new Error('oops, rootMeta should not be null!');
         }
@@ -461,16 +458,9 @@ export function buildLimuApis() {
           final = inner.handleArray(rootMeta, metaVer, final);
         }
 
-        // todo: 留着这个参数，解决多引用问题
-        // var base = { a: { b: { c: 1 } }, b: null };
-        // base.b = base.a.b;
-        // var d = im.createDraft(base);
-        // d.b.c = 888;
-        // if (options.multiRef && rootMeta.copy) {
-        // }
-
         revoke && revoke();
         clearAllDataNodeMeta(metaVer);
+
         return final;
       },
     };

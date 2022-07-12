@@ -256,7 +256,7 @@ export function createMetaList(metaVer) {
 
 export function clearAllDataNodeMeta(metaVer) {
   var metasList = ver2MetasList[metaVer];
-  metasList.forEach(metas => delete metas[metaVer])
+  metasList.forEach(metas => delete metas[metaVer]);
 }
 
 

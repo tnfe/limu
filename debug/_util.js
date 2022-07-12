@@ -9,6 +9,8 @@ exports.finishDraft = limu.finishDraft;
 
 exports.produce = limu.produce;
 
+exports.setAutoFreeze = limu.setAutoFreeze;
+
 let RUN_PRODUCE = false;
 
 exports.noop = function noop(...args) {

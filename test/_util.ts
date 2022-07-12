@@ -21,8 +21,8 @@ export const createDraft = limu.createDraft;
 export const finishDraft = limu.finishDraft;
 export const produce = limu.produce;
 
-const RUN_PRODUCE = false;
-// const RUN_PRODUCE = true;
+// const RUN_PRODUCE = false;
+const RUN_PRODUCE = true;
 
 export const produceTip = (testDescribe: string) => `${testDescribe} (with produce)`;
 
@@ -240,4 +240,14 @@ export function runSetTestSuit(
       });
     }
   });
+}
+
+export function assignFrozenDataInJest(cb: any) {
+  try {
+    cb();
+  } catch (e: any) {
+    // jest will throw the error below from jest-circus/build/utils.js
+    // Cannot assign to read only property 'key' of object '#<Object>'
+    expect(e.message).toMatch(/(?=Cannot assign)/);
+  }
 }

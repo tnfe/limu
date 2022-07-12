@@ -1,4 +1,5 @@
 import { Limu, produce, getDraftMeta, createDraft, finishDraft } from '../../src';
+import { assignFrozenDataInJest } from '../_util';
 
 describe('check apis', () => {
   test('new Limu', () => {
@@ -18,8 +19,17 @@ describe('check apis', () => {
     const final = produce(base, (draft) => {
       draft.key = 2;
     });
-    expect(final.key === 2).toBeTruthy();
 
+    expect(final.key === 2).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      base.key = 100;
+    });
+
+    expect(base.key).toBe(1); // base is frozen
+  });
+
+  test('produce curry', () => {
+    const base = { key: 1 };
     const cb = produce((draft: any) => {
       draft.key = 2;
     });
@@ -27,6 +37,14 @@ describe('check apis', () => {
     const final2 = cb(base);
     expect(final2.key === 2).toBeTruthy();
 
+    assignFrozenDataInJest(() => {
+      base.key = 100;
+    });
+
+    expect(base.key).toBe(1); // base is frozen
+  });
+
+  test('produce exception', () => {
     try {
       // @ts-ignore
       produce(2);
@@ -48,6 +66,7 @@ describe('check apis', () => {
       expect(e.message).toMatch(/(?=base state type can only be object\(except null\) or array)/);
     }
   });
+
 
   test('wrong finishDraft', () => {
     try {

@@ -231,7 +231,7 @@
             return null;
         return mayMetasProtoObj[metasKey];
     }
-    // 调用处已保证 meta 不为空
+    // 调用处已保证 meta 不为空 
     function makeCopy(meta, mayACopy) {
         var metaOwner = meta.self;
         if (Array.isArray(metaOwner)) {
@@ -715,7 +715,7 @@
             // @ts-ignore
             var mapProxyItemsList = rootMeta.proxyItemsMgr['Map'];
             var mayRootMap = null;
-            // 用于辅助跑通  /test/map-other/object-map.ts
+            // see test case:  /test/map-other/object-map.ts
             mapProxyItemsList.forEach(function (proxyItems) {
                 // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
                 if (proxyItems[isModifiedKey]) {
@@ -790,7 +790,7 @@
                     // @ts-ignore
                     var itemsParent = items.__parent;
                     if (itemsParent) {
-                        // @ts-ignore 将拆proxy后的结果指回去 CHANGED
+                        // @ts-ignore 将去 proxy 后的结果指回去
                         itemsParent[items.__dataIndex] = mayRootArr;
                     }
                 }
@@ -836,7 +836,6 @@
                     var parentMeta = getMeta(parent, metaVer);
                     // unfrozen this part data
                     if (limuConfig.autoFreeze && isFrozenObj(currentChildVal)) {
-                        // @ts-ignore
                         currentChildVal = makeCopy({ self: currentChildVal });
                         parent[key] = currentChildVal;
                         if (parentMeta && parentMeta.copy) {
@@ -1029,9 +1028,8 @@
                         deepFreeze(baseState);
                     }
                     if (isFrozenObj(baseState)) {
-                        // @ts-ignore
                         // baseState = makeCopy({ self: baseState });
-                        // @ts-ignore speed up benchmark/readme-demo.js 4x
+                        //speed up benchmark/readme-demo.js 4x
                         baseState = inner.getUnfrozenData(originalBase) || makeCopy({ self: baseState });
                         inner.setUnfrozenData(originalBase, baseState);
                     }
@@ -1071,7 +1069,7 @@
                     revoke = revokeHandler;
                     return proxyDraft;
                 },
-                // finishDraft: (proxyDraft, options = {}) => {
+                // finishDraft: (proxyDraft, options = {}) => { // in v2.0, support options
                 finishDraft: function (proxyDraft) {
                     // attention: if pass a revoked proxyDraft
                     // it will throw: Cannot perform 'set' on a proxy that has been revoked
@@ -1092,13 +1090,6 @@
                         final = inner.handleSet(rootMeta, metaVer, final);
                         final = inner.handleArray(rootMeta, metaVer, final);
                     }
-                    // todo: 留着这个参数，解决多引用问题
-                    // var base = { a: { b: { c: 1 } }, b: null };
-                    // base.b = base.a.b;
-                    // var d = im.createDraft(base);
-                    // d.b.c = 888;
-                    // if (options.multiRef && rootMeta.copy) {
-                    // }
                     revoke && revoke();
                     clearAllDataNodeMeta(metaVer);
                     return final;

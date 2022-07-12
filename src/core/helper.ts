@@ -51,8 +51,8 @@ export function getMetas(mayMetasProtoObj) {
 }
 
 
-// 调用处已保证 meta 不为空
-export function makeCopy(meta: DraftMeta, mayACopy?: any) {
+// 调用处已保证 meta 不为空 
+export function makeCopy(meta: Partial<DraftMeta>, mayACopy?: any) {
   const metaOwner: any = meta.self;
 
   if (Array.isArray(metaOwner)) {
