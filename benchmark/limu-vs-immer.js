@@ -2,7 +2,6 @@ const immer = require('immer');
 const limu = require('limu');
 const util = require('./_util');
 const pstr = require('./_pstr');
-
 const immutLibs = {
   immer,
   limu,
@@ -16,10 +15,14 @@ const strategyConsts = {
   BASE_F_AUTO_F: '4',    // reuseBase: false  autoFreeze: false      
 };
 
-// change this params to test limu and immer performance
+
+// ************************************************************************
+// change this params to test limu and immer performance in different situations
 const curStrategy = process.env.ST || strategyConsts.BASE_F_AUTO_F;
 const hasArr = false; // operate arr or not
 const lessDeepOp = true; // has more deep operation or not
+// ************************************************************************
+
 
 // perf test result at macbook 2021 max pro
 const pretReport = `

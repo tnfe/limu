@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "",
-  "main": "100000-len-arr.js",
+  "main": "limu-vs-immer.js",
   "scripts": {
+    "s1": "ST=1 node ./limu-vs-immer.js",
+    "s2": "ST=2 node ./limu-vs-immer.js",
+    "s3": "ST=3 node ./limu-vs-immer.js",
+    "s4": "ST=4 node ./limu-vs-immer.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
