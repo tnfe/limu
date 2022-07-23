@@ -22,8 +22,8 @@ const strategyConsts = {
 const curStrategy = process.env.ST || strategyConsts.BASE_F_AUTO_F;
 // change params 'hasArr'、'lessDeepOp' to test limu and immer performance in different situations
 // then run npm cmd: `npm run s1`、`npm run s2`、`npm run s3`、`npm run s4` to see perf result
-const hasArr = false; // operate arr or not
-const lessDeepOp = true; // has more deep operation or not
+const hasArr = true; // operate arr or not
+const lessDeepOp = false; // has more deep operation or not
 // ************************************************************************
 // hasArr = true; lessDeepOp = false; limu close to native
 
@@ -81,44 +81,13 @@ function oneBenchmark(lib, reuse, operateArr, lessDeepOp) {
   const base = getBase();
   const targetBase = reuse ? base : getBase();
 
+  // immer has heavy init, so let's skip this init step to see what the result will be
   const draft = lib.createDraft(targetBase);
-  draft.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z = 666;
-  if (!lessDeepOp) {
-    draft.a.b.c.d.e.f.g = 999;
-    draft.a.b.c.d.e.f = 999;
-    draft.a.b.c.d.e = 999;
-    draft.a.b.c.d = 999;
-    draft.a.b.c = 999;
-    draft.a.b = 999;
-    draft.a = 999;
-    draft.aaa = 999;
-    draft.a = 1;
-    draft.a1.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
-    draft.a2.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
-    draft.a3.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
-    draft.a4.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
-    draft.a5.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
-    draft.a6.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
-    draft.a7.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
-  }
-
-  // draft.a = 666;
-
-  // if (operateArr) {
-  //   const arr = draft.arr;
-  //   // arr.forEach((item, idx) => {
-  //   // this way better
-  //   lib.original(arr).forEach((item, idx) => {
-  //     if (idx > 0 && idx % 6000 === 0) {
-  //       arr[idx].a = 888;
-  //     }
-  //   });
-  // }
-
   const final = lib.finishDraft(draft);
 
+  // stats time from here
   const start = Date.now();
-  const d2 = lib.createDraft(final);
+  const d2 = lib.createDraft(final); // final or targetBase
   d2.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z = 666;
   if (!lessDeepOp) {
     d2.a.b.c.d.e.f.g = 999;
@@ -138,10 +107,21 @@ function oneBenchmark(lib, reuse, operateArr, lessDeepOp) {
     d2.a6.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
     d2.a7.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
   }
+
+  if (operateArr) {
+    const arr = d2.arr;
+    // arr.forEach((item, idx) => {
+    // this way better
+    lib.original(arr).forEach((item, idx) => {
+      if (idx > 0 && idx % 6000 === 0) {
+        arr[idx].a = 888;
+      }
+    });
+  }
   const f2 = lib.finishDraft(d2);
 
   if (operateArr && lib.__NATIVE_JS__ !== true) {
-    if (final.arr[6000].a !== 888) {
+    if (f2.arr[6000].a !== 888) {
       die('final.arr[6000]');
     }
     if (base.arr[6000].a !== 1) {
@@ -185,23 +165,10 @@ function measureBenchmark(label, loopLimit, preheat) {
   console.log(`${label} avg spend ${totalLibSpend / loopLimit} ms \n`);
 }
 
-// preheat
-// measureBenchmark('limu', 10, true);
-// measureBenchmark('immer', 10, true);
+
 // start test
 measureBenchmark('limu', loopLimit);
 measureBenchmark('immer', loopLimit);
-// measureBenchmark('pstr', loopLimit);
+measureBenchmark('pstr', loopLimit);
 // measureBenchmark('none', loopLimit);
 
-const sleep = () => new Promise(r => setTimeout(r, 5000));
-
-async function main() {
-  // show mem leak or not
-  for (let i = 0; i < 2; i++) {
-    await sleep();
-    util.showMem();
-  }
-}
-
-main();
