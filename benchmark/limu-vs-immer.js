@@ -17,8 +17,9 @@ const strategyConsts = {
 
 
 // ************************************************************************
-// change this params to test limu and immer performance in different situations
 const curStrategy = process.env.ST || strategyConsts.BASE_F_AUTO_F;
+// change params 'hasArr'、'lessDeepOp' to test limu and immer performance in different situations
+// then run npm cmd: `npm run s1`、`npm run s2`、`npm run s3`、`npm run s4` to see perf result
 const hasArr = false; // operate arr or not
 const lessDeepOp = true; // has more deep operation or not
 // ************************************************************************
@@ -41,14 +42,14 @@ const pretReport = `
 -----------------------[ hasArr false, lessOp true ]--------------------------
 (reuseBase: true,  autoFreeze: true)  immer 2.253 ms : limu 0.659 ms
 (reuseBase: false, autoFreeze: true)  immer 2.261 ms : limu 0.705 ms
-(reuseBase: true,  autoFreeze: false) immer 1.472 ms : limu 0.058 ms
-(reuseBase: false, autoFreeze: false) immer 1.504 ms : limu 0.064 ms
+(reuseBase: true,  autoFreeze: false) immer 1.386 ms : limu 0.015 ms
+(reuseBase: false, autoFreeze: false) immer 1.469 ms : limu 0.017 ms
 
------------------------[ hasArr false, lessOp true ]--------------------------
-(reuseBase: true,  autoFreeze: true)  immer 2.086 ms : limu 0.604 ms
+-----------------------[ hasArr false, lessOp false ]--------------------------
+(reuseBase: true,  autoFreeze: true)  immer 2.266 ms : limu 0.604 ms
 (reuseBase: false, autoFreeze: true)  immer 2.201 ms : limu 0.643 ms
-(reuseBase: true,  autoFreeze: false) immer 1.383 ms : limu 0.022 ms
-(reuseBase: false, autoFreeze: false) immer 1.42 ms  : limu 0.021 ms
+(reuseBase: true,  autoFreeze: false) immer 1.565 ms : limu 0.055 ms
+(reuseBase: false, autoFreeze: false) immer 1.479 ms : limu 0.061 ms
 `;
 
 

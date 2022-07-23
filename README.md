@@ -14,9 +14,10 @@ Click this [online perf demo](https://codesandbox.io/s/limu-simple-perf-case-yck
 
 See more perf test result
 ```
-1. cd benchmark
-2. npm i
-3. node ./limu-vs-immer.js
+1. git clone git@github.com:tnfe/limu.git
+2. cd benchmark
+3. npm i
+4. node ./limu-vs-immer.js
 ```
 
 ## Quick Start
@@ -175,8 +176,9 @@ Follow the steps below to heck more complex perf test
 You can change the params to test perf of different situations
 ```ts
 // ************************************************************************
-// change this params to test limu and immer performance in different situations
 const curStrategy = process.env.ST || strategyConsts.BASE_F_AUTO_F;
+// change params 'hasArr'、'lessDeepOp' to test limu and immer performance in different situations
+// then run npm cmd: `npm run s1`、`npm run s2`、`npm run s3`、`npm run s4` to see perf result
 const hasArr = false; // operate arr or not
 const lessDeepOp = true; // has more deep operation or not
 // ************************************************************************
