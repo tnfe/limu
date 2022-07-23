@@ -5,11 +5,9 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 
-// 用于验证 proxyDraft 和 finishDraft函数 是否能够匹配
-export const verKey = Symbol('verKey');
+// 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配
+export const verKey = Symbol('V');
 
-export const metasKey = Symbol('metas');
+export const META_KEY = Symbol('M');
 
-export const finishHandler = Symbol('finishHandler');
-
-export const isModifiedKey = Symbol('isModifiedKey');
+export const finishHandler = Symbol('limu-finishHandler');

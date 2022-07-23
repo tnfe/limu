@@ -1,33 +1,41 @@
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
- * 
+ *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
+import type { ObjectLike, ICreateDraftOptions } from './inner-types';
 import { buildLimuApis } from './core/build-limu-apis';
-import * as helper from './core/helper';
-import { verKey } from './support/symbols';
+import { deepFreeze as deepFreezeFn } from './core/helper';
+import { isDraft as isDraftFn, getDraftMeta as getDraftMetaFn } from './core/meta';
+import { deepCopy as deepCopyFn } from './core/copy';
+import { original as originalFn, current as currentFn } from './core/user-util';
 import { limuConfig } from './support/inner-data';
 import { isPromiseFn, isPromiseResult } from './support/util';
-import { ObjectLike } from './inner-types';
+import { LIMU_MAJOR_VER } from './support/ver';
 
 type BuLimu = ReturnType<typeof buildLimuApis>;
 
 export type Draft<T> = T;
-export type CreateDraft = <T extends ObjectLike >(base: T) => Draft<T>;
+export type CreateDraft = <T extends ObjectLike >(base: T, options?: ICreateDraftOptions) => Draft<T>;
 export type FinishDraft = <T extends ObjectLike >(draft: T) => T;
 export type ProduceCb<T> = (draft: Draft<T>) => void;
 export type GenNewStateCb<T> = (state: T) => T;
+// export type GenNewPatchesCb<T> = (state: T) => any[];
 export interface IProduce {
-  <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>): any;
+  <T extends ObjectLike>(baseState: T, recipe: ProduceCb<T>, options?: ICreateDraftOptions): T;
   /**
    * use in react:
    * setState(produce(draft=>{
    *    draft.name = 2;
    * }));
    */
-  <T extends ObjectLike>(cb: ProduceCb<T>): GenNewStateCb<T>;
+  <T extends ObjectLike>(recipe: ProduceCb<T>, options?: ICreateDraftOptions): GenNewStateCb<T>;
 }
+
+// export interface IProduceWithPatches {
+//   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
+// }
 
 
 export class Limu {
@@ -44,18 +52,18 @@ export class Limu {
 }
 
 
-export function createDraft<T extends ObjectLike>(base: T): Draft<T> {
+export function createDraft<T extends ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
   const apis = new Limu();
-  // @ts-ignore , add as just for click to see implement
-  return apis.createDraft(base) as BuLimu['createDraft'];
+  // @ts-ignore , add [as] just for click to see implement
+  return apis.createDraft(base, options) as BuLimu['createDraft'];
 }
 
 
 export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
-  const draftMeta = helper.getMetaForDraft(draft, draft[verKey]);
+  const draftMeta = getDraftMetaFn(draft);
   let finishHandler: (FinishDraft | null) = null;
   if (draftMeta) {
-    // @ts-ignore , add as just for click to see implement
+    // @ts-ignore , add [as] just for click to see implement
     finishHandler = draftMeta.finishDraft as BuLimu['finishDraft'];
   }
   if (!finishHandler) {
@@ -80,39 +88,76 @@ function checkCbPromise(cb, result: any) {
 }
 
 
-function innerProduce(baseState, cb) {
+function innerProduce(baseState, cb, options?: ICreateDraftOptions) {
   checkCbFn(cb);
-  const draft = createDraft(baseState);
+  const draft = createDraft(baseState, options);
   const result = cb(draft);
   checkCbPromise(cb, result)
   return finishDraft(draft);
 }
 
 
-const produceFn = (baseState: any, cb: any) => {
-  if (!cb) {
+function produceFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
+  if (!cb || typeof cb !== 'function') {
     // expect baseState to be a callback, support curried invocation
+    // expect cb to be options
+    const mayCb = baseState;
+    const mayOptions = cb;
     checkCbFn(baseState);
     return (state) => {
-      return innerProduce(state, baseState);
+      return innerProduce(state, mayCb, mayOptions);
     };
   }
-  return innerProduce(baseState, cb) as any;
+  return innerProduce(baseState, cb, options) as any;
 };
 
 
-export function getDraftMeta(proxyDraft) {
-  const ver = proxyDraft[verKey];
-  return helper.getMetaForDraft(proxyDraft, ver) as ObjectLike;
-}
+// function producePatchesFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
+//   const copyOpts: ICreateDraftOptions = { ... (options || {}), usePatches: true };
+//   return produceFn(baseState, cb, copyOpts);
+// };
 
 
-export const isDraft = helper.isDraft;
+export const getDraftMeta = getDraftMetaFn;
+
+
+export const isDraft = isDraftFn;
 
 
 export const produce = produceFn as unknown as IProduce;
 
 
+// to be implemented in the future
+// export const produceWithPatches = producePatchesFn as unknown as IProduceWithPatches;
+
+
+export const deepFreeze = deepFreezeFn;
+
+
+export const deepCopy = function <T extends ObjectLike>(obj: T) {
+  return deepCopyFn(obj);
+}
+
+
 export function setAutoFreeze(autoFreeze: boolean) {
   limuConfig.autoFreeze = autoFreeze;
 }
+
+
+export function getAutoFreeze() {
+  return limuConfig.autoFreeze;
+}
+
+
+export function getMajorVer() {
+  return LIMU_MAJOR_VER;
+}
+
+
+export const original = originalFn;
+
+
+export const current = currentFn;
+
+
+export default produce;

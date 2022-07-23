@@ -5,20 +5,28 @@ const jestConfig = {
   collectCoverageFrom: [
     '<rootDir>/src/**/*.ts',
     '!<rootDir>/src/inner-types.ts',
+    '!<rootDir>/src/core/helper.ts',
   ],
   setupFilesAfterEnv: [
   ],
   testMatch: [
     '<rootDir>/test/**/*.ts',
+    // '<rootDir>/test/complex/case-node-change.ts',
+    // '<rootDir>/test/map-other/case-nested-object.ts',
+
     // '<rootDir>/test/api/api.ts',
     // '<rootDir>/test/api/setAutoFreeze.ts',
+    // '<rootDir>/test/api/setAutoFreezeFalse.ts',
+    // '<rootDir>/test/immer-cases/2.{ts,js}',
 
     // '<rootDir>/test/array-base/push.ts',
     // '<rootDir>/test/array-other/object-item.ts',
     // '<rootDir>/test/array-other/object-list.ts',
+    // '<rootDir>/test/array-other/print.ts',
     // '<rootDir>/test/array-base/concat.ts',
     // '<rootDir>/test/array-base/flatMap.ts',
     // '<rootDir>/test/array-base/filter.ts',
+    // '<rootDir>/test/array-base/splice.ts',
 
     // '<rootDir>/test/array-base/valueOf.ts',
     // '<rootDir>/test/array-base/values.ts',
@@ -35,11 +43,13 @@ const jestConfig = {
     // '<rootDir>/test/array-other/object-item.ts',
     // '<rootDir>/test/array-other/object-item-2.ts',
     // '<rootDir>/test/array-other/object-item-3.ts',
+
+
     // '<rootDir>/test/map-other/case-nested-object.ts',
     // '<rootDir>/test/map-other/case1.ts',
-
-
+    // '<rootDir>/test/map-other/case2.ts',
     // '<rootDir>/test/map-other/object-map.ts',
+    // '<rootDir>/test/map-other/see-frozen.ts',
 
     // '<rootDir>/test/map-base/get.ts',
     // '<rootDir>/test/map-base/has.ts',
@@ -49,6 +59,8 @@ const jestConfig = {
     // '<rootDir>/test/map-base/forEach.ts',
 
     // '<rootDir>/test/set-base/add.ts',
+    // '<rootDir>/test/set-base/forEach.ts',
+    // '<rootDir>/test/set-other/object-set-add.ts',
     // '<rootDir>/test/set-base/keys.ts',
     // '<rootDir>/test/set-base/size.ts',
     // '<rootDir>/test/set-base/values.ts',
@@ -56,7 +68,6 @@ const jestConfig = {
     // '<rootDir>/test/set-other/update-object-item.ts',
     // '<rootDir>/test/set-other/object-set.ts',
     // '<rootDir>/test/set-other/object-set-primitive-item.ts',
-    // '<rootDir>/test/set-other/object-set-add.ts',
 
     // '<rootDir>/test/complex/case1.ts',
     // '<rootDir>/test/complex/case-push.ts',

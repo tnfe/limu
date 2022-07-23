@@ -24,5 +24,5 @@ draft.mixArr[0] = 100;
 draft.mixArr[2].get('name').addr = 'sz';
 const final = finishDraft(draft);
 
-console.log(final.mixArr[2].get('name'));
-console.log(base.mixArr[2].get('name'));
+console.log(final.mixArr[2].get('name'));// sz
+console.log(base.mixArr[2].get('name')); // bj

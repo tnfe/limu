@@ -17,8 +17,8 @@ describe('case-node-change', () => {
     expect(draft.a.b.c.newKey.key2).toBe(888);
 
     const e2 = base.e[0].e1.e2;
+    expect(e2).toBe(222);
     base.e[0].e1.e2 = 888;
-    console.log('e2 is ', e2);
 
     draft.a2 = 2;
     expect(draft.a2).toBe(2);

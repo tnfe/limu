@@ -4,7 +4,19 @@
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-export const carefulDataTypes = { Map: 'Map', Set: 'Set', Array: 'Array' };
+export const oppositeOps = {
+  add: 'remove',
+  remove: 'add',
+  set: 'delete',
+  delete: 'set',
+};
+
+export const MAP = 'Map';
+export const SET = 'Set';
+export const ARRAY = 'Array';
+export const OBJECT = 'Object';
+
+export const carefulDataTypes = { Map: MAP, Set: SET, Array: ARRAY } as const;
 
 export const objDesc = '[object Object]';
 
@@ -17,31 +29,27 @@ export const arrDesc = '[object Array]';
 export const fnDesc = '[object Function]';
 
 export const desc2dataType = {
-  [mapDesc]: carefulDataTypes.Map,
-  [setDesc]: carefulDataTypes.Set,
-  [arrDesc]: carefulDataTypes.Array,
-  [objDesc]: 'Object',
+  [mapDesc]: MAP,
+  [setDesc]: SET,
+  [arrDesc]: ARRAY,
+  [objDesc]: OBJECT,
 };
 
+export const SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'unshift', 'reverse', 'copyWithin', 'delete', 'fill'];
+
+export const SHOULD_REASSIGN_MAP_METHODS = ['clear', 'delete', 'set'];
+
+export const SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
 
 export const arrFnKeys = [
   'concat', 'copyWithin', 'entries', 'every', 'fill', 'filter', 'find', 'findIndex', 'flat', 'flatMap',
   'forEach', 'includes', 'indexOf', 'join', 'keys', 'lastIndexOf', 'map', 'pop', 'push', 'reduce', 'reduceRight',
   'reverse', 'shift', 'unshift', 'slice', 'some', 'sort', 'splice', 'values', 'valueOf',
 ];
-export const arrFnKeysThatNeedMarkModified = [
-  'copyWithin', 'fill', 'pop', 'push', 'reverse', 'shift', 'unshift', 'splice',
-];
 
 export const mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has', 'keys', 'set', 'values'];
-export const mapFnKeysThatNeedMarkModified = [
-  'clear', 'delete', 'set',
-];
 
 export const setFnKeys = ['add', 'clear', 'delete', 'entries', 'forEach', 'has', 'keys', 'values'];
-export const setFnKeysThatNeedMarkModified = [
-  'add', 'clear', 'delete',
-];
 
 // fill,push,pop,splice,shift,unshift should trigger copy, so they are not in arrIgnoreFnOrAttributeKeys
 
@@ -76,19 +84,13 @@ export const setIgnoreFnOrAttributeKeys = [
   'size',
 ];
 
-export const carefulType2fnKeys = {
+export const carefulFnKeys = {
   [carefulDataTypes.Map]: mapFnKeys,
   [carefulDataTypes.Set]: setFnKeys,
   [carefulDataTypes.Array]: arrFnKeys,
 };
 
-export const carefulType2fnKeysThatNeedMarkModified = {
-  [carefulDataTypes.Map]: mapFnKeysThatNeedMarkModified,
-  [carefulDataTypes.Set]: setFnKeysThatNeedMarkModified,
-  [carefulDataTypes.Array]: arrFnKeysThatNeedMarkModified,
-};
-
-export const carefulType2proxyItemFnKeys = {
+export const proxyItemFnKeys = {
   [carefulDataTypes.Map]: ['forEach', 'get'],
   [carefulDataTypes.Set]: ['forEach'],
   [carefulDataTypes.Array]: ['forEach', 'map'],

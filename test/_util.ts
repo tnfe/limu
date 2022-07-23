@@ -1,5 +1,16 @@
 import * as limu from '../src/index';
+// import * as limu from '../benchmark/node_modules/immer';
+// limu.enableMapSet();
+
 // import * as limu from '../benchmark/node_modules/limu';
+
+
+// for script: npm run test_no
+if (process.env.AUTO_FREEZE === '0') {
+  // @ts-ignore
+  limu.setAutoFreeze(false);
+}
+
 
 // 本地 jest 运行时为了方便定位console上显示的错误代码位置，可使用 dist的源码做调试，注意要先执行 npm run build
 // 如果为了调试源码，可去 debug 目录加用例并测试，debug 配置参考如下
@@ -19,14 +30,34 @@ import * as limu from '../src/index';
 
 export const createDraft = limu.createDraft;
 export const finishDraft = limu.finishDraft;
+// @ts-ignore
+export const current = limu.current;
 export const produce = limu.produce;
+export const produceWithPatches = noop;
+// @ts-ignore
+export const setAutoFreeze = limu.setAutoFreeze;
+// @ts-ignore
+export const isNewArch = () => (limu.getMajorVer ? limu.getMajorVer() >= 3 : true);
+// @ts-ignore
+export const getAutoFreeze = limu.getAutoFreeze || (() => true);
 
-// const RUN_PRODUCE = false;
-const RUN_PRODUCE = true;
+// limu.setAutoFreeze(true);
+
+const RUN_PRODUCE = false;
+// const RUN_PRODUCE = true;
 
 export const produceTip = (testDescribe: string) => `${testDescribe} (with produce)`;
 
 export const createDraftTip = (testDescribe: string) => `${testDescribe} (with createDraft, finishDraft)`;
+
+export const strfy = (obj: any, space?: number) => {
+  if (typeof obj === 'string') return obj;
+  return JSON.stringify(obj, null, space ?? 0);
+};
+
+export const logStr = (obj: any, space?: number) => console.log(strfy(obj, space));
+
+export const logLabeledStr = (label, obj: any, space?: number) => console.log(label, strfy(obj, space));
 
 /**
  * allow noop pass any params
@@ -87,6 +118,35 @@ export function getSetObjBase() {
   return new Set([{ name: 'k1' }, { name: 'k2' }, { name: 'k3' }]);
 }
 
+
+const jestExpect = expect;
+
+// @ts-ignore
+global.expect = (actual: any) => {
+  const fns = jestExpect(actual);
+  // const oriToMatchObject = fns.toMatchObject;
+  fns.toMatchObject = (toMatch) => {
+    const actualStr = strfy(actual);
+    const expectStr = strfy(toMatch);
+    if (actualStr !== expectStr) {
+      console.log(`actual is ${actualStr}`);
+      console.log(`expect is ${expectStr}`);
+      throw new Error('call toMatchObject fail');
+    }
+  };
+  return fns;
+};
+
+export function expectToBe(actualVal, exceptVal) {
+  expect(actualVal).toBe(exceptVal);
+}
+
+
+export function exceptNotEqual(actualVal, exceptVal) {
+  expect(actualVal === exceptVal).toBeFalsy();
+}
+
+
 /**
  * common compare handler
  * new and base should be equal
@@ -123,6 +183,7 @@ export function runTestSuit<T = any>(
     test(createDraftTip(testCaseDesc), () => {
       const base = getBase();
       const draft = createDraft(base);
+      // @ts-ignore
       operateDraft(draft, base);
       const final = finishDraft(draft);
       if (executeAssertLogic) executeAssertLogic(final, base);
@@ -132,6 +193,7 @@ export function runTestSuit<T = any>(
       test(produceTip(testCaseDesc), () => {
         const base = getBase();
         const final = produce(base, draft => {
+          // @ts-ignore
           operateDraft(draft, base);
         });
         if (executeAssertLogic) executeAssertLogic(final, base);
@@ -248,6 +310,6 @@ export function assignFrozenDataInJest(cb: any) {
   } catch (e: any) {
     // jest will throw the error below from jest-circus/build/utils.js
     // Cannot assign to read only property 'key' of object '#<Object>'
-    expect(e.message).toMatch(/(?=Cannot assign)/);
+    expect(e.message).toMatch(/(?=Cannot)/);
   }
 }

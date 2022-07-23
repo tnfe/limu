@@ -1,7 +1,15 @@
-import { Limu, produce, getDraftMeta, createDraft, finishDraft } from '../../src';
-import { assignFrozenDataInJest } from '../_util';
+import {
+  Limu, produce, getDraftMeta, createDraft, finishDraft,
+  deepFreeze, getAutoFreeze, original, current, getMajorVer,
+} from '../../src';
+import { assignFrozenDataInJest, strfy } from '../_util';
 
 describe('check apis', () => {
+  test('getMajorVer', () => {
+    expect(getMajorVer).toBeTruthy();
+    expect(typeof getMajorVer() === 'number').toBeTruthy();
+  });
+
   test('new Limu', () => {
     const limuApis = new Limu();
     expect(limuApis.createDraft).toBeTruthy();
@@ -12,6 +20,7 @@ describe('check apis', () => {
     expect(getDraftMeta(draft)).toBeTruthy();
     const final = limuApis.finishDraft(draft);
     expect(final).toBeTruthy();
+    console.log('getAutoFreeze ', getAutoFreeze());
   });
 
   test('produce', () => {
@@ -21,11 +30,10 @@ describe('check apis', () => {
     });
 
     expect(final.key === 2).toBeTruthy();
-    assignFrozenDataInJest(() => {
-      base.key = 100;
-    });
 
-    expect(base.key).toBe(1); // base is frozen
+    base.key = 100;
+    expect(base.key).toBe(100); // base is unfrozen
+    console.log('getAutoFreeze ', getAutoFreeze());
   });
 
   test('produce curry', () => {
@@ -41,7 +49,7 @@ describe('check apis', () => {
       base.key = 100;
     });
 
-    expect(base.key).toBe(1); // base is frozen
+    expect(base.key).toBe(100); // base is unfrozen
   });
 
   test('produce exception', () => {
@@ -63,10 +71,9 @@ describe('check apis', () => {
       const curryCb = produce((draft: any) => { draft.a = 1 });
       curryCb(2);
     } catch (e: any) {
-      expect(e.message).toMatch(/(?=base state type can only be object\(except null\) or array)/);
+      expect(e.message).toMatch(/(?=type can only be object\(except null\) or array)/);
     }
   });
-
 
   test('wrong finishDraft', () => {
     try {
@@ -76,12 +83,82 @@ describe('check apis', () => {
     }
   });
 
+  test('wrong finishDraft 2', () => {
+    try {
+      const limu1 = new Limu();
+      const draft1 = limu1.createDraft({ a: 1 })
+      const limu2 = new Limu();
+
+      limu2.finishDraft(draft1);
+    } catch (e: any) {
+      expect(e.message).toMatch(/(?=does not match finishDraft handler)/);
+    }
+  });
+
   test('getDraftMeta', () => {
     const base = { key: 1 };
     const draft = createDraft(base);
     expect(getDraftMeta(draft)).toBeTruthy();
     const final = finishDraft(draft);
     expect(final).toBeTruthy();
+  });
+
+  test('deepFreeze obj', () => {
+    const obj: any = { a: { b: 1 } };
+    deepFreeze(obj);
+    expect(Object.isFrozen(obj)).toBeTruthy();
+    expect(Object.isFrozen(obj.a)).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      obj.a1 = 100;
+    });
+  });
+
+  test('deepFreeze arr', () => {
+    const arr: any = [];
+    deepFreeze(arr);
+    expect(Object.isFrozen(arr)).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      arr.push(2);
+    });
+  });
+
+  test('deepFreeze set', () => {
+    const set = new Set();
+    deepFreeze(set);
+    expect(Object.isFrozen(set)).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      set.add(1);
+    });
+    expect(set.size === 0).toBeTruthy();
+  });
+
+  test('deepFreeze map', () => {
+    const map = new Map();
+    deepFreeze(map);
+    expect(Object.isFrozen(map)).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      map.set(1, 1);
+    });
+    expect(map.size === 0).toBeTruthy();
+  });
+
+  test('original current obj', () => {
+    const base = { key1: { x: 1 }, key2: { x: 100 } };
+    const draft = createDraft(base);
+    draft.key1.x++;
+    const orig = original(draft);
+    const curr = current(draft); // draft snapshot
+    expect(strfy(orig)).toBe('{"key1":{"x":1},"key2":{"x":100}}');
+    expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}');
+
+    draft.key1.x++
+    expect(strfy(draft)).toBe('{"key1":{"x":3},"key2":{"x":100}}'); // draft changed
+    expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}'); // curr not changed, still be 2
+
+    const final = finishDraft(draft);
+    expect(strfy(base)).toBe('{"key1":{"x":1},"key2":{"x":100}}');
+    expect(strfy(final)).toBe('{"key1":{"x":3},"key2":{"x":100}}');
+    expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}');
   });
 
 });

@@ -1,13 +1,23 @@
-import { runTestSuit, getSetBase } from '../_util';
+// @ts-nocheck
+import { runTestSuit, getSetBase, logStr } from '../_util';
 
 function changeDraft(setDraft: Set<any>) {
-  setDraft.add('k4');
-  expect(setDraft.size).toEqual(4);
+  setDraft.forEach((v, v2, set) => {
+    if (v === 3) {
+      set.add('k4');
+    }
+  });
+
+  setDraft.add('k5');
+  expect(setDraft.size).toEqual(5);
 }
 
 function compare(setNew, setBase) {
   expect(setNew !== setBase).toBeTruthy();
-  expect(setNew.size).toEqual(4);
+  logStr(Array.from(setNew));
+  logStr(Array.from(setBase));
+
+  expect(setNew.size).toEqual(5);
   expect(setBase.size).toEqual(3);
 }
 

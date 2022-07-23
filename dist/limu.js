@@ -40,54 +40,38 @@
         return to.concat(ar || Array.prototype.slice.call(from));
     }
 
-    var _a, _b, _c, _d;
-    /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Tencent Corporation. All rights reserved.
-     *  Licensed under the MIT License.
-     *
-     *  @Author: fantasticsoul
-     *--------------------------------------------------------------------------------------------*/
-    var carefulDataTypes = { Map: 'Map', Set: 'Set', Array: 'Array' };
+    var _a, _b, _c;
+    var MAP = 'Map';
+    var SET = 'Set';
+    var ARRAY = 'Array';
+    var OBJECT = 'Object';
+    var carefulDataTypes = { Map: MAP, Set: SET, Array: ARRAY };
     var objDesc = '[object Object]';
     var mapDesc = '[object Map]';
     var setDesc = '[object Set]';
     var arrDesc = '[object Array]';
     var fnDesc = '[object Function]';
     var desc2dataType = (_a = {},
-        _a[mapDesc] = carefulDataTypes.Map,
-        _a[setDesc] = carefulDataTypes.Set,
-        _a[arrDesc] = carefulDataTypes.Array,
-        _a[objDesc] = 'Object',
+        _a[mapDesc] = MAP,
+        _a[setDesc] = SET,
+        _a[arrDesc] = ARRAY,
+        _a[objDesc] = OBJECT,
         _a);
+    var SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'unshift', 'reverse', 'copyWithin', 'delete', 'fill'];
+    var SHOULD_REASSIGN_MAP_METHODS = ['clear', 'delete', 'set'];
+    var SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
     var arrFnKeys = [
         'concat', 'copyWithin', 'entries', 'every', 'fill', 'filter', 'find', 'findIndex', 'flat', 'flatMap',
         'forEach', 'includes', 'indexOf', 'join', 'keys', 'lastIndexOf', 'map', 'pop', 'push', 'reduce', 'reduceRight',
         'reverse', 'shift', 'unshift', 'slice', 'some', 'sort', 'splice', 'values', 'valueOf',
     ];
-    var arrFnKeysThatNeedMarkModified = [
-        'copyWithin', 'fill', 'pop', 'push', 'reverse', 'shift', 'unshift', 'splice',
-    ];
     var mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has', 'keys', 'set', 'values'];
-    var mapFnKeysThatNeedMarkModified = [
-        'clear', 'delete', 'set',
-    ];
     var setFnKeys = ['add', 'clear', 'delete', 'entries', 'forEach', 'has', 'keys', 'values'];
-    var setFnKeysThatNeedMarkModified = [
-        'add', 'clear', 'delete',
-    ];
-    var arrIgnoreFnOrAttributeKeys = [
-        // 'forEach', 'map', 'sort', 'copyWithin', 'reverse',
-        'length',
-        'slice', 'concat', 'find', 'findIndex', 'filter', 'flat', 'flatMap', 'includes',
-        'indexOf', 'every', 'some', 'constructor', 'join', 'keys', 'lastIndexOf', 'reduce',
-        'reduceRight', 'values', 'entries',
-        'valueOf',
-    ];
     var mapIgnoreFnKeys = [
         // 'forEach', 'get',
         'entries', 'keys', 'values', 'has',
     ];
-    var mapIgnoreFnOrAttributeKeys = __spreadArray(__spreadArray([], mapIgnoreFnKeys, true), [
+    __spreadArray(__spreadArray([], mapIgnoreFnKeys, true), [
         'size',
     ], false);
     var setIgnoreFnKeys = [
@@ -95,24 +79,19 @@
         'entries', 'has', 'keys', 'values'
     ];
     // export const setIgnoreFnKeys = ['entries', 'has', 'keys', 'values'];
-    var setIgnoreFnOrAttributeKeys = __spreadArray(__spreadArray([], setIgnoreFnKeys, true), [
+    __spreadArray(__spreadArray([], setIgnoreFnKeys, true), [
         'size',
     ], false);
-    var carefulType2fnKeys = (_b = {},
+    var carefulFnKeys = (_b = {},
         _b[carefulDataTypes.Map] = mapFnKeys,
         _b[carefulDataTypes.Set] = setFnKeys,
         _b[carefulDataTypes.Array] = arrFnKeys,
         _b);
-    var carefulType2fnKeysThatNeedMarkModified = (_c = {},
-        _c[carefulDataTypes.Map] = mapFnKeysThatNeedMarkModified,
-        _c[carefulDataTypes.Set] = setFnKeysThatNeedMarkModified,
-        _c[carefulDataTypes.Array] = arrFnKeysThatNeedMarkModified,
+    var proxyItemFnKeys = (_c = {},
+        _c[carefulDataTypes.Map] = ['forEach', 'get'],
+        _c[carefulDataTypes.Set] = ['forEach'],
+        _c[carefulDataTypes.Array] = ['forEach', 'map'],
         _c);
-    var carefulType2proxyItemFnKeys = (_d = {},
-        _d[carefulDataTypes.Map] = ['forEach', 'get'],
-        _d[carefulDataTypes.Set] = ['forEach'],
-        _d[carefulDataTypes.Array] = ['forEach', 'map'],
-        _d);
 
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
@@ -154,9 +133,6 @@
     function isPromiseResult(result) {
         return typeof Promise !== "undefined" && result instanceof Promise;
     }
-    function canHaveProto(val) {
-        return !isPrimitive(val);
-    }
     function canBeNum(val) {
         var valType = typeof val;
         if (valType === 'number')
@@ -168,12 +144,6 @@
     function isSymbol(maySymbol) {
         return typeof maySymbol === 'symbol';
     }
-    function isFrozenObj(mayObj) {
-        if (mayObj && !isPrimitive(mayObj)) {
-            return Object.isFrozen(mayObj);
-        }
-        return false;
-    }
 
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
@@ -181,11 +151,10 @@
      *
      *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
-    // 用于验证 proxyDraft 和 finishDraft函数 是否能够匹配
-    var verKey = Symbol('verKey');
-    var metasKey = Symbol('metas');
-    var finishHandler = Symbol('finishHandler');
-    var isModifiedKey = Symbol('isModifiedKey');
+    // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配
+    var verKey = Symbol('V');
+    var META_KEY = Symbol('M');
+    var finishHandler = Symbol('limu-finishHandler');
 
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Tencent Corporation. All rights reserved.
@@ -193,141 +162,103 @@
      *
      *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
-    var ver2MetasList = {};
-    var verWrap = { value: 0 };
+    var verWrap = { value: 0, usablePrefix: 1 };
     var limuConfig = {
         autoFreeze: true,
+        usePatches: false,
     };
+
+    function attachMeta(dataNode, meta) {
+        dataNode[META_KEY] = meta;
+        return dataNode;
+    }
+    /**
+     * 是否是 proxy 代理指向的草稿对象
+     * @param mayDraft
+     * @returns
+     */
+    function isDraft$1(mayDraft) {
+        if (isPrimitive(mayDraft)) {
+            return false;
+        }
+        var meta = mayDraft[META_KEY];
+        return !!meta;
+    }
+    function genMetaVer() {
+        if (verWrap.value >= Number.MAX_SAFE_INTEGER) {
+            verWrap.value = 1;
+            verWrap.usablePrefix += 1;
+        }
+        else {
+            verWrap.value += 1;
+        }
+        var value = verWrap.value, usablePrefix = verWrap.usablePrefix;
+        var metaVer = "".concat(usablePrefix, "_").concat(value);
+        return metaVer;
+    }
+    function getNextMetaLevel(mayContainMetaObj) {
+        var meta = getDraftMeta$1(mayContainMetaObj);
+        return meta ? meta.level + 1 : 1;
+    }
+    function getDraftMeta$1(proxyDraft) {
+        return proxyDraft[META_KEY];
+    }
 
     function shouldGenerateProxyItems(parentType, key) {
         // !!! 对于 Array，直接生成 proxyItems
         if (parentType === 'Array')
             return true;
-        var proxyItemFnKeys = carefulType2proxyItemFnKeys[parentType] || [];
-        return proxyItemFnKeys.includes(key);
+        var fnKeys = proxyItemFnKeys[parentType] || [];
+        return fnKeys.includes(key);
     }
-    function getKeyPath(mayContainMetaObj, curKey, metaVer) {
+    function getKeyPath(draftNode, curKey) {
         var pathArr = [curKey];
-        var meta = getMeta(mayContainMetaObj, metaVer);
+        var meta = getDraftMeta$1(draftNode);
         if (meta && meta.level > 0) {
             var keyPath = meta.keyPath;
             return __spreadArray(__spreadArray([], keyPath, true), [curKey], false);
         }
         return pathArr;
     }
-    function getMeta(mayMetasProtoObj, metaVer) {
-        var metas = getMetas(mayMetasProtoObj);
-        if (metas)
-            return metas[metaVer];
-        return null;
-    }
-    function getMetaForDraft(draft, metaVer) {
-        if (!draft)
-            return null;
-        return getMeta(draft.__proto__, metaVer);
-    }
-    function getMetas(mayMetasProtoObj) {
-        if (!mayMetasProtoObj)
-            return null;
-        return mayMetasProtoObj[metasKey];
-    }
-    // 调用处已保证 meta 不为空 
-    function makeCopy(meta, mayACopy) {
-        var metaOwner = meta.self;
-        if (Array.isArray(metaOwner)) {
-            return meta.proxyItems || metaOwner.slice();
+    function getUnProxyValue(value) {
+        if (!isObject(value)) {
+            return value;
         }
-        if (isObject(metaOwner)) {
-            return __assign({}, metaOwner);
-        }
-        if (isMap(metaOwner)) {
-            return (meta.proxyItems || mayACopy || new Map(metaOwner));
-        }
-        if (isSet(metaOwner)) {
-            return (meta.proxyItems || mayACopy || new Set(metaOwner));
-        }
-        throw new Error("data ".concat(metaOwner, " try trigger getCopy, its type is ").concat(typeof meta));
-    }
-    /**
-     * 尝试生成copy
-     * @param val
-     * @returns
-     */
-    function tryMakeCopy(val) {
-        if (Array.isArray(val)) {
-            return val.slice();
-        }
-        if (val && isObject(val)) {
-            return __assign({}, val);
-        }
-        if (isMap(val)) {
-            return new Map(val);
-        }
-        if (isSet(val)) {
-            return new Set(val);
-        }
-        return val;
-    }
-    function getUnProxyValue(value, metaVer) {
-        var valueMeta = getMetaForDraft(value, metaVer);
+        var valueMeta = getDraftMeta$1(value);
         if (!valueMeta)
             return value;
-        var copy = valueMeta.copy;
-        if (!copy) {
-            copy = makeCopy(valueMeta);
-            valueMeta.copy = copy;
-        }
-        return copy;
-    }
-    // 外部已确保是obj
-    function setMeta(obj, meta, metaVer) {
-        var metas = getMetas(obj);
-        metas && (metas[metaVer] = meta);
-    }
-    function getMetaVer() {
-        verWrap.value += 1;
-        var metaVer = verWrap.value;
-        ver2MetasList[metaVer] = [];
-        return metaVer;
-    }
-    function getNextMetaLevel(mayContainMetaObj, metaVer) {
-        var meta = getMeta(mayContainMetaObj, metaVer);
-        return meta ? meta.level + 1 : 1;
-    }
-    function getRealProto(val) {
-        var proto = Object.getPrototypeOf(val);
-        // 防止 Object.create(null) 创建的对象没有原型链
-        if (!proto)
-            return Object.prototype;
-        return Object.getPrototypeOf(val);
-    }
-    function setMetasProto(val, realProto) {
-        // 把 metas 放到单独的 __proto__ 层里，确保写入的数据不会污染 Object.prototype
-        //  __proto__:
-        //    Symbol('metas'): { ... }
-        //    __proto__: Object | Array
-        var metaProto = Object.create(null);
-        Object.setPrototypeOf(metaProto, realProto);
-        // 故意多写一层 __proto__ 容器
-        Object.setPrototypeOf(val, metaProto);
-        val.__proto__[metasKey] = {};
-    }
-    /**
-     * 是否是 proxy 代理的草稿对象
-     * @param mayDraft
-     * @returns
-     */
-    function isDraft$1(mayDraft) {
-        var ver = mayDraft === null || mayDraft === void 0 ? void 0 : mayDraft[verKey];
-        return !!ver;
+        return valueMeta.copy;
     }
     function getDataNodeType(dataNode) {
         var strDesc = getValStrDesc(dataNode);
         var dataType = desc2dataType[strDesc];
         return dataType;
     }
-    function deepFreeze(obj) {
-        if (Array.isArray(obj) || isSet(obj) || isMap(obj)) {
+    function deepFreeze$1(obj) {
+        if (isPrimitive(obj)) {
+            return obj;
+        }
+        // @ts-ignore
+        if (Array.isArray(obj) && obj.length > 0) {
+            obj.forEach(function (item) {
+                deepFreeze$1(item);
+            });
+            return Object.freeze(obj);
+        }
+        if (isSet(obj)) {
+            var set_1 = obj;
+            // TODD: throw error 'do not mutate' ?
+            set_1.add = function () { return set_1; };
+            set_1.delete = function () { return false; };
+            set_1.clear = noop;
+            return Object.freeze(obj);
+        }
+        if (isMap(obj)) {
+            var map_1 = obj;
+            // TODD: throw error 'do not mutate' ?
+            map_1.set = function () { return map_1; };
+            map_1.delete = function () { return false; };
+            map_1.clear = noop;
             return Object.freeze(obj);
         }
         // get all properties
@@ -336,91 +267,37 @@
         propertyNames.forEach(function (name) {
             var value = obj[name];
             if (value instanceof Object && value !== null) {
-                deepFreeze(value);
+                deepFreeze$1(value);
             }
         });
         return Object.freeze(obj);
     }
-    function reassignGrandpaAndParent(parentDataNodeMeta, calledBy, setKey) {
-        var _a;
-        var grandpaMeta = parentDataNodeMeta.parentMeta, parentType = parentDataNodeMeta.parentType, selfType = parentDataNodeMeta.selfType, parentDataNodeIdx = parentDataNodeMeta.idx, parentDataNodeCopy = parentDataNodeMeta.copy;
-        // 数组操作比较特殊，有2种方式，包括了(1方法修改) 和 (2自身通过索引直接修改)，这里处理到第2种
-        if (calledBy === 'set' && canBeNum(setKey) && selfType === 'Array') {
-            var proxyItems_1 = parentDataNodeMeta.proxyItems;
-            if (proxyItems_1) {
-                // @ts-ignore
-                proxyItems_1[isModifiedKey] = true;
+    function markModified(mapSetMeta) {
+        mapSetMeta.rootMeta.modified = true;
+        var doMark = function (meta) {
+            if (meta) {
+                meta.modified = true;
+                doMark(meta.parentMeta);
             }
-        }
-        if (!grandpaMeta) {
-            return;
-        }
-        var grandpaCopy = grandpaMeta.copy;
-        // 回溯过程中，为没拷贝体的爷爷节点生成拷贝对象
-        if (!grandpaCopy) {
-            grandpaCopy = makeCopy(grandpaMeta);
-            grandpaMeta.copy = grandpaCopy;
-        }
-        var needMarkModified = false;
-        // console.log(' ************ [[ DEBUG ]] reassignGrandpaAndParent for ' + parentType, ' ,K:', parentDataNodeIdx, ' ,V:', parentDataNodeCopy);
-        if (parentType === 'Map') {
-            grandpaCopy.set(parentDataNodeIdx, parentDataNodeCopy);
-            needMarkModified = true;
-        }
-        else if (parentType === 'Object') {
-            grandpaCopy[parentDataNodeIdx] = parentDataNodeCopy;
-        }
-        else if (parentType === 'Array') {
-            // 数组操作比较特殊，有2种方式，包括了1方法修改和2自身通过索引直接修改，这里处理到第1种
-            grandpaCopy[parentDataNodeIdx] = parentDataNodeCopy;
-            needMarkModified = true;
-        }
-        else if (parentType === 'Set') {
-            // Set 无法做 reassign，这里仅标记 needMarkModified，在 finishDraft 步骤里会最 Set的重计算
-            needMarkModified = true;
-        }
-        var proxyItems = grandpaMeta.proxyItems;
-        if (needMarkModified && proxyItems) {
-            // @ts-ignore
-            // proxyItems.__modified = true;
-            proxyItems[isModifiedKey] = true;
-            // @ts-ignore
-            // !!! 方便在 finishDraft 里，遇到 Set 结构还可以指回来
-            proxyItems.__parent = (_a = grandpaMeta.parentMeta) === null || _a === void 0 ? void 0 : _a.copy;
-            // @ts-ignore
-            proxyItems.__dataIndex = grandpaMeta.idx;
-        }
-    }
-    function markRootModifiedAndReassign(meta, parent, metaVer) {
-        if (meta === null || meta === void 0 ? void 0 : meta.rootMeta) {
-            meta.rootMeta.modified = true;
-            var parentMeta = getMeta(parent, metaVer);
-            if (parentMeta) {
-                reassignGrandpaAndParent(parentMeta);
-            }
-        }
+        };
+        doMark(mapSetMeta);
     }
     /**
      * 拦截 set delete clear add
      * 支持用户使用 callback 的第三位参数 (val, key, mapOrSet) 的 mapOrSet 当做 draft 使用
      */
-    function replaceSetOrMapMethods(dataType, mapOrSet, meta, parent, metaVer) {
+    function replaceSetOrMapMethods(mapOrSet, meta, options) {
+        var dataType = options.dataType;
         // 拦截 set delete clear add，注意 set，add 在末尾判断后添加
         // 支持用户使用 callback 的第三位参数 (val, key, map) 的 map 当做 draft 使用
         var oriDel = mapOrSet.delete.bind(mapOrSet);
         var oriClear = mapOrSet.clear.bind(mapOrSet);
-        mapOrSet.add = function limuAdd() {
-            noop();
-        };
-        mapOrSet.set = function limuSet() {
-            noop();
-        };
         mapOrSet.delete = function limuDelete() {
             var args = [];
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i] = arguments[_i];
             }
-            markRootModifiedAndReassign(meta, parent, metaVer);
+            markModified(meta);
             return oriDel.apply(void 0, args);
         };
         mapOrSet.clear = function limuClear() {
@@ -428,7 +305,7 @@
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i] = arguments[_i];
             }
-            markRootModifiedAndReassign(meta, parent, metaVer);
+            markModified(meta);
             return oriClear.apply(void 0, args);
         };
         if (dataType === 'Set') {
@@ -438,7 +315,8 @@
                 for (var _i = 0; _i < arguments.length; _i++) {
                     args[_i] = arguments[_i];
                 }
-                markRootModifiedAndReassign(meta, parent, metaVer);
+                markModified(meta);
+                // recordPatch({ meta, ...options });
                 return oriAdd_1.apply(void 0, args);
             };
         }
@@ -449,66 +327,35 @@
                 for (var _i = 0; _i < arguments.length; _i++) {
                     args[_i] = arguments[_i];
                 }
-                markRootModifiedAndReassign(meta, parent, metaVer);
+                markModified(meta);
+                // recordPatch({ meta, ...options });
+                // @ts-ignore
                 return oriSet_1.apply(void 0, args);
             };
         }
     }
 
-    /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Tencent Corporation. All rights reserved.
-     *  Licensed under the MIT License.
-     *
-     *  @Author: fantasticsoul
-     *--------------------------------------------------------------------------------------------*/
-    // slice、concat 以及一些特殊的key取值等操作无需copy副本
-    function allowCopyForOp(parentType, op) {
-        if (parentType === carefulDataTypes.Array) {
-            if (arrIgnoreFnOrAttributeKeys.includes(op))
-                return false;
-            if (canBeNum(op))
-                return false;
-        }
-        if (parentType === carefulDataTypes.Map && mapIgnoreFnOrAttributeKeys.includes(op)) {
-            return false;
-        }
-        if (parentType === carefulDataTypes.Set && setIgnoreFnOrAttributeKeys.includes(op)) {
-            return false;
-        }
-        // like Symbol(Symbol.isConcatSpreadable) in test case array-base/concat
-        if (isSymbol(op)) {
-            return false;
-        }
-        return true;
-    }
-    var SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'unshift', 'reverse', 'copyWithin', 'delete', 'fill'];
-    var SHOULD_REASSIGN_MAP_METHODS = ['clear', 'delete', 'set'];
-    var SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
-    function mayReassign(options) {
-        var calledBy = options.calledBy, parentDataNodeMeta = options.parentDataNodeMeta, op = options.op, parentType = options.parentType, key = options.key;
-        // 对于由 set 陷阱触发的 copyAndGetDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
+    function mayMarkModified(options) {
+        var calledBy = options.calledBy, parentDataNodeMeta = options.parentDataNodeMeta, op = options.op, parentType = options.parentType;
+        // 对于由 set 陷阱触发的 handleDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
         if (['deleteProperty', 'set'].includes(calledBy)
             ||
                 (calledBy === 'get' && ((parentType === 'Set' && SHOULD_REASSIGN_SET_METHODS.includes(op)) // 针对 Set.add
                     || (parentType === 'Array' && SHOULD_REASSIGN_ARR_METHODS.includes(op)) // 针对 Array 一系列的改变操作
-                    || (parentType === 'Map' && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Array 一系列的改变操作
+                    || (parentType === 'Map' && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Map 一系列的改变操作
                 ))) {
-            reassignGrandpaAndParent(parentDataNodeMeta, calledBy, key);
+            markModified(parentDataNodeMeta);
         }
     }
-    function copyAndGetDataNode(parentDataNode, copyCtx, isFirstCall) {
-        var op = copyCtx.op, key = copyCtx.key, mayProxyValue = copyCtx.value, metaVer = copyCtx.metaVer, calledBy = copyCtx.calledBy, parentType = copyCtx.parentType;
-        var parentDataNodeMeta = getMeta(parentDataNode, metaVer);
+    function handleDataNode(parentDataNode, copyCtx) {
+        var op = copyCtx.op, key = copyCtx.key, mayProxyValue = copyCtx.value, calledBy = copyCtx.calledBy, parentType = copyCtx.parentType;
+        var parentDataNodeMeta = getDraftMeta$1(parentDataNode);
         /**
          * 防止 value 本身就是一个 Proxy
          * var draft_a1_b = draft.a1.b;
          * draft.a2 = draft_a1_b;
          */
-        var value = mayProxyValue;
-        if (isFirstCall) {
-            // value 本身可能是代理对象
-            value = getUnProxyValue(mayProxyValue, metaVer);
-        }
+        var value = getUnProxyValue(mayProxyValue);
         /**
          * 链路断裂，此对象未被代理
          * // draft = { a: { b: { c: 1 } }};
@@ -520,99 +367,12 @@
             parentDataNode[key] = value;
             return;
         }
-        var self = parentDataNodeMeta.self, rootMeta = parentDataNodeMeta.rootMeta;
-        var parentCopy = parentDataNodeMeta.copy;
-        var allowCopy = allowCopyForOp(parentType, op);
-        if (allowCopy) {
-            // 没有 copy 就通过 makeCopy 造一个 copy
-            // 有了 copy 也要看parentType类型，如果是 'Map', 'Set' 的话，也需要 makeCopy
-            // 因为此时 parentDataNodeMeta 携带的 proxyItems 才是正确的 copy 体
-            // 否则在 test/complex/case1.ts 示例里，先调用了 mixArr.push，为 mixArr 每一个 item 项生成的copy
-            // Map 的 copy 是 Proxy { Map: name=> {name:'bj'} }
-            // 而我们需要的是 { Map: name=> Proxy {name:'bj'} }，否则导致测试失败
-            if (!parentCopy || ['Map', 'Set'].includes(parentType)) {
-                parentCopy = makeCopy(parentDataNodeMeta, parentCopy);
-                // console.log('re parentCopy');
-                parentDataNodeMeta.copy = parentCopy;
-            }
-            if (!isPrimitive(value)) {
-                var valueMeta = getMeta(mayProxyValue, metaVer);
-                if (valueMeta) {
-                    /**
-                     * 值的父亲节点和当时欲写值的数据节点层级对不上，说明节点发生了层级移动
-                     * 总是记录最新的父节点关系，防止原有的关系被解除
-                     * ------------------------------------------------------------
-                     *
-                     * // 移动情况
-                     * // draft is { a: { b: { c: { d: { e: 1 } } } } }
-                     * const dValue = draft.a.b.c.d; // { e: 1 }
-                     * const cValue = draft.a.b.c; // cValue: { d: { e: 1 } }，此时 cValue 已被代理，parentLevel = 2
-                     *
-                     * // [1]: dataNode: draft, key: 'a', value: cValue
-                     * draft.a = cValue;
-                     * // parentLevel = 0, 数据节点层级出现移动
-                     *
-                     * // [2]: dataNode: draft.a, key: 'b', value: cValue
-                     * draft.a.b = cValue;
-                     * // parentLevel = 1, 数据节点层级出现移动
-                     *
-                     * // [3]: dataNode: draft.a.b, key: 'c', value: cValue
-                     * draft.a.b.c = cValue;
-                     * // parentLevel = 2, 数据节点层级没有出现移动，还保持原来的关系
-                     *
-                     * ------------------------------------------------------------
-                     * // 关系解除情况
-                     * // draft is { a: { b: { c: { d: { e: 1 } } } }, a1: 2 }
-                     * const d = draft.a.b.c.d;
-                     * draft.a1 = d;
-                     * draft.a.b.c = null; // d属性数据节点和父亲关系解除
-                     */
-                    if (valueMeta.parentMeta && valueMeta.parentMeta.level !== parentDataNodeMeta.level) {
-                        // 修正 valueMeta 维护的相关数据
-                        valueMeta.parent = parentDataNodeMeta.self;
-                        valueMeta.level = parentDataNodeMeta.level + 1;
-                        valueMeta.key = key;
-                        valueMeta.keyPath = getKeyPath(valueMeta.parent, key, metaVer);
-                        /**
-                         * 父亲节点 P 和当时欲写值的数据节点 C 层级相等，也不能保证 C 向上链路的所有父辈们是否有过层级移动
-                         * 因为他们发生移动时，是不会去修改所有子孙的元数据的
-                         */
-                    }
-                    /**
-                     * 还没为当前数据节点建立代理，就被替换了
-                     * // draft is { a: { b: { c: 1 } } }
-                     * draft.a = { b: { c: 100 } };
-                     */
-                }
-            }
-            // console.log('[[ DEBUG ]] mayReassign ', `calledBy:${calledBy}  parentType:${parentType} op:${op}`);
-            mayReassign({ calledBy: calledBy, parentDataNodeMeta: parentDataNodeMeta, op: op, key: key, parentType: parentType });
-            // 向上回溯，复制完整条链路，parentMeta 为 null 表示已回溯到顶层
-            var grandpaMeta = parentDataNodeMeta.parentMeta;
-            if (grandpaMeta) {
-                var copyCtx_1 = {
-                    key: parentDataNodeMeta.key, parentType: parentDataNodeMeta.parentType,
-                    value: parentCopy,
-                    metaVer: metaVer,
-                    calledBy: calledBy,
-                };
-                // console.log('向上回溯，复制完整条链路', copyCtx);
-                copyAndGetDataNode(grandpaMeta.self, copyCtx_1, false);
-            }
-        }
+        var self = parentDataNodeMeta.self, parentCopy = parentDataNodeMeta.copy;
+        mayMarkModified({ calledBy: calledBy, parentDataNodeMeta: parentDataNodeMeta, op: op, key: key, parentType: parentType });
         // 是 Map, Set, Array 类型的方法操作或者值获取
-        var fnKeys = carefulType2fnKeys[parentType] || [];
-        var markModified = function () {
-            // 标记当前节点已更新
-            parentDataNodeMeta.modified = true;
-            rootMeta && (rootMeta.modified = true);
-        };
+        var fnKeys = carefulFnKeys[parentType] || [];
         // 是函数调用
         if (fnKeys.includes(op) && isFn(mayProxyValue)) {
-            var fnKeysThatNeedMarkModified = carefulType2fnKeysThatNeedMarkModified[parentType];
-            if (fnKeysThatNeedMarkModified.includes(op)) {
-                markModified();
-            }
             // slice 操作无需使用 copy，返回自身即可
             if ('slice' === op) {
                 // @ts-ignore
@@ -628,18 +388,7 @@
                     // 注意 forEach 等方法已提前生成了 proxyItems，这里 bind 的目标优先取 proxyItems
                     return parentCopy[op].bind(parentCopy);
                 }
-                if (['map', 'sort'].includes(op)) {
-                    return parentCopy[op].bind(parentDataNodeMeta.proxyVal);
-                }
-                /**
-                 * ATTENTION_1
-                 * 确保回调里的参数能拿到代理对象，如
-                 * ```js
-                 * // 此处的 arr 需要转为代理对象，因为用户可能直接操作它修改数据
-                 * arr.forEach((value, index, arr)=>{...})
-                 * ```
-                 */
-                return parentCopy[op].bind(parentDataNodeMeta.proxyItems);
+                return parentCopy[op];
             }
             else {
                 return self[op].bind(self);
@@ -648,180 +397,179 @@
         if (!parentCopy) {
             return value;
         }
-        // 处于递归调用则需要忽略以下逻辑（递归是会传递 isFirstCall 为 false ）
-        if (isFirstCall) {
-            if (op === 'del') {
-                delete parentCopy[key];
-            }
-            else if (op === 'toJSON' && !mayProxyValue) {
-                // 兼容 JSON.stringify 调用 
-                return;
-            }
-            else {
-                parentCopy[key] = value;
-            }
-        }
-        if (['set', 'deleteProperty'].includes(calledBy)) {
-            markModified();
-        }
-    }
-    function clearAllDataNodeMeta(metaVer) {
-        var metasList = ver2MetasList[metaVer];
-        metasList.forEach(function (metas) { return delete metas[metaVer]; });
-    }
-    function ensureDataNodeMetasProtoLayer(val, metaVer, throwError) {
-        if (throwError === void 0) { throwError = false; }
-        var canValHaveProto = canHaveProto(val);
-        if (canValHaveProto) {
-            var metas = val[metasKey];
-            if (!metas) {
-                setMetasProto(val, getRealProto(val));
-                metas = val[metasKey];
-            }
-            ver2MetasList[metaVer].push(metas);
+        if (op === 'toJSON' && !mayProxyValue) {
+            // 兼容 JSON.stringify 调用 
             return;
         }
-        if (throwError)
-            throw new Error('base state type can only be object(except null) or array');
-    }
-    /**
-     * 节省一些判定，提高性能之用
-     */
-    function ensureDataNodeMetasProtoLayerFast(val, metaVer) {
-        var metas = val[metasKey];
-        if (!metas) {
-            setMetasProto(val, getRealProto(val));
-            metas = val[metasKey];
+        if (calledBy === 'deleteProperty') {
+            var valueMeta = getDraftMeta$1(mayProxyValue);
+            // for test/complex/data-node-change case3
+            if (valueMeta) {
+                valueMeta.isDel = true;
+            }
+            else {
+                // for test/complex/data-node-change (node-change 2)
+                var oldValue = parentDataNode[key];
+                if (oldValue) {
+                    var oldValueMeta = getDraftMeta$1(parentDataNode[key]);
+                    oldValueMeta && (oldValueMeta.isDel = true);
+                }
+            }
+            delete parentCopy[key];
         }
-        ver2MetasList[metaVer].push(metas);
+        else {
+            parentCopy[key] = value;
+        }
     }
 
-    /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Tencent Corporation. All rights reserved.
-     *  Licensed under the MIT License.
-     *
-     *  @Author: fantasticsoul
-     *--------------------------------------------------------------------------------------------*/
+    function deepCopy$1(obj, metaVer) {
+        var innerDeep = function (obj) {
+            if (isPrimitive(obj)) {
+                return obj;
+            }
+            if (metaVer) {
+                var meta = getDraftMeta$1(obj);
+                var copy = meta === null || meta === void 0 ? void 0 : meta.copy;
+                // 多引用导致的遗漏值，还原回来，此处注意跳过根对象判定
+                if (copy && meta.level > 0) {
+                    return copy;
+                }
+            }
+            var newNode = obj;
+            if (Array.isArray(obj)) {
+                newNode = obj.slice();
+                newNode.forEach(function (item, idx) {
+                    newNode[idx] = innerDeep(item);
+                });
+            }
+            if (isSet(obj)) {
+                var tmpArr_1 = Array.from(obj);
+                tmpArr_1.forEach(function (item, idx) {
+                    tmpArr_1[idx] = innerDeep(item);
+                });
+                newNode = new Set(tmpArr_1);
+            }
+            if (isMap(obj)) {
+                newNode = new Map(obj);
+                newNode.forEach(function (value, key) {
+                    newNode.set(key, innerDeep(value));
+                });
+            }
+            if (isObject(obj)) {
+                newNode = {};
+                Object.keys(obj).forEach(function (key) {
+                    newNode[key] = innerDeep(obj[key]);
+                });
+            }
+            return newNode;
+        };
+        return innerDeep(obj);
+    }
+    /**
+     * 尝试生成copy
+     * @param val
+     * @returns
+     */
+    function tryMakeCopy(val, throwErr) {
+        if (Array.isArray(val)) {
+            return val.slice();
+        }
+        if (val && isObject(val)) {
+            return __assign({}, val);
+        }
+        if (isMap(val)) {
+            return new Map(val);
+        }
+        if (isSet(val)) {
+            return new Set(val);
+        }
+        if (throwErr) {
+            throw new Error("make copy err, type can only be object(except null) or array");
+        }
+        return val;
+    }
+    // 调用处已保证 meta 不为空 
+    function makeCopyWithMeta(ori, meta) {
+        var ret = tryMakeCopy(ori, true);
+        return attachMeta(ret, meta);
+    }
+
+    function isInSameScope(mayDraftNode, callerScopeVer) {
+        if (!isObject(mayDraftNode)) {
+            return true;
+        }
+        var ret = getDraftMeta$1(mayDraftNode).ver === callerScopeVer;
+        return ret;
+    }
+    function clearScopes(rootMeta) {
+        rootMeta.scopes.forEach(function (meta) {
+            var modified = meta.modified, copy = meta.copy, parentMeta = meta.parentMeta, key = meta.key, self = meta.self, parentType = meta.parentType, revoke = meta.revoke, proxyVal = meta.proxyVal, isDel = meta.isDel;
+            if (!copy)
+                return revoke();
+            delete copy[META_KEY];
+            if (!parentMeta)
+                return revoke();
+            var targetNode = !modified ? self : copy;
+            // 父节点是 Map、Set 时，parent 指向的是 ProxyItems，这里取到 copy 本体后再重新赋值
+            var parentCopy = parentMeta.copy;
+            if (parentType === MAP) {
+                parentCopy.set(key, targetNode);
+                return revoke();
+            }
+            if (parentType === SET) {
+                parentCopy.delete(proxyVal);
+                parentCopy.add(targetNode);
+                return revoke();
+            }
+            if (parentType === ARRAY) {
+                parentCopy[key] = targetNode;
+                return revoke();
+            }
+            if (isDel !== true) {
+                parentCopy[key] = targetNode;
+                return revoke();
+            }
+            // Array or Object
+            // parentCopy[key] = targetNode;
+            // return revoke();
+        });
+        rootMeta.scopes.length = 0;
+    }
+    function recordVerScope(meta) {
+        meta.rootMeta.scopes.push(meta);
+    }
+
     // size 直接返回，
     // 避免 Cannot set property size of #<Map> which has only a getter
     // 避免 Cannot set property size of #<Set> which has only a getter
     var PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
-    var TYPE_BLACK_LIST = [carefulDataTypes.Array, carefulDataTypes.Set, carefulDataTypes.Map];
-    // 这些类型不关心 copy
-    var NO_CARE_COPY_TYPE_LIST = [carefulDataTypes.Set, carefulDataTypes.Map];
-    var unforzenDataMap = new Map();
-    var inner = {
-        handleMap: function (rootMeta, metaVer, final) {
-            // @ts-ignore
-            var mapProxyItemsList = rootMeta.proxyItemsMgr['Map'];
-            var mayRootMap = null;
-            // see test case:  /test/map-other/object-map.ts
-            mapProxyItemsList.forEach(function (proxyItems) {
-                // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-                if (proxyItems[isModifiedKey]) {
-                    var tmpMap_1 = new Map();
-                    mayRootMap = tmpMap_1;
-                    proxyItems.forEach(function (val, key) {
-                        var meta = getMeta(val, metaVer);
-                        if (meta) {
-                            var toSetItem = !meta.modified ? meta.self : meta.copy;
-                            tmpMap_1.set(key, toSetItem);
-                        }
-                    });
-                    // @ts-ignore，指回来
-                    if (proxyItems.__parent) {
-                        // @ts-ignore
-                        proxyItems.__parent[proxyItems.__dataIndex] = tmpMap_1;
-                    }
-                }
-            });
-            // 根对象就是 Map 时，直接将 final 指向可能做好的新 Map
-            if (rootMeta.parentType === 'Map') {
-                return mayRootMap || final;
-            }
-            return final;
-        },
-        handleSet: function (rootMeta, metaVer, final) {
-            // @ts-ignore
-            var setProxyItemsList = rootMeta.proxyItemsMgr['Set'];
-            var mayRootSetArr = null;
-            setProxyItemsList.forEach(function (proxyItems) {
-                // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-                if (proxyItems[isModifiedKey]) {
-                    var arr_1 = Array.from(proxyItems);
-                    mayRootSetArr = arr_1;
-                    arr_1.forEach(function (val, idx) {
-                        var meta = getMeta(val, metaVer);
-                        if (meta) {
-                            arr_1[idx] = !meta.modified ? meta.self : meta.copy;
-                        }
-                    });
-                    // @ts-ignore，指回来
-                    if (proxyItems.__parent) {
-                        // @ts-ignore
-                        proxyItems.__parent[proxyItems.__dataIndex] = new Set(arr_1);
-                    }
-                }
-            });
-            // 根对象就是 Set 时，直接将 final 指向可能做好的新 Set
-            if (rootMeta.parentType === 'Set') {
-                return mayRootSetArr ? new Set(mayRootSetArr) : final;
-            }
-            return final;
-        },
-        handleArray: function (rootMeta, metaVer, final) {
-            // @ts-ignore
-            var arrProxyItemsList = rootMeta.proxyItemsMgr['Array'];
-            var mayRootArr = [];
-            arrProxyItemsList.forEach(function (proxyItems) {
-                // @ts-ignore, 在 reassignGrandpaAndParent 做了标记
-                if (proxyItems[isModifiedKey]) {
-                    var proxyItemsMeta = getMeta(proxyItems, metaVer);
-                    var items = (proxyItemsMeta === null || proxyItemsMeta === void 0 ? void 0 : proxyItemsMeta.copy) || proxyItems;
-                    items.forEach(function (val, idx) {
-                        var meta = getMeta(val, metaVer);
-                        if (meta) {
-                            mayRootArr[idx] = !meta.modified ? meta.self : meta.copy;
-                        }
-                        else {
-                            mayRootArr[idx] = val;
-                        }
-                    });
-                    // @ts-ignore
-                    var itemsParent = items.__parent;
-                    if (itemsParent) {
-                        // @ts-ignore 将去 proxy 后的结果指回去
-                        itemsParent[items.__dataIndex] = mayRootArr;
-                    }
-                }
-            });
-            // 根对象就是 Array 时，直接将 final 指向可能做好的新 Array
-            if (rootMeta.parentType === 'Array' && mayRootArr.length) {
-                return mayRootArr;
-            }
-            return final;
-        },
-        /** reuse fronzen ata */
-        getUnfrozenData: function (key) {
-            return unforzenDataMap.get(key);
-        },
-        setUnfrozenData: function (key, data) {
-            unforzenDataMap.set(key, data);
-        }
-    };
+    var TYPE_BLACK_LIST = [ARRAY, SET, MAP];
     function buildLimuApis() {
         var limuApis = (function () {
-            var metaVer = getMetaVer();
+            var metaVer = genMetaVer();
             var called = false;
-            var revoke = null;
-            var copyOnWriteTraps = {
+            // let revoke: null | (() => void) = null;
+            // 调用那一刻起，确定 autoFreeze 值
+            var autoFreeze = limuConfig.autoFreeze;
+            /**
+             * 为了和下面这个 immer case 保持行为一致
+             * https://github.com/immerjs/immer/issues/960
+             * 如果数据节点上人工赋值了其他 draft 的话，当前 draft 结束后不能够被冻结（ 见set逻辑 ）
+             */
+            var canFreezeDraft = true;
+            // 暂未实现
+            var usePatches = limuConfig.usePatches;
+            var patches = [];
+            var inversePatches = [];
+            // >= 3.0+ ver, copy on read, mark modified on write
+            var limuTraps = {
                 // parent指向的是代理之前的对象
                 get: function (parent, key) {
                     if (key === verKey) {
                         return metaVer;
                     }
                     var currentChildVal = parent[key];
-                    if (key === '__proto__' || key === finishHandler || key === isModifiedKey) {
+                    if (key === '__proto__' || key === finishHandler || key === META_KEY) {
                         return currentChildVal;
                     }
                     if (isSymbol(key)) {
@@ -832,134 +580,98 @@
                         }
                         return currentChildVal;
                     }
-                    var parentType = getDataNodeType(parent);
-                    var parentMeta = getMeta(parent, metaVer);
-                    // unfrozen this part data
-                    if (limuConfig.autoFreeze && isFrozenObj(currentChildVal)) {
-                        currentChildVal = makeCopy({ self: currentChildVal });
-                        parent[key] = currentChildVal;
-                        if (parentMeta && parentMeta.copy) {
-                            parentMeta.copy[key] = currentChildVal;
-                        }
-                    }
+                    var parentMeta = getDraftMeta$1(parent);
+                    var parentType = parentMeta === null || parentMeta === void 0 ? void 0 : parentMeta.selfType;
                     // console.log(`Get parentType:${parentType} key:${key} `, 'Read KeyPath', getKeyPath(parent, key, metaVer));
                     // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
                     // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
                     // 是为了配合 data-node-processor 里的 ATTENTION_1
                     if (parentMeta && TYPE_BLACK_LIST.includes(parentType) && PROPERTIES_BLACK_LIST.includes(key)) {
-                        return parentMeta.copy ? parentMeta.copy[key] : parentMeta.self[key];
+                        return parentMeta.copy[key];
                     }
-                    // 第 2+ 次进入 key 的 get 函数，已为 parent 生成了代理
-                    if (parentMeta) {
-                        var self = parentMeta.self, copy = parentMeta.copy;
-                        var originalChildVal = self[key];
-                        if (!NO_CARE_COPY_TYPE_LIST.includes(parentType)) {
-                            // 存在 copy，则从 copy 上获取
-                            if (copy) {
-                                currentChildVal = copy[key];
-                            }
-                            // 产生了节点替换情况（此时currentChildVal应该是从 copy 里 获取的）
-                            // 直接返回 currentChildVal 即可
-                            // 因为 currentChildVal 已经是一个全新的值，无需对它做代理
-                            // ori: { a: 1 },     cur: 1 
-                            // ori: 1,            cur: { a: 1 } 
-                            // ori: 1,            cur: 2 
-                            // ori: { a: 1 }      cur: { a: 1 } 
-                            if (originalChildVal !== currentChildVal
-                                && Array.isArray(originalChildVal)
-                                && Array.isArray(currentChildVal)
-                                && parentMeta
-                                && !currentChildVal[metasKey]) {
-                                // 返回出去的值因未做代理，之后对它的取值行为不会再进入到 get 函数中
-                                // todo：后续版本考虑 createDraft 加参数来控制是否为这种已替换节点也做代理
-                                var childMeta = getMeta(parent[key], metaVer);
-                                if (childMeta) {
-                                    ensureDataNodeMetasProtoLayerFast(currentChildVal, metaVer);
-                                    setMeta(currentChildVal, childMeta, metaVer);
-                                    return childMeta.proxyVal;
-                                }
-                            }
+                    var createProxyVal = function (selfVal, options) {
+                        if (isPrimitive(selfVal)) {
+                            return selfVal;
                         }
-                    }
-                    var createProxyVal = function (currentChildVal, copy, parentDataIdx) {
-                        var _a, _b;
-                        if (parentDataIdx === void 0) { parentDataIdx = -1; }
-                        if (currentChildVal && !isPrimitive(currentChildVal)) {
-                            var meta = getMeta(currentChildVal, metaVer);
-                            if (!isFn(currentChildVal)) {
-                                ensureDataNodeMetasProtoLayer(currentChildVal, metaVer);
+                        if (selfVal) {
+                            var _a = (options || {}).key, key_1 = _a === void 0 ? '' : _a;
+                            var valMeta = getDraftMeta$1(selfVal);
+                            if (!isFn(selfVal)) {
                                 // 惰性生成代理对象和其元数据
-                                if (!meta) {
-                                    meta = {
+                                if (!valMeta) {
+                                    var keyPath = getKeyPath(parent, key_1);
+                                    var parentMeta_1 = getDraftMeta$1(parent);
+                                    valMeta = {
+                                        // @ts-ignore
                                         rootMeta: null,
-                                        parentMeta: null,
-                                        parent: parent,
+                                        parentMeta: parentMeta_1,
+                                        parents: [],
+                                        parent: parentMeta_1.copy,
                                         parentType: parentType,
-                                        selfType: getDataNodeType(currentChildVal),
-                                        self: currentChildVal,
-                                        key: key,
-                                        idx: parentDataIdx,
-                                        keyPath: getKeyPath(parent, parentDataIdx, metaVer),
-                                        level: getNextMetaLevel(parent, metaVer),
-                                        proxyVal: new Proxy(currentChildVal, copyOnWriteTraps),
-                                        copy: copy,
+                                        selfType: getDataNodeType(selfVal),
+                                        self: selfVal,
+                                        key: key_1,
+                                        keyPath: keyPath,
+                                        level: getNextMetaLevel(parent),
+                                        proxyVal: {},
+                                        copy: {},
                                         modified: false,
                                         proxyItems: null,
-                                        proxyItemsMgr: null,
                                         finishDraft: noop,
                                         ver: metaVer,
+                                        revoke: noop,
                                     };
-                                    var parentMeta_1 = getMeta(parent, metaVer);
-                                    if (parentMeta_1) {
-                                        meta.parentMeta = parentMeta_1;
-                                        meta.rootMeta = parentMeta_1.rootMeta;
-                                    }
-                                    setMeta(currentChildVal, meta, metaVer);
+                                    var copy = makeCopyWithMeta(selfVal, valMeta);
+                                    valMeta.copy = copy;
+                                    var ret = Proxy.revocable(copy, limuTraps);
+                                    valMeta.proxyVal = ret.proxy;
+                                    valMeta.revoke = ret.revoke;
+                                    valMeta.rootMeta = parentMeta_1.rootMeta;
+                                    recordVerScope(valMeta);
+                                    // child value 指向 copy
+                                    parent[key_1] = copy;
                                 }
-                                return meta.proxyVal;
+                                return valMeta.proxyVal;
                             }
                             else {
-                                if (shouldGenerateProxyItems(parentType, key)) {
-                                    meta = getMeta(parent, metaVer);
-                                    if (!meta) {
+                                if (shouldGenerateProxyItems(parentType, key_1)) {
+                                    valMeta = getDraftMeta$1(parent);
+                                    if (!valMeta) {
                                         throw new Error('[[ createMeta ]]: oops, meta should not be null');
                                     }
-                                    if (!meta.proxyItems) {
+                                    if (!valMeta.proxyItems) {
                                         // 提前完成遍历，为所有 item 生成代理
                                         var proxyItems = [];
-                                        if (parentType === carefulDataTypes.Set) {
+                                        if (parentType === SET) {
                                             var tmp_1 = new Set();
-                                            parent.forEach(function (val) { return tmp_1.add(createProxyVal(val, tryMakeCopy(val))); });
-                                            replaceSetOrMapMethods('Set', tmp_1, meta, parent, metaVer);
-                                            proxyItems = tmp_1;
+                                            parent.forEach(function (val) { return tmp_1.add(createProxyVal(val)); });
+                                            replaceSetOrMapMethods(tmp_1, valMeta, { dataType: SET, patches: patches, inversePatches: inversePatches, usePatches: usePatches });
+                                            proxyItems = attachMeta(tmp_1, valMeta);
+                                            // 区别于 2.0.2 版本，这里提前把copy指回来
+                                            parentMeta.copy = proxyItems;
                                         }
-                                        else if (parentType === carefulDataTypes.Map) {
+                                        else if (parentType === MAP) {
                                             var tmp_2 = new Map();
-                                            parent.forEach(function (val, key) { return tmp_2.set(key, createProxyVal(val, tryMakeCopy(val), key)); });
-                                            replaceSetOrMapMethods('Map', tmp_2, meta, parent, metaVer);
-                                            proxyItems = tmp_2;
+                                            parent.forEach(function (val, key) { return tmp_2.set(key, createProxyVal(val, { key: key })); });
+                                            replaceSetOrMapMethods(tmp_2, valMeta, { dataType: MAP, patches: patches, inversePatches: inversePatches, usePatches: usePatches });
+                                            proxyItems = attachMeta(tmp_2, valMeta);
+                                            // 区别于 2.0.2 版本，这里提前把copy指回来
+                                            parentMeta.copy = proxyItems;
                                         }
                                         else if (parentType === carefulDataTypes.Array) {
-                                            var tmp_3 = [];
-                                            var forEachTarget = meta.copy || parent;
-                                            meta.copy = tmp_3;
-                                            forEachTarget.forEach(function (val, idx) { return tmp_3.push(createProxyVal(val, tryMakeCopy(val), idx)); });
-                                            proxyItems = meta.proxyVal;
+                                            valMeta.copy = valMeta.copy || parent.slice();
+                                            proxyItems = valMeta.proxyVal;
                                         }
-                                        meta.proxyItems = proxyItems;
-                                        var targetMgr = (_b = (_a = meta.rootMeta) === null || _a === void 0 ? void 0 : _a.proxyItemsMgr) === null || _b === void 0 ? void 0 : _b[parentType];
-                                        if (targetMgr) {
-                                            targetMgr.push(proxyItems);
-                                        }
+                                        valMeta.proxyItems = proxyItems;
                                     }
                                 }
-                                return currentChildVal;
+                                return selfVal;
                             }
                         }
-                        return currentChildVal;
+                        return selfVal;
                     };
                     // 可能会指向代理对象
-                    currentChildVal = createProxyVal(currentChildVal, null, key);
+                    currentChildVal = createProxyVal(currentChildVal, { key: key });
                     var toReturn;
                     // 用下标取数组时，可直接返回
                     // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
@@ -967,7 +679,17 @@
                         toReturn = currentChildVal;
                     }
                     else if (carefulDataTypes[parentType]) {
-                        toReturn = copyAndGetDataNode(parent, { parentType: parentType, op: key, key: key, value: currentChildVal, metaVer: metaVer, calledBy: 'get' }, true);
+                        toReturn = handleDataNode(parent, {
+                            op: key,
+                            key: key,
+                            value: currentChildVal,
+                            metaVer: metaVer,
+                            calledBy: 'get',
+                            patches: patches,
+                            inversePatches: inversePatches,
+                            usePatches: usePatches,
+                            parentType: parentType,
+                        });
                     }
                     else {
                         toReturn = currentChildVal;
@@ -976,122 +698,126 @@
                 },
                 // parent 指向的是代理之前的对象
                 set: function (parent, key, value) {
-                    // console.log('Set ', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
-                    if (key === isModifiedKey) {
-                        parent.__proto__[isModifiedKey] = value;
+                    var targetValue = value;
+                    if (isDraft$1(value)) {
+                        // see case debug/complex/set-draft-node
+                        if (isInSameScope(value, metaVer)) {
+                            targetValue = getUnProxyValue(value);
+                            if (targetValue === parent[key]) {
+                                return true;
+                            }
+                        }
+                        else {
+                            // assign another version V2 scope draft node value to current scope V1 draft node
+                            canFreezeDraft = false;
+                        }
+                    }
+                    if (key === META_KEY) {
+                        parent[key] = targetValue;
                         return true;
                     }
+                    // console.log('Set', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
                     // speed up array operation
-                    var meta = getMeta(parent, metaVer);
+                    var meta = getDraftMeta$1(parent);
                     if (meta) {
+                        // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
                         // @ts-ignore
-                        if (meta.copy && meta.__callSet && meta.selfType === carefulDataTypes.Array && canBeNum(key)) {
-                            meta.copy[key] = value;
+                        if (meta.copy && meta.__callSet && meta.selfType === ARRAY && canBeNum(key)) {
+                            meta.copy[key] = targetValue;
                             return true;
                         }
                         // @ts-ignore
                         meta.__callSet = true;
                     }
-                    copyAndGetDataNode(parent, { key: key, value: value, metaVer: metaVer, calledBy: 'set' }, true);
+                    handleDataNode(parent, { key: key, value: targetValue, metaVer: metaVer, calledBy: 'set' });
                     return true;
                 },
                 deleteProperty: function (parent, key) {
                     // console.log('Delete ', parent, key);
-                    copyAndGetDataNode(parent, { op: 'del', key: key, value: '', metaVer: metaVer, calledBy: 'deleteProperty' }, true);
+                    handleDataNode(parent, { op: 'del', key: key, value: '', metaVer: metaVer, calledBy: 'deleteProperty' });
                     return true;
                 },
                 // trap function call
-                apply: function (target, thisArg, argumentsList) {
-                    // console.log(`Apply `, target, thisArg, argumentsList);
-                    // expected output: "Calculate sum: 1,2"
-                    // return target(argumentsList[0], argumentsList[1]) * 10;
-                    return target.apply(thisArg, argumentsList);
+                apply: function (target, thisArg, args) {
+                    return target.apply(thisArg, args);
                 },
             };
             return {
-                createDraft: function (mayDraft) {
+                createDraft: function (mayDraft, options) {
+                    var _a, _b;
+                    // allow user overwrite autoFreeze setting in current call process
+                    var opts = options || {};
+                    autoFreeze = (_a = opts.autoFreeze) !== null && _a !== void 0 ? _a : autoFreeze;
+                    usePatches = (_b = opts.usePatches) !== null && _b !== void 0 ? _b : usePatches;
                     if (called) {
                         throw new Error('can not call new Limu().createDraft twice');
                     }
-                    var baseState = mayDraft;
-                    var originalBase = mayDraft;
+                    var baseOri = mayDraft;
                     called = true;
                     if (isDraft$1(mayDraft)) {
-                        var draftMeta = getMetaForDraft(mayDraft, mayDraft[verKey]);
-                        // @ts-ignore
-                        baseState = draftMeta.self;
-                        // @ts-ignore
-                        originalBase = draftMeta.self;
+                        var draftMeta = getDraftMeta$1(mayDraft);
+                        baseOri = draftMeta.self;
                     }
-                    // in case of baseState is already a frozen data
-                    if (limuConfig.autoFreeze && !isFrozenObj(baseState)) {
-                        deepFreeze(baseState);
-                    }
-                    if (isFrozenObj(baseState)) {
-                        // baseState = makeCopy({ self: baseState });
-                        //speed up benchmark/readme-demo.js 4x
-                        baseState = inner.getUnfrozenData(originalBase) || makeCopy({ self: baseState });
-                        inner.setUnfrozenData(originalBase, baseState);
-                    }
-                    ensureDataNodeMetasProtoLayer(baseState, metaVer, true);
-                    var meta = getMeta(baseState, metaVer);
-                    if (!meta) {
-                        var baseStateType = getDataNodeType(baseState);
-                        meta = {
-                            rootMeta: null,
-                            parent: null,
-                            parentMeta: null,
-                            parentType: baseStateType,
-                            selfType: baseStateType,
-                            self: baseState,
-                            originalSelf: originalBase,
-                            copy: null,
-                            modified: false,
-                            key: '',
-                            keyPath: [],
-                            idx: -1,
-                            level: 0,
-                            proxyVal: null,
-                            proxyItems: null,
-                            proxyItemsMgr: {
-                                Map: [],
-                                Set: [],
-                                Array: [],
-                            },
-                            finishDraft: limuApis.finishDraft,
-                            ver: metaVer,
-                        };
-                        meta.rootMeta = meta;
-                        setMeta(baseState, meta, metaVer);
-                    }
-                    var _a = Proxy.revocable(baseState, copyOnWriteTraps), proxyDraft = _a.proxy, revokeHandler = _a.revoke;
+                    var baseStateType = getDataNodeType(baseOri);
+                    var meta = {
+                        // @ts-ignore add later
+                        rootMeta: null,
+                        parent: null,
+                        parentMeta: null,
+                        parents: [],
+                        parentType: baseStateType,
+                        selfType: baseStateType,
+                        self: baseOri,
+                        // @ts-ignore add later
+                        copy: null,
+                        modified: false,
+                        key: '',
+                        keyPath: [],
+                        level: 0,
+                        proxyVal: null,
+                        proxyItems: null,
+                        scopes: [],
+                        finishDraft: limuApis.finishDraft,
+                        ver: metaVer,
+                    };
+                    var baseCopy = makeCopyWithMeta(baseOri, meta);
+                    meta.copy = baseCopy;
+                    meta.rootMeta = meta;
+                    var _c = Proxy.revocable(baseCopy, limuTraps), proxyDraft = _c.proxy, revokeHandler = _c.revoke;
                     meta.proxyVal = proxyDraft;
-                    revoke = revokeHandler;
+                    meta.revoke = revokeHandler;
+                    recordVerScope(meta);
                     return proxyDraft;
                 },
-                // finishDraft: (proxyDraft, options = {}) => { // in v2.0, support options
                 finishDraft: function (proxyDraft) {
                     // attention: if pass a revoked proxyDraft
                     // it will throw: Cannot perform 'set' on a proxy that has been revoked
-                    // 再次检查，以免用户是用 new Limu() 返回的 finishDraft 
-                    // 去结束另一个 new Limu() createDraft 的 草稿对象
-                    if (metaVer !== proxyDraft[verKey]) {
-                        throw new Error('oops, the input draft does not match finishDraft handler');
-                    }
-                    var rootMeta = getMetaForDraft(proxyDraft, metaVer);
+                    var rootMeta = getDraftMeta$1(proxyDraft);
                     if (!rootMeta) {
                         throw new Error('oops, rootMeta should not be null!');
                     }
-                    var final = rootMeta.originalSelf || rootMeta.self;
-                    // 有 copy 不一定有修改行为，这里需做双重判断
-                    if (rootMeta.copy && rootMeta.modified) {
-                        final = rootMeta.copy;
-                        final = inner.handleMap(rootMeta, metaVer, final);
-                        final = inner.handleSet(rootMeta, metaVer, final);
-                        final = inner.handleArray(rootMeta, metaVer, final);
+                    // 再次检查，以免用户是用 new Limu() 返回的 finishDraft 
+                    // 去结束另一个 new Limu() createDraft 的 草稿对象
+                    if (metaVer !== rootMeta.ver) {
+                        throw new Error('oops, the input draft does not match finishDraft handler');
                     }
-                    revoke && revoke();
-                    clearAllDataNodeMeta(metaVer);
+                    var self = rootMeta.self, copy = rootMeta.copy, modified = rootMeta.modified;
+                    var final = self;
+                    // 有 copy 不一定有修改行为，这里需做双重判断
+                    var isDraftChanged = copy && modified;
+                    if (isDraftChanged) {
+                        final = rootMeta.copy;
+                    }
+                    clearScopes(rootMeta);
+                    if (autoFreeze && canFreezeDraft) {
+                        // TODO deep pruning
+                        // see https://github.com/immerjs/immer/issues/687
+                        // let cachedFrozenOriginalBase = frozenOriginalBaseMap.get(rootMeta.originalSelf);
+                        final = deepFreeze$1(final);
+                    }
+                    // if (usePatches) {
+                    //   return [final, patches, inversePatches];
+                    // }
                     return final;
                 },
             };
@@ -1099,12 +825,38 @@
         return limuApis;
     }
 
-    /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Tencent Corporation. All rights reserved.
-     *  Licensed under the MIT License.
-     *
-     *  @Author: fantasticsoul
-     *--------------------------------------------------------------------------------------------*/
+    function original$1(mayDraftNode, trustLimu) {
+        if (!isDraft$1(mayDraftNode)) {
+            return mayDraftNode;
+        }
+        var meta = getDraftMeta$1(mayDraftNode);
+        var self = (meta === null || meta === void 0 ? void 0 : meta.self) || null;
+        // 上面已经 return 出去，正常情况一定能获取到 meta.self 的
+        var existedSelf = self;
+        if (trustLimu) {
+            return existedSelf;
+        }
+        return existedSelf || null;
+    }
+    function current$1(mayDraftNode) {
+        // TODO: 考虑添加 trustLimu 参数，和 original 保持一致？
+        if (!isDraft$1(mayDraftNode)) {
+            return mayDraftNode;
+        }
+        var meta = getDraftMeta$1(mayDraftNode);
+        return deepCopy$1(meta.copy || meta.self);
+    }
+
+    /**
+     * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致
+     * 和 2.0 版本处于不兼容状态
+     * 此处标记版本号辅助打包程序识别出是 2.0 版本的代码，让其不会被打包到 3.0 + 的 npm 包体中
+     */
+    var LIMU_MAJOR_VER = 3;
+
+    // export interface IProduceWithPatches {
+    //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
+    // }
     var Limu = /** @class */ (function () {
         function Limu() {
             var limuApis = buildLimuApis();
@@ -1114,16 +866,16 @@
         }
         return Limu;
     }());
-    function createDraft(base) {
+    function createDraft(base, options) {
         var apis = new Limu();
-        // @ts-ignore , add as just for click to see implement
-        return apis.createDraft(base);
+        // @ts-ignore , add [as] just for click to see implement
+        return apis.createDraft(base, options);
     }
     function finishDraft(draft) {
-        var draftMeta = getMetaForDraft(draft, draft[verKey]);
+        var draftMeta = getDraftMeta$1(draft);
         var finishHandler = null;
         if (draftMeta) {
-            // @ts-ignore , add as just for click to see implement
+            // @ts-ignore , add [as] just for click to see implement
             finishHandler = draftMeta.finishDraft;
         }
         if (!finishHandler) {
@@ -1142,38 +894,63 @@
             throw new Error('produce callback can not be a promise function');
         }
     }
-    function innerProduce(baseState, cb) {
+    function innerProduce(baseState, cb, options) {
         checkCbFn(cb);
-        var draft = createDraft(baseState);
+        var draft = createDraft(baseState, options);
         var result = cb(draft);
         checkCbPromise(cb, result);
         return finishDraft(draft);
     }
-    var produceFn = function (baseState, cb) {
-        if (!cb) {
+    function produceFn(baseState, cb, options) {
+        if (!cb || typeof cb !== 'function') {
             // expect baseState to be a callback, support curried invocation
+            // expect cb to be options
+            var mayCb_1 = baseState;
+            var mayOptions_1 = cb;
             checkCbFn(baseState);
             return function (state) {
-                return innerProduce(state, baseState);
+                return innerProduce(state, mayCb_1, mayOptions_1);
             };
         }
-        return innerProduce(baseState, cb);
-    };
-    function getDraftMeta(proxyDraft) {
-        var ver = proxyDraft[verKey];
-        return getMetaForDraft(proxyDraft, ver);
+        return innerProduce(baseState, cb, options);
     }
+    // function producePatchesFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
+    //   const copyOpts: ICreateDraftOptions = { ... (options || {}), usePatches: true };
+    //   return produceFn(baseState, cb, copyOpts);
+    // };
+    var getDraftMeta = getDraftMeta$1;
     var isDraft = isDraft$1;
     var produce = produceFn;
+    // to be implemented in the future
+    // export const produceWithPatches = producePatchesFn as unknown as IProduceWithPatches;
+    var deepFreeze = deepFreeze$1;
+    var deepCopy = function (obj) {
+        return deepCopy$1(obj);
+    };
     function setAutoFreeze(autoFreeze) {
         limuConfig.autoFreeze = autoFreeze;
     }
+    function getAutoFreeze() {
+        return limuConfig.autoFreeze;
+    }
+    function getMajorVer() {
+        return LIMU_MAJOR_VER;
+    }
+    var original = original$1;
+    var current = current$1;
 
     exports.Limu = Limu;
     exports.createDraft = createDraft;
+    exports.current = current;
+    exports.deepCopy = deepCopy;
+    exports.deepFreeze = deepFreeze;
+    exports["default"] = produce;
     exports.finishDraft = finishDraft;
+    exports.getAutoFreeze = getAutoFreeze;
     exports.getDraftMeta = getDraftMeta;
+    exports.getMajorVer = getMajorVer;
     exports.isDraft = isDraft;
+    exports.original = original;
     exports.produce = produce;
     exports.setAutoFreeze = setAutoFreeze;
 

@@ -19,7 +19,6 @@ getI()
 
 function changeDraft(objDraft: Record<string, any>) {
   objDraft.count = 3;
-  // console.log(objDraft);
   objDraft.map.get('fancy').name = 'fancy_new';
   // help detect: Cannot set property size of #<Map> which has only a getter
   noop('objDraft.map.size', objDraft.map.size);
@@ -33,3 +32,21 @@ function compare(objNew, objBase) {
 }
 
 runObjectTestSuit('test object-map', 'map', getStateBase, changeDraft, compare);
+
+// function changeDraft2(objDraft: Record<string, any>) {
+//   objDraft.count = 3;
+//   objDraft.map.forEach(noop);
+//   objDraft.map.get('fancy').name = 'fancy_new';
+//   noop('objDraft.map.size', objDraft.map.size);
+// }
+
+// runObjectTestSuit('test object-map', 'forEach noop then change', getStateBase, changeDraft2, compare);
+
+// function changeDraft3(objDraft: Record<string, any>) {
+//   objDraft.count = 3;
+//   objDraft.map.get('fancy').name = 'fancy_new';
+//   objDraft.map.forEach(noop);
+//   noop('objDraft.map.size', objDraft.map.size);
+// }
+
+// runObjectTestSuit('test object-map', 'change then forEach noop', getStateBase, changeDraft3, compare);

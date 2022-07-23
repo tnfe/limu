@@ -1,3 +1,4 @@
+import '../_util';
 import * as consts from '../../src/support/consts';
 
 describe('check consts', () => {
@@ -8,7 +9,6 @@ describe('check consts', () => {
   });
 
   test('other', () => {
-    console.log('=======> other');
     expect(consts.objDesc).toBe('[object Object]');
     expect(consts.mapDesc).toBe('[object Map]');
     expect(consts.setDesc).toBe('[object Set]');

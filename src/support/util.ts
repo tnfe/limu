@@ -6,7 +6,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { objDesc, arrDesc, mapDesc, setDesc, fnDesc } from './consts';
 
-const toString = Object.prototype.toString;
+export const toString = Object.prototype.toString;
 
 export function noop(...args: any[]) {
   return args;
@@ -53,6 +53,7 @@ export function canHaveProto(val) {
   return !isPrimitive(val);
 }
 
+
 export function canBeNum(val) {
   var valType = typeof val;
   if (valType === 'number') return true;
@@ -60,13 +61,34 @@ export function canBeNum(val) {
   return false;
 }
 
+
 export function isSymbol(maySymbol) {
   return typeof maySymbol === 'symbol';
 }
+
 
 export function isFrozenObj(mayObj) {
   if (mayObj && !isPrimitive(mayObj)) {
     return Object.isFrozen(mayObj);
   }
   return false;
+}
+
+
+export function safeMapGet(map: Map<string, any>, key: any) {
+  let val = map.get(key)
+  if (!val) {
+    val = {};
+    map[key] = val;
+  }
+  return val;
+}
+
+
+export function fastObjAssign(obj: any) {
+  const newOne = {};
+  Object.keys(obj).forEach(key => {
+    newOne[key] = obj[key];
+  });
+  return newOne;
 }

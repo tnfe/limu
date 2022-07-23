@@ -1,9 +1,11 @@
+// @ts-nocheck
 import {
   noop,
   runTestSuit,
   getMapBase,
   shouldBeEqual,
 } from '../_util';
+
 
 function doNothingInForEach(mapDraft: Map<any, any>) {
   mapDraft.forEach((val, key) => {
@@ -15,14 +17,14 @@ runTestSuit('map is base', 'forEach', getMapBase, doNothingInForEach, shouldBeEq
 
 runTestSuit('map in base obj', 'forEach',
   () => { // get base state
-    return { map: getMapBase() };
+    return { key1: { map: getMapBase() } };
   },
   (draft) => { // change draft
-    doNothingInForEach(draft.map);
+    doNothingInForEach(draft.key1.map);
   },
   (final, base) => { // assert
     expect(final === base).toBeTruthy();
-    shouldBeEqual(final.map, base.map);
+    shouldBeEqual(final.key1.map, base.key1.map);
   },
 );
 
@@ -46,14 +48,14 @@ runTestSuit('map is base', 'changeMapWithCbDraft', getMapBase, changeMapWithCbDr
 
 runTestSuit('map in base obj', 'changeMapWithCbDraft',
   () => { // get base state
-    return { map: getMapBase() };
+    return { key1: { map: getMapBase() } };
   },
   (draft) => { // change draft
-    changeMapWithCbDraft(draft.map);
+    changeMapWithCbDraft(draft.key1.map);
   },
   (final, base) => { // assert
     expect(final !== base).toBeTruthy();
-    compare(final.map, base.map);
+    compare(final.key1.map, base.key1.map);
   },
 );
 
@@ -61,13 +63,13 @@ runTestSuit('map is base', 'changeMapWithDraft', getMapBase, changeMapWithDraft,
 
 runTestSuit('map in base obj', 'changeMapWithDraft',
   () => { // get base state
-    return { map: getMapBase() };
+    return { key1: { map: getMapBase() } };
   },
   (draft) => { // change draft
-    changeMapWithDraft(draft.map);
+    changeMapWithDraft(draft.key1.map);
   },
   (final, base) => { // assert
     expect(final !== base).toBeTruthy();
-    compare(final.map, base.map);
+    // compare(final.key1.map, base.key1.map);
   },
 );

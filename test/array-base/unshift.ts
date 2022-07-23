@@ -5,14 +5,9 @@ function changeDraft(arrDraft) {
 }
 
 function compare(arrNew, arrBase) {
-  console.log(arrNew);
-  console.log(arrBase);
   const len = arrNew.length;
-  console.log('---> len is ', len);
-  console.log('---> arrNew.length ', len === 4, arrBase);
-  console.log('---> typeof arrNew.length ', typeof len);
   expect(len === 4).toBeTruthy();
-  // expect(arrNew !== arrBase).toBeTruthy();
+  expect(arrNew !== arrBase).toBeTruthy();
 }
 
 runTestSuit('arr is base', 'unshift', getArrBase, changeDraft, compare);
