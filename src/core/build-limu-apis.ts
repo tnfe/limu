@@ -12,7 +12,7 @@ import {
   getUnProxyValue,
   createScopedMeta,
 } from './helper';
-import { finishHandler, verKey, META_KEY } from '../support/symbols';
+import { verKey, META_KEY } from '../support/symbols';
 import { carefulDataTypes, MAP, SET, ARRAY } from '../support/consts';
 import { limuConfig } from '../support/inner-data';
 import { isPrimitive, canBeNum, isFn, isSymbol } from '../support/util';
@@ -55,7 +55,7 @@ export function buildLimuApis() {
         }
 
         let currentChildVal = parent[key];
-        if (key === '__proto__' || key === finishHandler || key === META_KEY) {
+        if (key === '__proto__' || key === META_KEY) {
           return currentChildVal;
         }
 

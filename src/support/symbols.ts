@@ -9,5 +9,3 @@
 export const verKey = Symbol('V');
 
 export const META_KEY = Symbol('M');
-
-export const finishHandler = Symbol('limu-finishHandler');
