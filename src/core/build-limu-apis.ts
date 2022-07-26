@@ -175,6 +175,7 @@ export function buildLimuApis() {
               return true;
             }
           } else {
+            // TODO: judge value must be root draft node
             // assign another version V2 scope draft node value to current scope V1 draft node
             canFreezeDraft = false;
           }
