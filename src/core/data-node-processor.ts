@@ -12,11 +12,8 @@ import {
   SHOULD_REASSIGN_ARR_METHODS,
   SHOULD_REASSIGN_MAP_METHODS,
 } from '../support/consts';
-import {
-  getUnProxyValue,
-  markModified,
-} from './helper';
-import { getDraftMeta } from './meta';
+import { getUnProxyValue } from './helper';
+import { getDraftMeta, markModified } from './meta';
 
 
 function mayMarkModified(options: { calledBy: string, parentDataNodeMeta: DraftMeta, op: string, parentType: string, key: string | number }) {

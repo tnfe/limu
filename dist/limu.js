@@ -123,6 +123,11 @@
     function getValStrDesc(val) {
         return toString.call(val);
     }
+    function getDataType(dataNode) {
+        var strDesc = getValStrDesc(dataNode);
+        var dataType = desc2dataType[strDesc];
+        return dataType;
+    }
     function isPrimitive(val) {
         var desc = toString.call(val);
         return ![objDesc, arrDesc, mapDesc, setDesc, fnDesc].includes(desc);
@@ -168,9 +173,68 @@
         usePatches: false,
     };
 
+    function markModified(mapSetMeta) {
+        mapSetMeta.rootMeta.modified = true;
+        var doMark = function (meta) {
+            if (meta) {
+                meta.modified = true;
+                doMark(meta.parentMeta);
+            }
+        };
+        doMark(mapSetMeta);
+    }
     function attachMeta(dataNode, meta) {
         dataNode[META_KEY] = meta;
         return dataNode;
+    }
+    function getKeyPath(draftNode, curKey) {
+        var pathArr = [curKey];
+        var meta = getDraftMeta$1(draftNode);
+        if (meta && meta.level > 0) {
+            var keyPath = meta.keyPath;
+            return __spreadArray(__spreadArray([], keyPath, true), [curKey], false);
+        }
+        return pathArr;
+    }
+    function newMeta(baseData, options) {
+        var finishDraft = options.finishDraft, ver = options.ver, _a = options.parentMeta, parentMeta = _a === void 0 ? null : _a, key = options.key;
+        var dataType = getDataType(baseData);
+        var keyPath = [];
+        var level = 0;
+        var copy = null;
+        if (parentMeta) {
+            copy = parentMeta.copy;
+            level = getNextMetaLevel(copy);
+            keyPath = getKeyPath(copy, key);
+        }
+        var meta = {
+            // @ts-ignore add later
+            rootMeta: null,
+            parentMeta: parentMeta,
+            parent: copy,
+            selfType: dataType,
+            self: baseData,
+            // @ts-ignore add later
+            copy: null,
+            key: key,
+            keyPath: keyPath,
+            level: level,
+            // @ts-ignore add later
+            proxyVal: null,
+            proxyItems: null,
+            modified: false,
+            scopes: [],
+            finishDraft: finishDraft,
+            ver: ver,
+            revoke: noop,
+        };
+        if (level === 0) {
+            meta.rootMeta = meta;
+        }
+        else {
+            meta.rootMeta = parentMeta.rootMeta;
+        }
+        return meta;
     }
     /**
      * 是否是 proxy 代理指向的草稿对象
@@ -204,21 +268,100 @@
         return proxyDraft[META_KEY];
     }
 
+    function deepCopy$1(obj, metaVer) {
+        var innerDeep = function (obj) {
+            if (isPrimitive(obj)) {
+                return obj;
+            }
+            if (metaVer) {
+                var meta = getDraftMeta$1(obj);
+                var copy = meta === null || meta === void 0 ? void 0 : meta.copy;
+                // 多引用导致的遗漏值，还原回来，此处注意跳过根对象判定
+                if (copy && meta.level > 0) {
+                    return copy;
+                }
+            }
+            var newNode = obj;
+            if (Array.isArray(obj)) {
+                newNode = obj.slice();
+                newNode.forEach(function (item, idx) {
+                    newNode[idx] = innerDeep(item);
+                });
+            }
+            if (isSet(obj)) {
+                var tmpArr_1 = Array.from(obj);
+                tmpArr_1.forEach(function (item, idx) {
+                    tmpArr_1[idx] = innerDeep(item);
+                });
+                newNode = new Set(tmpArr_1);
+            }
+            if (isMap(obj)) {
+                newNode = new Map(obj);
+                newNode.forEach(function (value, key) {
+                    newNode.set(key, innerDeep(value));
+                });
+            }
+            if (isObject(obj)) {
+                newNode = {};
+                Object.keys(obj).forEach(function (key) {
+                    newNode[key] = innerDeep(obj[key]);
+                });
+            }
+            return newNode;
+        };
+        return innerDeep(obj);
+    }
+    /**
+     * 尝试生成copy
+     * @param val
+     * @returns
+     */
+    function tryMakeCopy(val, throwErr) {
+        if (Array.isArray(val)) {
+            return val.slice();
+        }
+        if (val && isObject(val)) {
+            return __assign({}, val);
+        }
+        if (isMap(val)) {
+            return new Map(val);
+        }
+        if (isSet(val)) {
+            return new Set(val);
+        }
+        if (throwErr) {
+            throw new Error("make copy err, type can only be object(except null) or array");
+        }
+        return val;
+    }
+    // 调用处已保证 meta 不为空 
+    function makeCopyWithMeta(ori, meta) {
+        var ret = tryMakeCopy(ori, true);
+        return attachMeta(ret, meta);
+    }
+
+    /*---------------------------------------------------------------------------------------------
+     *  Copyright (c) Tencent Corporation. All rights reserved.
+     *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
+     *--------------------------------------------------------------------------------------------*/
+    function createScopedMeta(baseData, options) {
+        var _a = options.finishDraft, finishDraft = _a === void 0 ? noop : _a, ver = options.ver, traps = options.traps, parentMeta = options.parentMeta, key = options.key;
+        var meta = newMeta(baseData, { finishDraft: finishDraft, ver: ver, parentMeta: parentMeta, key: key });
+        var copy = makeCopyWithMeta(baseData, meta);
+        meta.copy = copy;
+        var ret = Proxy.revocable(copy, traps);
+        meta.proxyVal = ret.proxy;
+        meta.revoke = ret.revoke;
+        return meta;
+    }
     function shouldGenerateProxyItems(parentType, key) {
         // !!! 对于 Array，直接生成 proxyItems
         if (parentType === 'Array')
             return true;
         var fnKeys = proxyItemFnKeys[parentType] || [];
         return fnKeys.includes(key);
-    }
-    function getKeyPath(draftNode, curKey) {
-        var pathArr = [curKey];
-        var meta = getDraftMeta$1(draftNode);
-        if (meta && meta.level > 0) {
-            var keyPath = meta.keyPath;
-            return __spreadArray(__spreadArray([], keyPath, true), [curKey], false);
-        }
-        return pathArr;
     }
     function getUnProxyValue(value) {
         if (!isObject(value)) {
@@ -228,11 +371,6 @@
         if (!valueMeta)
             return value;
         return valueMeta.copy;
-    }
-    function getDataNodeType(dataNode) {
-        var strDesc = getValStrDesc(dataNode);
-        var dataType = desc2dataType[strDesc];
-        return dataType;
     }
     function deepFreeze$1(obj) {
         if (isPrimitive(obj)) {
@@ -271,16 +409,6 @@
             }
         });
         return Object.freeze(obj);
-    }
-    function markModified(mapSetMeta) {
-        mapSetMeta.rootMeta.modified = true;
-        var doMark = function (meta) {
-            if (meta) {
-                meta.modified = true;
-                doMark(meta.parentMeta);
-            }
-        };
-        doMark(mapSetMeta);
     }
     /**
      * 拦截 set delete clear add
@@ -422,78 +550,6 @@
         }
     }
 
-    function deepCopy$1(obj, metaVer) {
-        var innerDeep = function (obj) {
-            if (isPrimitive(obj)) {
-                return obj;
-            }
-            if (metaVer) {
-                var meta = getDraftMeta$1(obj);
-                var copy = meta === null || meta === void 0 ? void 0 : meta.copy;
-                // 多引用导致的遗漏值，还原回来，此处注意跳过根对象判定
-                if (copy && meta.level > 0) {
-                    return copy;
-                }
-            }
-            var newNode = obj;
-            if (Array.isArray(obj)) {
-                newNode = obj.slice();
-                newNode.forEach(function (item, idx) {
-                    newNode[idx] = innerDeep(item);
-                });
-            }
-            if (isSet(obj)) {
-                var tmpArr_1 = Array.from(obj);
-                tmpArr_1.forEach(function (item, idx) {
-                    tmpArr_1[idx] = innerDeep(item);
-                });
-                newNode = new Set(tmpArr_1);
-            }
-            if (isMap(obj)) {
-                newNode = new Map(obj);
-                newNode.forEach(function (value, key) {
-                    newNode.set(key, innerDeep(value));
-                });
-            }
-            if (isObject(obj)) {
-                newNode = {};
-                Object.keys(obj).forEach(function (key) {
-                    newNode[key] = innerDeep(obj[key]);
-                });
-            }
-            return newNode;
-        };
-        return innerDeep(obj);
-    }
-    /**
-     * 尝试生成copy
-     * @param val
-     * @returns
-     */
-    function tryMakeCopy(val, throwErr) {
-        if (Array.isArray(val)) {
-            return val.slice();
-        }
-        if (val && isObject(val)) {
-            return __assign({}, val);
-        }
-        if (isMap(val)) {
-            return new Map(val);
-        }
-        if (isSet(val)) {
-            return new Set(val);
-        }
-        if (throwErr) {
-            throw new Error("make copy err, type can only be object(except null) or array");
-        }
-        return val;
-    }
-    // 调用处已保证 meta 不为空 
-    function makeCopyWithMeta(ori, meta) {
-        var ret = tryMakeCopy(ori, true);
-        return attachMeta(ret, meta);
-    }
-
     function isInSameScope(mayDraftNode, callerScopeVer) {
         if (!isObject(mayDraftNode)) {
             return true;
@@ -503,7 +559,7 @@
     }
     function clearScopes(rootMeta) {
         rootMeta.scopes.forEach(function (meta) {
-            var modified = meta.modified, copy = meta.copy, parentMeta = meta.parentMeta, key = meta.key, self = meta.self, parentType = meta.parentType, revoke = meta.revoke, proxyVal = meta.proxyVal, isDel = meta.isDel;
+            var modified = meta.modified, copy = meta.copy, parentMeta = meta.parentMeta, key = meta.key, self = meta.self, revoke = meta.revoke, proxyVal = meta.proxyVal, isDel = meta.isDel;
             if (!copy)
                 return revoke();
             delete copy[META_KEY];
@@ -512,6 +568,7 @@
             var targetNode = !modified ? self : copy;
             // 父节点是 Map、Set 时，parent 指向的是 ProxyItems，这里取到 copy 本体后再重新赋值
             var parentCopy = parentMeta.copy;
+            var parentType = parentMeta.selfType;
             if (parentType === MAP) {
                 parentCopy.set(key, targetNode);
                 return revoke();
@@ -529,11 +586,19 @@
                 parentCopy[key] = targetNode;
                 return revoke();
             }
-            // Array or Object
-            // parentCopy[key] = targetNode;
-            // return revoke();
         });
         rootMeta.scopes.length = 0;
+    }
+    function extraFinalData(rootMeta) {
+        var self = rootMeta.self, copy = rootMeta.copy, modified = rootMeta.modified;
+        var final = self;
+        // 有 copy 不一定有修改行为，这里需做双重判断
+        if (copy && modified) {
+            final = rootMeta.copy;
+        }
+        // if put this on first line, fail at test/set-other/update-object-item.ts
+        clearScopes(rootMeta);
+        return final;
     }
     function recordVerScope(meta) {
         meta.rootMeta.scopes.push(meta);
@@ -599,37 +664,10 @@
                             if (!isFn(selfVal)) {
                                 // 惰性生成代理对象和其元数据
                                 if (!valMeta) {
-                                    var keyPath = getKeyPath(parent, key_1);
-                                    var parentMeta_1 = getDraftMeta$1(parent);
-                                    valMeta = {
-                                        // @ts-ignore
-                                        rootMeta: null,
-                                        parentMeta: parentMeta_1,
-                                        parents: [],
-                                        parent: parentMeta_1.copy,
-                                        parentType: parentType,
-                                        selfType: getDataNodeType(selfVal),
-                                        self: selfVal,
-                                        key: key_1,
-                                        keyPath: keyPath,
-                                        level: getNextMetaLevel(parent),
-                                        proxyVal: {},
-                                        copy: {},
-                                        modified: false,
-                                        proxyItems: null,
-                                        finishDraft: noop,
-                                        ver: metaVer,
-                                        revoke: noop,
-                                    };
-                                    var copy = makeCopyWithMeta(selfVal, valMeta);
-                                    valMeta.copy = copy;
-                                    var ret = Proxy.revocable(copy, limuTraps);
-                                    valMeta.proxyVal = ret.proxy;
-                                    valMeta.revoke = ret.revoke;
-                                    valMeta.rootMeta = parentMeta_1.rootMeta;
+                                    valMeta = createScopedMeta(selfVal, { key: key_1, parentMeta: parentMeta, ver: metaVer, traps: limuTraps });
                                     recordVerScope(valMeta);
                                     // child value 指向 copy
-                                    parent[key_1] = copy;
+                                    parent[key_1] = valMeta.copy;
                                 }
                                 return valMeta.proxyVal;
                             }
@@ -698,6 +736,7 @@
                 },
                 // parent 指向的是代理之前的对象
                 set: function (parent, key, value) {
+                    // console.log('Set', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
                     var targetValue = value;
                     if (isDraft$1(value)) {
                         // see case debug/complex/set-draft-node
@@ -716,13 +755,13 @@
                         parent[key] = targetValue;
                         return true;
                     }
-                    // console.log('Set', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
                     // speed up array operation
                     var meta = getDraftMeta$1(parent);
-                    if (meta) {
-                        // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
+                    // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
+                    var isArray = meta.selfType === ARRAY;
+                    if (meta && isArray) {
                         // @ts-ignore
-                        if (meta.copy && meta.__callSet && meta.selfType === ARRAY && canBeNum(key)) {
+                        if (meta.copy && meta.__callSet && isArray && canBeNum(key)) {
                             meta.copy[key] = targetValue;
                             return true;
                         }
@@ -758,36 +797,9 @@
                         var draftMeta = getDraftMeta$1(mayDraft);
                         baseOri = draftMeta.self;
                     }
-                    var baseStateType = getDataNodeType(baseOri);
-                    var meta = {
-                        // @ts-ignore add later
-                        rootMeta: null,
-                        parent: null,
-                        parentMeta: null,
-                        parents: [],
-                        parentType: baseStateType,
-                        selfType: baseStateType,
-                        self: baseOri,
-                        // @ts-ignore add later
-                        copy: null,
-                        modified: false,
-                        key: '',
-                        keyPath: [],
-                        level: 0,
-                        proxyVal: null,
-                        proxyItems: null,
-                        scopes: [],
-                        finishDraft: limuApis.finishDraft,
-                        ver: metaVer,
-                    };
-                    var baseCopy = makeCopyWithMeta(baseOri, meta);
-                    meta.copy = baseCopy;
-                    meta.rootMeta = meta;
-                    var _c = Proxy.revocable(baseCopy, limuTraps), proxyDraft = _c.proxy, revokeHandler = _c.revoke;
-                    meta.proxyVal = proxyDraft;
-                    meta.revoke = revokeHandler;
+                    var meta = createScopedMeta(baseOri, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft });
                     recordVerScope(meta);
-                    return proxyDraft;
+                    return meta.proxyVal;
                 },
                 finishDraft: function (proxyDraft) {
                     // attention: if pass a revoked proxyDraft
@@ -796,19 +808,15 @@
                     if (!rootMeta) {
                         throw new Error('oops, rootMeta should not be null!');
                     }
-                    // 再次检查，以免用户是用 new Limu() 返回的 finishDraft 
+                    if (rootMeta.level !== 0) {
+                        throw new Error('oops, can not finish sub draft node!');
+                    }
+                    // 再次检查，以免用户是用 new Limu() 返回的 finishDraft
                     // 去结束另一个 new Limu() createDraft 的 草稿对象
                     if (metaVer !== rootMeta.ver) {
                         throw new Error('oops, the input draft does not match finishDraft handler');
                     }
-                    var self = rootMeta.self, copy = rootMeta.copy, modified = rootMeta.modified;
-                    var final = self;
-                    // 有 copy 不一定有修改行为，这里需做双重判断
-                    var isDraftChanged = copy && modified;
-                    if (isDraftChanged) {
-                        final = rootMeta.copy;
-                    }
-                    clearScopes(rootMeta);
+                    var final = extraFinalData(rootMeta);
                     if (autoFreeze && canFreezeDraft) {
                         // TODO deep pruning
                         // see https://github.com/immerjs/immer/issues/687

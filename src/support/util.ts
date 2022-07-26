@@ -4,7 +4,7 @@
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import { objDesc, arrDesc, mapDesc, setDesc, fnDesc } from './consts';
+import { objDesc, arrDesc, mapDesc, setDesc, fnDesc, desc2dataType } from './consts';
 
 export const toString = Object.prototype.toString;
 
@@ -33,26 +33,28 @@ export function getValStrDesc(val) {
   return toString.call(val);
 }
 
+export function getDataType(dataNode) {
+  var strDesc = getValStrDesc(dataNode);
+  const dataType = desc2dataType[strDesc];
+  return dataType;
+}
+
 export function isPrimitive(val) {
   const desc = toString.call(val);
   return ![objDesc, arrDesc, mapDesc, setDesc, fnDesc].includes(desc);
 }
 
-
 export function isPromiseFn(obj) {
   return obj.constructor.name === 'AsyncFunction' || 'function' === typeof obj.then;
 }
-
 
 export function isPromiseResult(result: any) {
   return typeof Promise !== "undefined" && result instanceof Promise;
 }
 
-
 export function canHaveProto(val) {
   return !isPrimitive(val);
 }
-
 
 export function canBeNum(val) {
   var valType = typeof val;
@@ -61,11 +63,9 @@ export function canBeNum(val) {
   return false;
 }
 
-
 export function isSymbol(maySymbol) {
   return typeof maySymbol === 'symbol';
 }
-
 
 export function isFrozenObj(mayObj) {
   if (mayObj && !isPrimitive(mayObj)) {
@@ -73,7 +73,6 @@ export function isFrozenObj(mayObj) {
   }
   return false;
 }
-
 
 export function safeMapGet(map: Map<string, any>, key: any) {
   let val = map.get(key)
@@ -83,7 +82,6 @@ export function safeMapGet(map: Map<string, any>, key: any) {
   }
   return val;
 }
-
 
 export function fastObjAssign(obj: any) {
   const newOne = {};

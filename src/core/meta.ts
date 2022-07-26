@@ -2,12 +2,79 @@
 import type { DraftMeta, ObjectLike } from '../inner-types';
 import { META_KEY } from '../support/symbols';
 import { verWrap } from '../support/inner-data';
-import { isPrimitive } from '../support/util';
+import { isPrimitive, getDataType, noop } from '../support/util';
+
+
+export function markModified(mapSetMeta: DraftMeta) {
+  mapSetMeta.rootMeta.modified = true;
+  const doMark = (meta: DraftMeta | null) => {
+    if (meta) {
+      meta.modified = true;
+      doMark(meta.parentMeta);
+    }
+  };
+
+  doMark(mapSetMeta);
+};
 
 
 export function attachMeta(dataNode: any, meta: DraftMeta) {
   dataNode[META_KEY] = meta;
   return dataNode;
+}
+
+
+export function getKeyPath(draftNode, curKey) {
+  const pathArr: string[] = [curKey];
+  const meta = getDraftMeta(draftNode);
+  if (meta && meta.level > 0) {
+    const { keyPath } = meta;
+    return [...keyPath, curKey];
+  }
+  return pathArr;
+}
+
+
+export function newMeta(baseData: any, options: any) {
+  const { finishDraft, ver, parentMeta = null, key } = options;
+  const dataType = getDataType(baseData);
+
+  let keyPath: string[] = [];
+  let level = 0;
+  let copy = null;
+  if (parentMeta) {
+    copy = parentMeta.copy;
+    level = getNextMetaLevel(copy);
+    keyPath = getKeyPath(copy, key);
+  }
+
+  const meta: DraftMeta = {
+    // @ts-ignore add later
+    rootMeta: null,
+    parentMeta,
+    parent: copy,
+    selfType: dataType,
+    self: baseData,
+    // @ts-ignore add later
+    copy: null,
+    key,
+    keyPath,
+    level,
+    // @ts-ignore add later
+    proxyVal: null,
+    proxyItems: null,
+    modified: false,
+    scopes: [],
+    finishDraft,
+    ver,
+    revoke: noop,
+  };
+  if (level === 0) {
+    meta.rootMeta = meta;
+  } else {
+    meta.rootMeta = parentMeta.rootMeta;
+  }
+  return meta;
 }
 
 

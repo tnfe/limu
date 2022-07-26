@@ -6,21 +6,19 @@
  *--------------------------------------------------------------------------------------------*/
 import type { ObjectLike, DraftMeta, ICreateDraftOptions } from '../inner-types';
 import {
-  getKeyPath,
-  getDataNodeType,
   shouldGenerateProxyItems,
   replaceSetOrMapMethods,
   deepFreeze,
   getUnProxyValue,
+  createScopedMeta,
 } from './helper';
 import { finishHandler, verKey, META_KEY } from '../support/symbols';
 import { carefulDataTypes, MAP, SET, ARRAY } from '../support/consts';
 import { limuConfig } from '../support/inner-data';
-import { isPrimitive, canBeNum, isFn, noop, isSymbol } from '../support/util';
+import { isPrimitive, canBeNum, isFn, isSymbol } from '../support/util';
 import { handleDataNode } from './data-node-processor';
-import { genMetaVer, getNextMetaLevel, getDraftMeta, isDraft, attachMeta } from './meta';
-import { makeCopyWithMeta } from './copy';
-import { clearScopes, isInSameScope, recordVerScope } from './scope';
+import { genMetaVer, getDraftMeta, isDraft, attachMeta } from './meta';
+import { extraFinalData, isInSameScope, recordVerScope } from './scope';
 
 // size 直接返回，
 // 避免 Cannot set property size of #<Map> which has only a getter
@@ -94,42 +92,11 @@ export function buildLimuApis() {
             if (!isFn(selfVal)) {
               // 惰性生成代理对象和其元数据
               if (!valMeta) {
-                const keyPath = getKeyPath(parent, key);
-                const parentMeta = getDraftMeta(parent);
-
-                valMeta = {
-                  // @ts-ignore
-                  rootMeta: null,
-                  parentMeta: parentMeta,
-                  parents: [],
-                  parent: parentMeta.copy,
-                  parentType,
-                  selfType: getDataNodeType(selfVal),
-                  self: selfVal,
-                  key,
-                  keyPath,
-                  level: getNextMetaLevel(parent),
-                  proxyVal: {},
-                  copy: {},
-                  modified: false,
-                  proxyItems: null,
-                  finishDraft: noop,
-                  ver: metaVer,
-                  revoke: noop,
-                };
-                const copy = makeCopyWithMeta(selfVal, valMeta);
-                valMeta.copy = copy;
-                const ret = Proxy.revocable(copy, limuTraps);
-                valMeta.proxyVal = ret.proxy;
-                valMeta.revoke = ret.revoke;
-
-                valMeta.rootMeta = parentMeta.rootMeta;
+                valMeta = createScopedMeta(selfVal, { key, parentMeta, ver: metaVer, traps: limuTraps });
                 recordVerScope(valMeta);
-
                 // child value 指向 copy
-                parent[key] = copy;
+                parent[key] = valMeta.copy;
               }
-
               return valMeta.proxyVal;
             } else {
               if (shouldGenerateProxyItems(parentType, key)) {
@@ -197,6 +164,7 @@ export function buildLimuApis() {
       },
       // parent 指向的是代理之前的对象
       set: (parent, key, value) => {
+        // console.log('Set', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
         let targetValue = value;
 
         if (isDraft(value)) {
@@ -217,14 +185,14 @@ export function buildLimuApis() {
           return true;
         }
 
-        // console.log('Set', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
 
         // speed up array operation
         const meta = getDraftMeta(parent);
-        if (meta) {
-          // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
+        // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
+        const isArray = meta.selfType === ARRAY;
+        if (meta && isArray) {
           // @ts-ignore
-          if (meta.copy && meta.__callSet && meta.selfType === ARRAY && canBeNum(key)) {
+          if (meta.copy && meta.__callSet && isArray && canBeNum(key)) {
             meta.copy[key] = targetValue;
             return true;
           }
@@ -264,37 +232,10 @@ export function buildLimuApis() {
           baseOri = draftMeta.self;
         }
 
-        const baseStateType = getDataNodeType(baseOri);
-        const meta: DraftMeta = {
-          // @ts-ignore add later
-          rootMeta: null,
-          parent: null,
-          parentMeta: null,
-          parents: [],
-          parentType: baseStateType,
-          selfType: baseStateType,
-          self: baseOri,
-          // @ts-ignore add later
-          copy: null,
-          modified: false,
-          key: '',
-          keyPath: [],
-          level: 0,
-          proxyVal: null,
-          proxyItems: null,
-          scopes: [],
-          finishDraft: limuApis.finishDraft,
-          ver: metaVer,
-        };
-        const baseCopy = makeCopyWithMeta(baseOri, meta);
-        meta.copy = baseCopy;
-        meta.rootMeta = meta;
-        const { proxy: proxyDraft, revoke: revokeHandler } = Proxy.revocable(baseCopy, limuTraps);
-        meta.proxyVal = proxyDraft;
-        meta.revoke = revokeHandler;
+        const meta = createScopedMeta(baseOri, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft });
         recordVerScope(meta);
 
-        return proxyDraft;
+        return meta.proxyVal as T;
       },
       finishDraft: (proxyDraft) => {
         // attention: if pass a revoked proxyDraft
@@ -303,22 +244,16 @@ export function buildLimuApis() {
         if (!rootMeta) {
           throw new Error('oops, rootMeta should not be null!');
         }
-        // 再次检查，以免用户是用 new Limu() 返回的 finishDraft 
+        if (rootMeta.level !== 0) {
+          throw new Error('oops, can not finish sub draft node!');
+        }
+        // 再次检查，以免用户是用 new Limu() 返回的 finishDraft
         // 去结束另一个 new Limu() createDraft 的 草稿对象
         if (metaVer !== rootMeta.ver) {
           throw new Error('oops, the input draft does not match finishDraft handler');
         }
 
-        const { self, copy, modified } = rootMeta;
-        let final = self;
-        // 有 copy 不一定有修改行为，这里需做双重判断
-        const isDraftChanged = copy && modified;
-        if (isDraftChanged) {
-          final = rootMeta.copy;
-        }
-
-        clearScopes(rootMeta);
-
+        let final = extraFinalData(rootMeta);
         if (autoFreeze && canFreezeDraft) {
           // TODO deep pruning
           // see https://github.com/immerjs/immer/issues/687

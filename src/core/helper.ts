@@ -4,11 +4,25 @@
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import { isObject, isMap, isSet, getValStrDesc, noop, isPrimitive } from '../support/util';
-import { desc2dataType, proxyItemFnKeys, oppositeOps } from '../support/consts';
+import { isObject, isMap, isSet, noop, isPrimitive } from '../support/util';
+import { proxyItemFnKeys, oppositeOps } from '../support/consts';
 import { DraftMeta, ObjectLike } from '../inner-types';
-import { getDraftMeta } from './meta'
+import { getDraftMeta, markModified, newMeta } from './meta'
+import { makeCopyWithMeta } from './copy'
 
+
+export function createScopedMeta(baseData: any, options) {
+  const { finishDraft = noop, ver, traps, parentMeta, key } = options;
+  const meta = newMeta(baseData, { finishDraft, ver, parentMeta, key });
+
+  const copy = makeCopyWithMeta(baseData, meta);
+  meta.copy = copy;
+  const ret = Proxy.revocable(copy, traps);
+  meta.proxyVal = ret.proxy;
+  meta.revoke = ret.revoke;
+
+  return meta;
+}
 
 export function shouldGenerateProxyItems(parentType, key) {
   // !!! 对于 Array，直接生成 proxyItems
@@ -16,18 +30,6 @@ export function shouldGenerateProxyItems(parentType, key) {
   const fnKeys = proxyItemFnKeys[parentType] || [];
   return fnKeys.includes(key);
 }
-
-
-export function getKeyPath(draftNode, curKey) {
-  const pathArr = [curKey];
-  const meta = getDraftMeta(draftNode);
-  if (meta && meta.level > 0) {
-    const { keyPath } = meta;
-    return [...keyPath, curKey];
-  }
-  return pathArr;
-}
-
 
 export function getUnProxyValue(value) {
   if (!isObject(value)) {
@@ -39,14 +41,6 @@ export function getUnProxyValue(value) {
 
   return valueMeta.copy;
 }
-
-
-export function getDataNodeType(dataNode) {
-  var strDesc = getValStrDesc(dataNode);
-  const dataType = desc2dataType[strDesc];
-  return dataType;
-}
-
 
 export function deepFreeze<T extends ObjectLike>(obj: T) {
   if (isPrimitive(obj)) {
@@ -89,20 +83,6 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
   })
   return Object.freeze(obj);
 }
-
-
-export function markModified(mapSetMeta: DraftMeta) {
-  mapSetMeta.rootMeta.modified = true;
-  const doMark = (meta: DraftMeta | null) => {
-    if (meta) {
-      meta.modified = true;
-      doMark(meta.parentMeta);
-    }
-  };
-
-  doMark(mapSetMeta);
-};
-
 
 export function recordPatch(options: { meta: DraftMeta, [key: string]: any }) {
   // TODO: to be implement in the future
@@ -151,5 +131,3 @@ export function replaceSetOrMapMethods(
     };
   }
 }
-
-

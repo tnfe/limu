@@ -54,6 +54,9 @@ function oneBenchmark(lib, base) {
   if (base.b !== null) {
     die('base.b should be null');
   }
+  if (final2.b !== undefined) {
+    die('final2.b should be undefined');
+  }
 
   const taskSpend = Date.now() - start;
   return taskSpend;
@@ -73,5 +76,6 @@ function measureBenchmark(label, loopLimit) {
   console.log(`${label} avg spend ${totalSpend / loopLimit} ms \n`);
 }
 
-measureBenchmark('limu', 10000);
-measureBenchmark('immer', 10000);
+const loopLimit = 1;
+measureBenchmark('limu', loopLimit);
+measureBenchmark('immer', loopLimit);
