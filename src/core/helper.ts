@@ -5,7 +5,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import { isObject, isMap, isSet, noop, isPrimitive } from '../support/util';
-import { proxyItemFnKeys, oppositeOps } from '../support/consts';
+import { proxyItemFnKeys, oppositeOps, MAP, SET, ARRAY } from '../support/consts';
 import { DraftMeta, ObjectLike } from '../inner-types';
 import { getDraftMeta, markModified, newMeta } from './meta'
 import { makeCopyWithMeta } from './copy'
@@ -26,7 +26,7 @@ export function createScopedMeta(baseData: any, options) {
 
 export function shouldGenerateProxyItems(parentType, key) {
   // !!! 对于 Array，直接生成 proxyItems
-  if (parentType === 'Array') return true;
+  if (parentType === ARRAY) return true;
   const fnKeys = proxyItemFnKeys[parentType] || [];
   return fnKeys.includes(key);
 }
@@ -112,7 +112,7 @@ export function replaceSetOrMapMethods(
     return oriClear(...args);
   };
 
-  if (dataType === 'Set') {
+  if (dataType === SET) {
     const oriAdd = mapOrSet.add.bind(mapOrSet);
     mapOrSet.add = function limuAdd(...args) {
       markModified(meta);
@@ -121,7 +121,7 @@ export function replaceSetOrMapMethods(
     };
   }
 
-  if (dataType === 'Map') {
+  if (dataType === MAP) {
     const oriSet = mapOrSet.set.bind(mapOrSet);
     mapOrSet.set = function limuSet(...args) {
       markModified(meta);

@@ -11,6 +11,7 @@ import {
   SHOULD_REASSIGN_SET_METHODS,
   SHOULD_REASSIGN_ARR_METHODS,
   SHOULD_REASSIGN_MAP_METHODS,
+  SET, ARRAY, MAP,
 } from '../support/consts';
 import { getUnProxyValue } from './helper';
 import { getDraftMeta, markModified } from './meta';
@@ -22,9 +23,9 @@ function mayMarkModified(options: { calledBy: string, parentDataNodeMeta: DraftM
   if (['deleteProperty', 'set'].includes(calledBy)
     ||
     (calledBy === 'get' && (
-      (parentType === 'Set' && SHOULD_REASSIGN_SET_METHODS.includes(op)) // 针对 Set.add
-      || (parentType === 'Array' && SHOULD_REASSIGN_ARR_METHODS.includes(op)) // 针对 Array 一系列的改变操作
-      || (parentType === 'Map' && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Map 一系列的改变操作
+      (parentType === SET && SHOULD_REASSIGN_SET_METHODS.includes(op)) // 针对 Set.add
+      || (parentType === ARRAY && SHOULD_REASSIGN_ARR_METHODS.includes(op)) // 针对 Array 一系列的改变操作
+      || (parentType === MAP && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Map 一系列的改变操作
     ))
   ) {
     markModified(parentDataNodeMeta);
