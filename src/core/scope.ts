@@ -1,5 +1,4 @@
 
-// @ts-nocheck
 import type { DraftMeta } from '../inner-types';
 import { META_KEY } from '../support/symbols';
 import { MAP, SET, ARRAY } from '../support/consts';

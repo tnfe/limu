@@ -358,7 +358,7 @@
     }
     function shouldGenerateProxyItems(parentType, key) {
         // !!! 对于 Array，直接生成 proxyItems
-        if (parentType === 'Array')
+        if (parentType === ARRAY)
             return true;
         var fnKeys = proxyItemFnKeys[parentType] || [];
         return fnKeys.includes(key);
@@ -436,7 +436,7 @@
             markModified(meta);
             return oriClear.apply(void 0, args);
         };
-        if (dataType === 'Set') {
+        if (dataType === SET) {
             var oriAdd_1 = mapOrSet.add.bind(mapOrSet);
             mapOrSet.add = function limuAdd() {
                 var args = [];
@@ -448,7 +448,7 @@
                 return oriAdd_1.apply(void 0, args);
             };
         }
-        if (dataType === 'Map') {
+        if (dataType === MAP) {
             var oriSet_1 = mapOrSet.set.bind(mapOrSet);
             mapOrSet.set = function limuSet() {
                 var args = [];
@@ -468,9 +468,9 @@
         // 对于由 set 陷阱触发的 handleDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
         if (['deleteProperty', 'set'].includes(calledBy)
             ||
-                (calledBy === 'get' && ((parentType === 'Set' && SHOULD_REASSIGN_SET_METHODS.includes(op)) // 针对 Set.add
-                    || (parentType === 'Array' && SHOULD_REASSIGN_ARR_METHODS.includes(op)) // 针对 Array 一系列的改变操作
-                    || (parentType === 'Map' && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Map 一系列的改变操作
+                (calledBy === 'get' && ((parentType === SET && SHOULD_REASSIGN_SET_METHODS.includes(op)) // 针对 Set.add
+                    || (parentType === ARRAY && SHOULD_REASSIGN_ARR_METHODS.includes(op)) // 针对 Array 一系列的改变操作
+                    || (parentType === MAP && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Map 一系列的改变操作
                 ))) {
             markModified(parentDataNodeMeta);
         }
