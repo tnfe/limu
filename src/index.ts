@@ -6,8 +6,8 @@
  *--------------------------------------------------------------------------------------------*/
 import type { ObjectLike, ICreateDraftOptions } from './inner-types';
 import { buildLimuApis } from './core/build-limu-apis';
-import { deepFreeze as deepFreezeFn } from './core/helper';
 import { isDraft as isDraftFn, getDraftMeta as getDraftMetaFn } from './core/meta';
+import { deepFreeze as deepFreezeFn } from './core/freeze';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { original as originalFn, current as currentFn } from './core/user-util';
 import { limuConfig } from './support/inner-data';

@@ -4,11 +4,12 @@
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import { isObject, isMap, isSet, noop, isPrimitive } from '../support/util';
+import { isObject, noop, isPrimitive, isFn } from '../support/util';
 import { proxyItemFnKeys, oppositeOps, MAP, SET, ARRAY } from '../support/consts';
-import { DraftMeta, ObjectLike } from '../inner-types';
-import { getDraftMeta, markModified, newMeta } from './meta'
+import { DraftMeta } from '../inner-types';
+import { getDraftMeta, markModified, newMeta, attachMeta } from './meta'
 import { makeCopyWithMeta } from './copy'
+import { recordVerScope } from './scope'
 
 
 export function createScopedMeta(baseData: any, options) {
@@ -31,6 +32,73 @@ export function shouldGenerateProxyItems(parentType, key) {
   return fnKeys.includes(key);
 }
 
+
+export function getProxyVal(selfVal, options: any) {
+  const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType } = options || {};
+
+  const mayCreateProxyVal = (selfVal: any, inputKey?: string) => {
+    if (isPrimitive(selfVal) || !selfVal) {
+      return selfVal;
+    }
+
+    const key = inputKey || '';
+    let valMeta = getDraftMeta(selfVal);
+
+    if (!isFn(selfVal)) {
+      // 惰性生成代理对象和其元数据
+      if (!valMeta) {
+        valMeta = createScopedMeta(selfVal, { key, parentMeta, ver, traps });
+        recordVerScope(valMeta);
+        // child value 指向 copy
+        parent[key] = valMeta.copy;
+      }
+      return valMeta.proxyVal;
+    }
+
+    if (!shouldGenerateProxyItems(parentType, key)) {
+      return selfVal;
+    }
+
+    // valMeta = getDraftMeta(parent) as DraftMeta;
+    if (!parentMeta) {
+      throw new Error('[[ createMeta ]]: oops, meta should not be null');
+    }
+
+    if (parentMeta.proxyItems) {
+      return selfVal;
+    }
+
+    // 提前完成遍历，为所有 item 生成代理
+    let proxyItems: any = [];
+    if (parentType === SET) {
+      const tmp = new Set();
+      (parent as Set<any>).forEach((val) => tmp.add(mayCreateProxyVal(val)));
+      replaceSetOrMapMethods(tmp, parentMeta, { dataType: SET, patches, inversePatches, usePatches });
+      proxyItems = attachMeta(tmp, parentMeta);
+
+      // 区别于 2.0.2 版本，这里提前把copy指回来
+      parentMeta.copy = proxyItems;
+    } else if (parentType === MAP) {
+      const tmp = new Map();
+      (parent as Map<any, any>).forEach((val, key) => tmp.set(key, mayCreateProxyVal(val, key)));
+      replaceSetOrMapMethods(tmp, parentMeta, { dataType: MAP, patches, inversePatches, usePatches });
+      proxyItems = attachMeta(tmp, parentMeta);
+
+      // 区别于 2.0.2 版本，这里提前把copy指回来
+      parentMeta.copy = proxyItems;
+    } else if (parentType === ARRAY) {
+      parentMeta.copy = parentMeta.copy || parent.slice();
+      proxyItems = parentMeta.proxyVal;
+    }
+    parentMeta.proxyItems = proxyItems;
+
+    return selfVal;
+  };
+
+  return mayCreateProxyVal(selfVal, key);
+};
+
+
 export function getUnProxyValue(value) {
   if (!isObject(value)) {
     return value;
@@ -42,47 +110,6 @@ export function getUnProxyValue(value) {
   return valueMeta.copy;
 }
 
-export function deepFreeze<T extends ObjectLike>(obj: T) {
-  if (isPrimitive(obj)) {
-    return obj;
-  }
-
-  // @ts-ignore
-  if (Array.isArray(obj) && obj.length > 0) {
-    obj.forEach(item => {
-      deepFreeze(item);
-    });
-    return Object.freeze(obj);
-  }
-
-  if (isSet(obj)) {
-    const set = obj as Set<any>;
-    // TODD: throw error 'do not mutate' ?
-    set.add = () => set;
-    set.delete = () => false;
-    set.clear = noop;
-    return Object.freeze(obj);
-  }
-  if (isMap(obj)) {
-    const map = obj as Map<any, any>;
-    // TODD: throw error 'do not mutate' ?
-    map.set = () => map;
-    map.delete = () => false;
-    map.clear = noop;
-    return Object.freeze(obj);
-  }
-
-  // get all properties
-  const propertyNames = Object.getOwnPropertyNames(obj);
-  // 遍历
-  propertyNames.forEach(name => {
-    const value = obj[name];
-    if (value instanceof Object && value !== null) {
-      deepFreeze(value);
-    }
-  })
-  return Object.freeze(obj);
-}
 
 export function recordPatch(options: { meta: DraftMeta, [key: string]: any }) {
   // TODO: to be implement in the future

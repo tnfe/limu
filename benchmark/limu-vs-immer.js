@@ -1,5 +1,6 @@
 const immer = require('immer');
-const limu = require('limu');
+// const limu = require('limu');
+const limu = require('../dist/limu');
 const util = require('./_util');
 const pstr = require('./_pstr');
 const none = require('./_none');
@@ -22,8 +23,8 @@ const strategyConsts = {
 const curStrategy = process.env.ST || strategyConsts.BASE_F_AUTO_F;
 // change params 'hasArr'、'lessDeepOp' to test limu and immer performance in different situations
 // then run npm cmd: `npm run s1`、`npm run s2`、`npm run s3`、`npm run s4` to see perf result
-const hasArr = false; // operate arr or not
-const lessDeepOp = true; // has more deep operation or not
+const hasArr = true; // operate arr or not
+const lessDeepOp = false; // has more deep operation or not
 // ************************************************************************
 // hasArr = true; lessDeepOp = false; limu close to native
 
@@ -84,15 +85,6 @@ function oneBenchmark(lib, reuse, operateArr, lessDeepOp) {
   const draft = lib.createDraft(targetBase);
   draft.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z = 666;
   if (!lessDeepOp) {
-    draft.a.b.c.d.e.f.g = 999;
-    draft.a.b.c.d.e.f = 999;
-    draft.a.b.c.d.e = 999;
-    draft.a.b.c.d = 999;
-    draft.a.b.c = 999;
-    draft.a.b = 999;
-    draft.a = 999;
-    draft.aaa = 999;
-    draft.a = 1;
     draft.a1.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
     draft.a2.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
     draft.a3.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
@@ -102,34 +94,23 @@ function oneBenchmark(lib, reuse, operateArr, lessDeepOp) {
     draft.a7.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
   }
 
-  // draft.a = 666;
-
-  // if (operateArr) {
-  //   const arr = draft.arr;
-  //   // arr.forEach((item, idx) => {
-  //   // this way better
-  //   lib.original(arr).forEach((item, idx) => {
-  //     if (idx > 0 && idx % 6000 === 0) {
-  //       arr[idx].a = 888;
-  //     }
-  //   });
-  // }
+  if (operateArr) {
+    const arr = draft.arr;
+    // arr.forEach((item, idx) => {
+    // this way better
+    lib.original(arr).forEach((item, idx) => {
+      if (idx > 0 && idx % 6000 === 0) {
+        arr[idx].a = 888;
+      }
+    });
+  }
 
   const final = lib.finishDraft(draft);
 
   const start = Date.now();
   const d2 = lib.createDraft(final);
-  d2.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z = 666;
+  d2.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z = 888;
   if (!lessDeepOp) {
-    d2.a.b.c.d.e.f.g = 999;
-    d2.a.b.c.d.e.f = 999;
-    d2.a.b.c.d.e = 999;
-    d2.a.b.c.d = 999;
-    d2.a.b.c = 999;
-    d2.a.b = 999;
-    d2.a = 999;
-    d2.aaa = 999;
-    d2.a = 1;
     d2.a1.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
     d2.a2.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
     d2.a3.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;

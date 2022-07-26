@@ -1,12 +1,17 @@
-
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Tencent Corporation. All rights reserved.
+ *  Licensed under the MIT License.
+ * 
+ *  @Author: fantasticsoul
+ *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta, ObjectLike } from '../inner-types';
 import { META_KEY } from '../support/symbols';
 import { verWrap } from '../support/inner-data';
 import { isPrimitive, getDataType, noop } from '../support/util';
 
 
-export function markModified(mapSetMeta: DraftMeta) {
-  mapSetMeta.rootMeta.modified = true;
+export function markModified(meta: DraftMeta) {
+  meta.rootMeta.modified = true;
   const doMark = (meta: DraftMeta | null) => {
     if (meta) {
       meta.modified = true;
@@ -14,7 +19,7 @@ export function markModified(mapSetMeta: DraftMeta) {
     }
   };
 
-  doMark(mapSetMeta);
+  doMark(meta);
 };
 
 
@@ -116,3 +121,7 @@ export function getDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): 
   return proxyDraft[META_KEY];
 }
 
+
+export function getUnsafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> | null {
+  return proxyDraft ? proxyDraft[META_KEY] : null;
+}

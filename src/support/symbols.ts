@@ -6,6 +6,5 @@
  *--------------------------------------------------------------------------------------------*/
 
 // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配
-export const verKey = Symbol('V');
 
 export const META_KEY = Symbol('M');

@@ -6,19 +6,18 @@
  *--------------------------------------------------------------------------------------------*/
 import type { ObjectLike, DraftMeta, ICreateDraftOptions } from '../inner-types';
 import {
-  shouldGenerateProxyItems,
-  replaceSetOrMapMethods,
-  deepFreeze,
   getUnProxyValue,
   createScopedMeta,
+  getProxyVal,
 } from './helper';
-import { verKey, META_KEY } from '../support/symbols';
+import { META_KEY } from '../support/symbols';
 import { carefulDataTypes, MAP, SET, ARRAY } from '../support/consts';
 import { limuConfig } from '../support/inner-data';
-import { isPrimitive, canBeNum, isFn, isSymbol } from '../support/util';
+import { canBeNum, isFn, isSymbol } from '../support/util';
 import { handleDataNode } from './data-node-processor';
-import { genMetaVer, getDraftMeta, isDraft, attachMeta } from './meta';
+import { genMetaVer, getDraftMeta, isDraft } from './meta';
 import { extraFinalData, isInSameScope, recordVerScope } from './scope';
+import { deepFreeze } from './freeze';
 
 // size 直接返回，
 // 避免 Cannot set property size of #<Map> which has only a getter
@@ -50,10 +49,6 @@ export function buildLimuApis() {
     const limuTraps = {
       // parent指向的是代理之前的对象
       get: (parent, key) => {
-        if (key === verKey) {
-          return metaVer;
-        }
-
         let currentChildVal = parent[key];
         if (key === '__proto__' || key === META_KEY) {
           return currentChildVal;
@@ -69,7 +64,7 @@ export function buildLimuApis() {
         }
 
         const parentMeta = getDraftMeta(parent) as DraftMeta;
-        const parentType = parentMeta?.selfType as any;
+        const parentType = parentMeta?.selfType;
 
         // console.log(`Get parentType:${parentType} key:${key} `, 'Read KeyPath', getKeyPath(parent, key, metaVer));
 
@@ -79,88 +74,30 @@ export function buildLimuApis() {
         if (parentMeta && TYPE_BLACK_LIST.includes(parentType) && PROPERTIES_BLACK_LIST.includes(key)) {
           return parentMeta.copy[key];
         }
-
-        const createProxyVal = (selfVal, options?: any) => {
-          if (isPrimitive(selfVal)) {
-            return selfVal;
-          }
-
-          if (selfVal) {
-            const { key = '' } = options || {};
-            let valMeta = getDraftMeta(selfVal);
-
-            if (!isFn(selfVal)) {
-              // 惰性生成代理对象和其元数据
-              if (!valMeta) {
-                valMeta = createScopedMeta(selfVal, { key, parentMeta, ver: metaVer, traps: limuTraps });
-                recordVerScope(valMeta);
-                // child value 指向 copy
-                parent[key] = valMeta.copy;
-              }
-              return valMeta.proxyVal;
-            } else {
-              if (shouldGenerateProxyItems(parentType, key)) {
-                valMeta = getDraftMeta(parent) as DraftMeta;
-                if (!valMeta) {
-                  throw new Error('[[ createMeta ]]: oops, meta should not be null');
-                }
-
-                if (!valMeta.proxyItems) {
-                  // 提前完成遍历，为所有 item 生成代理
-                  let proxyItems: any = [];
-                  if (parentType === SET) {
-                    const tmp = new Set();
-                    (parent as Set<any>).forEach((val) => tmp.add(createProxyVal(val)));
-                    replaceSetOrMapMethods(tmp, valMeta, { dataType: SET, patches, inversePatches, usePatches });
-                    proxyItems = attachMeta(tmp, valMeta);
-
-                    // 区别于 2.0.2 版本，这里提前把copy指回来
-                    parentMeta.copy = proxyItems;
-                  } else if (parentType === MAP) {
-                    const tmp = new Map();
-                    (parent as Map<any, any>).forEach((val, key) => tmp.set(key, createProxyVal(val, { key })));
-                    replaceSetOrMapMethods(tmp, valMeta, { dataType: MAP, patches, inversePatches, usePatches });
-                    proxyItems = attachMeta(tmp, valMeta);
-
-                    // 区别于 2.0.2 版本，这里提前把copy指回来
-                    parentMeta.copy = proxyItems;
-                  } else if (parentType === carefulDataTypes.Array) {
-                    valMeta.copy = valMeta.copy || parent.slice();
-                    proxyItems = valMeta.proxyVal;
-                  }
-
-                  valMeta.proxyItems = proxyItems;
-                }
-              }
-
-              return selfVal;
-            }
-          }
-
-          return selfVal;
-        };
-
         // 可能会指向代理对象
-        currentChildVal = createProxyVal(currentChildVal, { key });
+        currentChildVal = getProxyVal(
+          currentChildVal,
+          { key, parentMeta, parentType, ver: metaVer, traps: limuTraps, parent, patches, inversePatches, usePatches }
+        );
 
-        let toReturn;
         // 用下标取数组时，可直接返回
         // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
-        if (parentType === carefulDataTypes.Array && canBeNum(key)) {
-          toReturn = currentChildVal;
-        } else if (carefulDataTypes[parentType]) {
-          toReturn = handleDataNode(
+        if (parentType === ARRAY && canBeNum(key)) {
+          return currentChildVal;
+        }
+
+        if (carefulDataTypes[parentType]) {
+          currentChildVal = handleDataNode(
             parent,
             {
               op: key, key, value: currentChildVal, metaVer, calledBy: 'get',
-              patches, inversePatches, usePatches, parentType,
+              patches, inversePatches, usePatches, parentType, parentMeta,
             },
           );
-        } else {
-          toReturn = currentChildVal;
+          return currentChildVal;
         }
 
-        return toReturn;
+        return currentChildVal;
       },
       // parent 指向的是代理之前的对象
       set: (parent, key, value) => {
@@ -186,26 +123,26 @@ export function buildLimuApis() {
           return true;
         }
 
-
         // speed up array operation
-        const meta = getDraftMeta(parent);
+        const parentMeta = getDraftMeta(parent);
         // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
-        const isArray = meta.selfType === ARRAY;
-        if (meta && isArray) {
+        const isArray = parentMeta.selfType === ARRAY;
+        if (parentMeta && isArray) {
           // @ts-ignore
-          if (meta.copy && meta.__callSet && isArray && canBeNum(key)) {
-            meta.copy[key] = targetValue;
+          if (parentMeta.copy && parentMeta.__callSet && isArray && canBeNum(key)) {
+            parentMeta.copy[key] = targetValue;
             return true;
           }
           // @ts-ignore
-          meta.__callSet = true;
+          parentMeta.__callSet = true;
         }
-        handleDataNode(parent, { key, value: targetValue, metaVer, calledBy: 'set' });
+        handleDataNode(parent, { parentMeta, key, value: targetValue, metaVer, calledBy: 'set' });
         return true;
       },
       deleteProperty: (parent, key) => {
         // console.log('Delete ', parent, key);
-        handleDataNode(parent, { op: 'del', key, value: '', metaVer, calledBy: 'deleteProperty' });
+        const parentMeta = getDraftMeta(parent);
+        handleDataNode(parent, { parentMeta, op: 'del', key, value: '', metaVer, calledBy: 'deleteProperty' });
         return true;
       },
 

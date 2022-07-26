@@ -1,4 +1,10 @@
 
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Tencent Corporation. All rights reserved.
+ *  Licensed under the MIT License.
+ * 
+ *  @Author: fantasticsoul
+ *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta } from '../inner-types';
 import { META_KEY } from '../support/symbols';
 import { MAP, SET, ARRAY } from '../support/consts';

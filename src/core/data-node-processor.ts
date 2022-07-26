@@ -7,18 +7,18 @@
 import type { DraftMeta } from '../inner-types';
 import { isFn } from '../support/util';
 import {
-  carefulDataTypes, carefulFnKeys,
+  carefulFnKeys,
   SHOULD_REASSIGN_SET_METHODS,
   SHOULD_REASSIGN_ARR_METHODS,
   SHOULD_REASSIGN_MAP_METHODS,
   SET, ARRAY, MAP,
 } from '../support/consts';
 import { getUnProxyValue } from './helper';
-import { getDraftMeta, markModified } from './meta';
+import { markModified, getUnsafeDraftMeta } from './meta';
 
 
-function mayMarkModified(options: { calledBy: string, parentDataNodeMeta: DraftMeta, op: string, parentType: string, key: string | number }) {
-  const { calledBy, parentDataNodeMeta, op, parentType } = options;
+function mayMarkModified(options: { calledBy: string, parentMeta: DraftMeta, op: string, parentType: string, key: string | number }) {
+  const { calledBy, parentMeta, op, parentType } = options;
   // 对于由 set 陷阱触发的 handleDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
   if (['deleteProperty', 'set'].includes(calledBy)
     ||
@@ -28,16 +28,19 @@ function mayMarkModified(options: { calledBy: string, parentDataNodeMeta: DraftM
       || (parentType === MAP && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Map 一系列的改变操作
     ))
   ) {
-    markModified(parentDataNodeMeta);
+    markModified(parentMeta);
   }
 }
 
 
 export function handleDataNode(parentDataNode, copyCtx) {
   const {
-    op, key, value: mayProxyValue, calledBy, parentType,
+    op, key, value: mayProxyValue, calledBy, parentType, parentMeta,
   } = copyCtx;
-  const parentDataNodeMeta = getDraftMeta(parentDataNode);
+  if (op === 'toJSON' && !mayProxyValue) {
+    // 兼容 JSON.stringify 调用 
+    return;
+  }
 
   /**
    * 防止 value 本身就是一个 Proxy
@@ -53,13 +56,13 @@ export function handleDataNode(parentDataNode, copyCtx) {
    * draft.a = newData;
    * draft.a.n1.n2 = 888; // 此时 n2_DataNode 是未代理对象
    */
-  if (!parentDataNodeMeta) {
+  if (!parentMeta) {
     parentDataNode[key] = value;
     return;
   }
 
-  const { self, copy: parentCopy } = parentDataNodeMeta;
-  mayMarkModified({ calledBy, parentDataNodeMeta, op, key, parentType });
+  const { self, copy: parentCopy } = parentMeta;
+  mayMarkModified({ calledBy, parentMeta, op, key, parentType });
 
   // 是 Map, Set, Array 类型的方法操作或者值获取
   const fnKeys = carefulFnKeys[parentType] || [];
@@ -67,50 +70,54 @@ export function handleDataNode(parentDataNode, copyCtx) {
   if (fnKeys.includes(op) && isFn(mayProxyValue)) {
     // slice 操作无需使用 copy，返回自身即可
     if ('slice' === op) {
-      // @ts-ignore
       return self.slice;
-    } else if (parentCopy) {
+    }
+    if (parentCopy) {
       // 因为 Map 和 Set 里的对象不能直接操作修改，是通过 set 调用来修改的
       // 所以无需 bind(parentDataNodeMeta.proxyVal)， 否则会以下情况出现，
       // Method Map.prototype.forEach called on incompatible receiver
       // Method Set.prototype.forEach called on incompatible receiver
       // see https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Errors/Called_on_incompatible_type
-      if (parentType === carefulDataTypes.Set || parentType === carefulDataTypes.Map) {
+      if (parentType === SET || parentType === MAP) {
         // 注意 forEach 等方法已提前生成了 proxyItems，这里 bind 的目标优先取 proxyItems
         return parentCopy[op].bind(parentCopy);
       }
-
       return parentCopy[op];
-    } else {
-      return self[op].bind(self);
     }
+    return self[op].bind(self);
   }
 
   if (!parentCopy) {
     return value;
   }
 
-  if (op === 'toJSON' && !mayProxyValue) {
-    // 兼容 JSON.stringify 调用 
-    return;
-  }
+  const oldValue = parentCopy[key];
+  const tryMarkDel = () => {
+    const oldValueMeta = getUnsafeDraftMeta(oldValue);
+    oldValueMeta && (oldValueMeta.isDel = true);
+  };
+  // TODO: add test case
+  const tryMarkUndel = () => {
+    const valueMeta = getUnsafeDraftMeta(mayProxyValue);
+    valueMeta && (valueMeta.isDel = false);
+  };
 
   if (calledBy === 'deleteProperty') {
-    const valueMeta = getDraftMeta(mayProxyValue);
+    const valueMeta = getUnsafeDraftMeta(mayProxyValue);
     // for test/complex/data-node-change case3
     if (valueMeta) {
       valueMeta.isDel = true;
     } else {
       // for test/complex/data-node-change (node-change 2)
-      const oldValue = parentDataNode[key];
-      if (oldValue) {
-        const oldValueMeta = getDraftMeta(parentDataNode[key]);
-        oldValueMeta && (oldValueMeta.isDel = true);
-      }
+      tryMarkDel();
     }
 
     delete parentCopy[key];
-  } else {
-    parentCopy[key] = value;
+    return;
   }
+
+  parentCopy[key] = value;
+  // 谨防是 a.b = { ... } ---> a.b = 1 的变异赋值方式
+  tryMarkDel();
+  tryMarkUndel();
 }
