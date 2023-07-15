@@ -168,8 +168,8 @@ loop: 200, pstr avg spend 9.225 ms
 loop: 200, native avg spend 0.915 ms
 ```
 
-## about limu
-limu is an immutable js library based on shallow copy on read and tag modification on write. Based on this mechanism, it is more friendly to debugging. You can copy the following code to the console experience
+
+As limu is an immutable js library based on shallow copy on read and mark modified on write. Based on this mechanism, so it is more friendly to debugging. You can copy the following code to the console experience
 
 For example, first visit [unpkg](https://unpkg.com/), right-click to open the console, and then paste the following code to load js
 ```ts
