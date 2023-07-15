@@ -1,10 +1,8 @@
 import type { ObjectLike } from '../src/index';
-import * as limu from '../src/index';
-// import * as limu from '../dist/limu-fast';
-// import * as limu from '../dist/limu';
-// import * as limu from '../benchmark/_mutative';
-// import * as limu from '../benchmark/node_modules/immer';
-// limu.enableMapSet();
+import * as limu from '../src/index'; // test source code
+// import { lib as limu } from '../benchmark/lib/mutative';
+// import * as limu from '../benchmark/lib/immer';
+// import * as limu from '.../benchmark/lib/limu'; // test compiled code
 
 // @ts-ignore only works for immer
 if (limu.enableMapSet) {
@@ -182,17 +180,21 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
   getBase: () => T,
   operateDraft: (draft: T, base: T) => void,
   executeAssertLogic?: (final: T, base: T) => void,
-  skip?: boolean,
 ) {
-  if (skip) return;
+  // @ts-ignore sort test case only works for limu cause its shallow copy on read mechanism
+  if (testCaseDesc.includes('ordered sort') && !limu.Limu) {
+    runEmptyTestSuit();
+    return;
+  }
+
   describe(testSuitDesc, () => {
     test(createDraftTip(testCaseDesc), () => {
       const base = getBase();
       const draft = createDraft(base);
-      // @ts-ignore avoid immer type warning
+      // @ts-ignore avoid different lib's type warning
       operateDraft(draft, base);
       const final = finishDraft(draft);
-      // @ts-ignore avoid immer type warning
+      // @ts-ignore avoid different lib's type warning
       if (executeAssertLogic) executeAssertLogic(final, base);
     });
 

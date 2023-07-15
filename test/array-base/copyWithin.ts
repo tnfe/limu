@@ -15,7 +15,7 @@ function compare(arrNew, arrBase) {
   expect(arrBase).toMatchObject([100, 200, 1, 2, 3, 4]);
 }
 
-runTestSuit('arr is base', 'copyWithin', getArrBase, changeDraft, compare, true);
+runTestSuit('arr is base', 'copyWithin', getArrBase, changeDraft, compare);
 
 runTestSuit('arr in base obj', 'copyWithin',
   () => { // get base state

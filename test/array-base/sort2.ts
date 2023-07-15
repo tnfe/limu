@@ -17,7 +17,7 @@ function compare(arrNew, arrBase) {
   expect(arrBase).toMatchObject([3, 1, 2, 4, 4, 5]);
 }
 
-runTestSuit('arr is base', 'sort2', getAnArrCanBeSort, sortDraft, compare, true);
+runTestSuit('arr is base', 'sort2', getAnArrCanBeSort, sortDraft, compare);
 
 runTestSuit('arr in base obj', 'sort2',
   () => { // get base state

@@ -45,7 +45,6 @@ const jestConfig = {
     // '<rootDir>/test/array-other/object-item-3.ts',
     // '<rootDir>/test/array-other/object-list.ts',
 
-
     // '<rootDir>/test/map-other/case-nested-object.ts',
     // '<rootDir>/test/map-other/case1.ts',
     // '<rootDir>/test/map-other/case2.ts',

@@ -12,15 +12,15 @@ function compare(arrNew, arrBase) {
 
 runTestSuit('arr is base', 'unshift', getArrBase, changeDraft, compare);
 
-// runTestSuit('arr in base obj', 'unshift',
-//   () => { // get base state
-//     return { arr: getArrBase() };
-//   },
-//   (draft) => { // change draft
-//     changeDraft(draft.arr);
-//   },
-//   (final, base) => { // assert
-//     expect(final !== base).toBeTruthy();
-//     compare(final.arr, base.arr);
-//   },
-// );
+runTestSuit('arr in base obj', 'unshift',
+  () => { // get base state
+    return { arr: getArrBase() };
+  },
+  (draft) => { // change draft
+    changeDraft(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final !== base).toBeTruthy();
+    compare(final.arr, base.arr);
+  },
+);

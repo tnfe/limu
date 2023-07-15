@@ -10,7 +10,7 @@ runTestSuit('diff: arr in base obj', 'ordered sort',
     expect(sortedArr).toMatchObject([1, 2, 3, 4, 5]);
   },
   (final, base) => {
-    expect(final === base).toBeFalsy(); // limu think this is false cause it shallow copy on read mechanism
+    expect(final === base).toBeFalsy(); // limu think this is false cause its shallow copy on read mechanism
     // expect(final === base).toBeTruthy();
   },
 );
