@@ -1,9 +1,20 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
+
+/**
+ * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
+ * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
+ */
+export const LIMU_MAJOR_VER = 3;
+
+export const VER = '3.2.2';
+
+// 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
+export const META_KEY = Symbol('M');
+
 export const oppositeOps = {
   add: 'remove',
   remove: 'add',
@@ -18,21 +29,21 @@ export const OBJECT = 'Object';
 
 export const carefulDataTypes = { Map: MAP, Set: SET, Array: ARRAY } as const;
 
-export const objDesc = '[object Object]';
+export const OBJ_DESC = '[object Object]';
 
-export const mapDesc = '[object Map]';
+export const MAP_DESC = '[object Map]';
 
-export const setDesc = '[object Set]';
+export const SET_DESC = '[object Set]';
 
-export const arrDesc = '[object Array]';
+export const ARR_DESC = '[object Array]';
 
-export const fnDesc = '[object Function]';
+export const FN_DESC = '[object Function]';
 
 export const desc2dataType = {
-  [mapDesc]: MAP,
-  [setDesc]: SET,
-  [arrDesc]: ARRAY,
-  [objDesc]: OBJECT,
+  [MAP_DESC]: MAP,
+  [SET_DESC]: SET,
+  [ARR_DESC]: ARRAY,
+  [OBJ_DESC]: OBJECT,
 };
 
 export const SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'unshift', 'reverse', 'copyWithin', 'delete', 'fill'];
@@ -51,47 +62,32 @@ export const mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has',
 
 export const setFnKeys = ['add', 'clear', 'delete', 'entries', 'forEach', 'has', 'keys', 'values'];
 
-// fill,push,pop,splice,shift,unshift should trigger copy, so they are not in arrIgnoreFnOrAttributeKeys
-
-export const arrFnKeysThatNoTriggerCopy = [
-  'forEach', 'map',
-];
-export const arrIgnoreFnOrAttributeKeys = [
-  // 'forEach', 'map', 'sort', 'copyWithin', 'reverse',
-  'length',
-  'slice', 'concat', 'find', 'findIndex', 'filter', 'flat', 'flatMap', 'includes',
-  'indexOf', 'every', 'some', 'constructor', 'join', 'keys', 'lastIndexOf', 'reduce',
-  'reduceRight', 'values', 'entries',
-  'valueOf',
-];
-
 export const mapIgnoreFnKeys = [
-  // 'forEach', 'get',
   'entries', 'keys', 'values', 'has',
 ];
+
 export const mapIgnoreFnOrAttributeKeys = [
   ...mapIgnoreFnKeys,
   'size',
 ];
 
 export const setIgnoreFnKeys = [
-  // 'forEach',
   'entries', 'has', 'keys', 'values'
 ];
-// export const setIgnoreFnKeys = ['entries', 'has', 'keys', 'values'];
+
 export const setIgnoreFnOrAttributeKeys = [
   ...setIgnoreFnKeys,
   'size',
 ];
 
 export const carefulFnKeys = {
-  [carefulDataTypes.Map]: mapFnKeys,
-  [carefulDataTypes.Set]: setFnKeys,
-  [carefulDataTypes.Array]: arrFnKeys,
+  [MAP]: mapFnKeys,
+  [SET]: setFnKeys,
+  [ARRAY]: arrFnKeys,
 };
 
 export const proxyItemFnKeys = {
-  [carefulDataTypes.Map]: ['forEach', 'get'],
-  [carefulDataTypes.Set]: ['forEach'],
-  [carefulDataTypes.Array]: ['forEach', 'map'],
+  [MAP]: ['forEach', 'get'],
+  [SET]: ['forEach'],
+  [ARRAY]: ['forEach', 'map'],
 };

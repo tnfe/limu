@@ -1,9 +1,19 @@
+import type { ObjectLike } from '../src/index';
 import * as limu from '../src/index';
+// import * as limu from '../dist/limu-fast';
+// import * as limu from '../dist/limu';
+// import * as limu from '../benchmark/_mutative';
 // import * as limu from '../benchmark/node_modules/immer';
 // limu.enableMapSet();
 
-// import * as limu from '../benchmark/node_modules/limu';
+// @ts-ignore only works for immer
+if (limu.enableMapSet) {
+  // @ts-ignore
+  limu.enableMapSet();
+}
 
+// const RUN_PRODUCE = false; // only run createDrat/finishDraft for all test cases
+const RUN_PRODUCE = true; // run createDrat/finishDraft、produce both for all test cases
 
 // for script: npm run test_no
 if (process.env.AUTO_FREEZE === '0') {
@@ -42,9 +52,6 @@ export const isNewArch = () => (limu.getMajorVer ? limu.getMajorVer() >= 3 : tru
 export const getAutoFreeze = limu.getAutoFreeze || (() => true);
 
 // limu.setAutoFreeze(true);
-
-const RUN_PRODUCE = false;
-// const RUN_PRODUCE = true;
 
 export const produceTip = (testDescribe: string) => `${testDescribe} (with produce)`;
 
@@ -119,23 +126,22 @@ export function getSetObjBase() {
 }
 
 
-const jestExpect = expect;
+// const jestExpect = expect;
 
-// @ts-ignore
-global.expect = (actual: any) => {
-  const fns = jestExpect(actual);
-  // const oriToMatchObject = fns.toMatchObject;
-  fns.toMatchObject = (toMatch) => {
-    const actualStr = strfy(actual);
-    const expectStr = strfy(toMatch);
-    if (actualStr !== expectStr) {
-      console.log(`actual is ${actualStr}`);
-      console.log(`expect is ${expectStr}`);
-      throw new Error('call toMatchObject fail');
-    }
-  };
-  return fns;
-};
+// // @ts-ignore
+// global.expect = (actual: any) => {
+//   const fns = jestExpect(actual);
+//   fns.toMatchObject = (toMatch) => {
+//     const actualStr = strfy(actual);
+//     const expectStr = strfy(toMatch);
+//     if (actualStr !== expectStr) {
+//       console.log(`actual is ${actualStr}`);
+//       console.log(`expect is ${expectStr}`);
+//       throw new Error('call toMatchObject fail');
+//     }
+//   };
+//   return fns;
+// };
 
 export function expectToBe(actualVal, exceptVal) {
   expect(actualVal).toBe(exceptVal);
@@ -158,8 +164,8 @@ export function shouldBeEqual(stateNew, stateBase) {
  * common compare handler
  * new and base should be not equal
  */
-export function shouldBeNotEqual(stateNew, stateBase) {
-  expect(stateNew !== stateBase).toBeTruthy();
+export function shouldBeNotEqual(final, base) {
+  expect(final !== base).toBeTruthy();
 }
 
 /**
@@ -170,7 +176,7 @@ export function shouldBeNotEqual(stateNew, stateBase) {
  * @param operateDraft
  * @param executeAssertLogic
  */
-export function runTestSuit<T = any>(
+export function runTestSuit<T extends ObjectLike = ObjectLike>(
   testSuitDesc: string,
   testCaseDesc: string,
   getBase: () => T,
@@ -183,9 +189,10 @@ export function runTestSuit<T = any>(
     test(createDraftTip(testCaseDesc), () => {
       const base = getBase();
       const draft = createDraft(base);
-      // @ts-ignore
+      // @ts-ignore avoid immer type warning
       operateDraft(draft, base);
       const final = finishDraft(draft);
+      // @ts-ignore avoid immer type warning
       if (executeAssertLogic) executeAssertLogic(final, base);
     });
 
@@ -304,6 +311,14 @@ export function runSetTestSuit(
   });
 }
 
+export function runEmptyTestSuit() {
+  describe('empty suite', () => {
+    test('empty case', () => {
+      expect(1 === 1).toBeTruthy();
+    })
+  });
+}
+
 export function assignFrozenDataInJest(cb: any) {
   try {
     cb();
@@ -312,4 +327,8 @@ export function assignFrozenDataInJest(cb: any) {
     // Cannot assign to read only property 'key' of object '#<Object>'
     expect(e.message).toMatch(/(?=Cannot)/);
   }
+}
+
+export function clone(obj: any) {
+  return JSON.parse(JSON.stringify(obj));
 }

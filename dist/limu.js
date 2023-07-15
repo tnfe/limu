@@ -40,23 +40,41 @@
         return to.concat(ar || Array.prototype.slice.call(from));
     }
 
-    var _a, _b, _c;
+    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+        var e = new Error(message);
+        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+    };
+
+    /*---------------------------------------------------------------------------------------------
+     *  Licensed under the MIT License.
+     *
+     *  @Author: fantasticsoul
+     *--------------------------------------------------------------------------------------------*/
+    var _a$1, _b, _c;
+    /**
+     * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
+     * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
+     */
+    var LIMU_MAJOR_VER = 3;
+    var VER = '3.2.2';
+    // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
+    var META_KEY = Symbol('M');
     var MAP = 'Map';
     var SET = 'Set';
     var ARRAY = 'Array';
     var OBJECT = 'Object';
     var carefulDataTypes = { Map: MAP, Set: SET, Array: ARRAY };
-    var objDesc = '[object Object]';
-    var mapDesc = '[object Map]';
-    var setDesc = '[object Set]';
-    var arrDesc = '[object Array]';
-    var fnDesc = '[object Function]';
-    var desc2dataType = (_a = {},
-        _a[mapDesc] = MAP,
-        _a[setDesc] = SET,
-        _a[arrDesc] = ARRAY,
-        _a[objDesc] = OBJECT,
-        _a);
+    var OBJ_DESC = '[object Object]';
+    var MAP_DESC = '[object Map]';
+    var SET_DESC = '[object Set]';
+    var ARR_DESC = '[object Array]';
+    var FN_DESC = '[object Function]';
+    var desc2dataType = (_a$1 = {},
+        _a$1[MAP_DESC] = MAP,
+        _a$1[SET_DESC] = SET,
+        _a$1[ARR_DESC] = ARRAY,
+        _a$1[OBJ_DESC] = OBJECT,
+        _a$1);
     var SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'unshift', 'reverse', 'copyWithin', 'delete', 'fill'];
     var SHOULD_REASSIGN_MAP_METHODS = ['clear', 'delete', 'set'];
     var SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
@@ -68,37 +86,29 @@
     var mapFnKeys = ['clear', 'delete', 'entries', 'forEach', 'get', 'has', 'keys', 'set', 'values'];
     var setFnKeys = ['add', 'clear', 'delete', 'entries', 'forEach', 'has', 'keys', 'values'];
     var mapIgnoreFnKeys = [
-        // 'forEach', 'get',
         'entries', 'keys', 'values', 'has',
     ];
     __spreadArray(__spreadArray([], mapIgnoreFnKeys, true), [
         'size',
     ], false);
     var setIgnoreFnKeys = [
-        // 'forEach',
         'entries', 'has', 'keys', 'values'
     ];
-    // export const setIgnoreFnKeys = ['entries', 'has', 'keys', 'values'];
     __spreadArray(__spreadArray([], setIgnoreFnKeys, true), [
         'size',
     ], false);
     var carefulFnKeys = (_b = {},
-        _b[carefulDataTypes.Map] = mapFnKeys,
-        _b[carefulDataTypes.Set] = setFnKeys,
-        _b[carefulDataTypes.Array] = arrFnKeys,
+        _b[MAP] = mapFnKeys,
+        _b[SET] = setFnKeys,
+        _b[ARRAY] = arrFnKeys,
         _b);
     var proxyItemFnKeys = (_c = {},
-        _c[carefulDataTypes.Map] = ['forEach', 'get'],
-        _c[carefulDataTypes.Set] = ['forEach'],
-        _c[carefulDataTypes.Array] = ['forEach', 'map'],
+        _c[MAP] = ['forEach', 'get'],
+        _c[SET] = ['forEach'],
+        _c[ARRAY] = ['forEach', 'map'],
         _c);
 
-    /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Tencent Corporation. All rights reserved.
-     *  Licensed under the MIT License.
-     *
-     *  @Author: fantasticsoul
-     *--------------------------------------------------------------------------------------------*/
+    var _a;
     var toString = Object.prototype.toString;
     function noop() {
         var args = [];
@@ -109,16 +119,16 @@
     }
     function isObject(val) {
         // attention，null desc is '[object Null]'
-        return toString.call(val) === objDesc;
+        return toString.call(val) === OBJ_DESC;
     }
     function isMap(val) {
-        return toString.call(val) === mapDesc;
+        return toString.call(val) === MAP_DESC;
     }
     function isSet(val) {
-        return toString.call(val) === setDesc;
+        return toString.call(val) === SET_DESC;
     }
     function isFn(val) {
-        return toString.call(val) === fnDesc;
+        return toString.call(val) === FN_DESC;
     }
     function getValStrDesc(val) {
         return toString.call(val);
@@ -130,7 +140,7 @@
     }
     function isPrimitive(val) {
         var desc = toString.call(val);
-        return ![objDesc, arrDesc, mapDesc, setDesc, fnDesc].includes(desc);
+        return ![OBJ_DESC, ARR_DESC, MAP_DESC, SET_DESC, FN_DESC].includes(desc);
     }
     function isPromiseFn(obj) {
         return obj.constructor.name === 'AsyncFunction' || 'function' === typeof obj.then;
@@ -149,18 +159,23 @@
     function isSymbol(maySymbol) {
         return typeof maySymbol === 'symbol';
     }
+    var descProto = (_a = {},
+        _a[OBJ_DESC] = Object.prototype,
+        _a[ARR_DESC] = Array.prototype,
+        _a[MAP_DESC] = Map.prototype,
+        _a[SET_DESC] = Set.prototype,
+        _a[FN_DESC] = Function.prototype,
+        _a);
+    function injectMetaProto(rawObj) {
+        var desc = toString.call(rawObj);
+        var rootProto = descProto[desc] || Object.prototype;
+        var heluxObj = Object.create(null);
+        Object.setPrototypeOf(heluxObj, rootProto);
+        Object.setPrototypeOf(rawObj, heluxObj);
+        return rawObj;
+    }
 
     /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Tencent Corporation. All rights reserved.
-     *  Licensed under the MIT License.
-     *
-     *  @Author: fantasticsoul
-     *--------------------------------------------------------------------------------------------*/
-    // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配
-    var META_KEY = Symbol('M');
-
-    /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
      *
      *  @Author: fantasticsoul
@@ -181,8 +196,14 @@
         };
         doMark(meta);
     }
-    function attachMeta(dataNode, meta) {
-        dataNode[META_KEY] = meta;
+    function attachMeta(dataNode, meta, fast) {
+        if (fast) {
+            dataNode[META_KEY] = meta; // speed up read performance, especially for array forEach scene
+        }
+        else {
+            injectMetaProto(dataNode);
+            dataNode.__proto__[META_KEY] = meta;
+        }
         return dataNode;
     }
     function getKeyPath(draftNode, curKey) {
@@ -218,10 +239,12 @@
             keyPath: keyPath,
             level: level,
             // @ts-ignore add later
+            /** @type any */
             proxyVal: null,
             proxyItems: null,
             modified: false,
             scopes: [],
+            linkCount: 1,
             finishDraft: finishDraft,
             ver: ver,
             revoke: noop,
@@ -264,6 +287,9 @@
     }
     function getDraftMeta$1(proxyDraft) {
         return proxyDraft[META_KEY];
+    }
+    function getUnsafeDraftMeta(proxyDraft) {
+        return proxyDraft ? proxyDraft[META_KEY] : null;
     }
 
     function deepCopy$1(obj, metaVer) {
@@ -333,9 +359,9 @@
         return val;
     }
     // 调用处已保证 meta 不为空 
-    function makeCopyWithMeta(ori, meta) {
+    function makeCopyWithMeta(ori, meta, fast) {
         var ret = tryMakeCopy(ori, true);
-        return attachMeta(ret, meta);
+        return attachMeta(ret, meta, fast);
     }
 
     function isInSameScope(mayDraftNode, callerScopeVer) {
@@ -393,15 +419,14 @@
     }
 
     /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Tencent Corporation. All rights reserved.
      *  Licensed under the MIT License.
      *
      *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     function createScopedMeta(baseData, options) {
-        var _a = options.finishDraft, finishDraft = _a === void 0 ? noop : _a, ver = options.ver, traps = options.traps, parentMeta = options.parentMeta, key = options.key;
+        var _a = options.finishDraft, finishDraft = _a === void 0 ? noop : _a, ver = options.ver, traps = options.traps, parentMeta = options.parentMeta, key = options.key, fast = options.fast;
         var meta = newMeta(baseData, { finishDraft: finishDraft, ver: ver, parentMeta: parentMeta, key: key });
-        var copy = makeCopyWithMeta(baseData, meta);
+        var copy = makeCopyWithMeta(baseData, meta, fast);
         meta.copy = copy;
         var ret = Proxy.revocable(copy, traps);
         meta.proxyVal = ret.proxy;
@@ -416,7 +441,7 @@
         return fnKeys.includes(key);
     }
     function getProxyVal(selfVal, options) {
-        var _a = options || {}, key = _a.key, parentMeta = _a.parentMeta, ver = _a.ver, traps = _a.traps, parent = _a.parent, patches = _a.patches, inversePatches = _a.inversePatches, usePatches = _a.usePatches, parentType = _a.parentType;
+        var key = options.key, parentMeta = options.parentMeta, ver = options.ver, traps = options.traps, parent = options.parent, patches = options.patches, inversePatches = options.inversePatches, usePatches = options.usePatches, parentType = options.parentType, fast = options.fast;
         var mayCreateProxyVal = function (selfVal, inputKey) {
             if (isPrimitive(selfVal) || !selfVal) {
                 return selfVal;
@@ -426,7 +451,7 @@
             if (!isFn(selfVal)) {
                 // 惰性生成代理对象和其元数据
                 if (!valMeta) {
-                    valMeta = createScopedMeta(selfVal, { key: key, parentMeta: parentMeta, ver: ver, traps: traps });
+                    valMeta = createScopedMeta(selfVal, { key: key, parentMeta: parentMeta, ver: ver, traps: traps, fast: fast });
                     recordVerScope(valMeta);
                     // child value 指向 copy
                     parent[key] = valMeta.copy;
@@ -449,7 +474,7 @@
                 var tmp_1 = new Set();
                 parent.forEach(function (val) { return tmp_1.add(mayCreateProxyVal(val)); });
                 replaceSetOrMapMethods(tmp_1, parentMeta, { dataType: SET, patches: patches, inversePatches: inversePatches, usePatches: usePatches });
-                proxyItems = attachMeta(tmp_1, parentMeta);
+                proxyItems = attachMeta(tmp_1, parentMeta, fast);
                 // 区别于 2.0.2 版本，这里提前把copy指回来
                 parentMeta.copy = proxyItems;
             }
@@ -457,11 +482,11 @@
                 var tmp_2 = new Map();
                 parent.forEach(function (val, key) { return tmp_2.set(key, mayCreateProxyVal(val, key)); });
                 replaceSetOrMapMethods(tmp_2, parentMeta, { dataType: MAP, patches: patches, inversePatches: inversePatches, usePatches: usePatches });
-                proxyItems = attachMeta(tmp_2, parentMeta);
+                proxyItems = attachMeta(tmp_2, parentMeta, fast);
                 // 区别于 2.0.2 版本，这里提前把copy指回来
                 parentMeta.copy = proxyItems;
             }
-            else if (parentType === ARRAY) {
+            else if (parentType === ARRAY && key !== 'sort') {
                 parentMeta.copy = parentMeta.copy || parent.slice();
                 proxyItems = parentMeta.proxyVal;
             }
@@ -595,28 +620,32 @@
             return value;
         }
         var oldValue = parentCopy[key];
-        var tryMarkOldValueMetaDel = function () {
-            if (oldValue) {
-                var oldValueMeta = getDraftMeta$1(oldValue);
-                oldValueMeta && (oldValueMeta.isDel = true);
-            }
+        var tryMarkDel = function () {
+            var oldValueMeta = getUnsafeDraftMeta(oldValue);
+            oldValueMeta && (oldValueMeta.isDel = true);
+        };
+        // TODO: add test case
+        var tryMarkUndel = function () {
+            var valueMeta = getUnsafeDraftMeta(mayProxyValue);
+            valueMeta && (valueMeta.isDel = false);
         };
         if (calledBy === 'deleteProperty') {
-            var valueMeta = getDraftMeta$1(mayProxyValue);
+            var valueMeta = getUnsafeDraftMeta(mayProxyValue);
             // for test/complex/data-node-change case3
             if (valueMeta) {
                 valueMeta.isDel = true;
             }
             else {
                 // for test/complex/data-node-change (node-change 2)
-                tryMarkOldValueMetaDel();
+                tryMarkDel();
             }
             delete parentCopy[key];
             return;
         }
         parentCopy[key] = value;
         // 谨防是 a.b = { ... } ---> a.b = 1 的变异赋值方式
-        tryMarkOldValueMetaDel();
+        tryMarkDel();
+        tryMarkUndel();
     }
 
     function deepFreeze$1(obj) {
@@ -648,7 +677,6 @@
         }
         // get all properties
         var propertyNames = Object.getOwnPropertyNames(obj);
-        // 遍历
         propertyNames.forEach(function (name) {
             var value = obj[name];
             if (value instanceof Object && value !== null) {
@@ -658,12 +686,17 @@
         return Object.freeze(obj);
     }
 
-    // size 直接返回，
+    // 可直接返回的属性
     // 避免 Cannot set property size of #<Map> which has only a getter
     // 避免 Cannot set property size of #<Set> which has only a getter
     var PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
     var TYPE_BLACK_LIST = [ARRAY, SET, MAP];
-    function buildLimuApis() {
+    function buildLimuApis(options) {
+        var _a;
+        var optionsVar = options || {};
+        var onRead = optionsVar.onRead || noop;
+        var onWrite = optionsVar.onWrite || noop;
+        var fast = (_a = optionsVar.fast) !== null && _a !== void 0 ? _a : false;
         var limuApis = (function () {
             var metaVer = genMetaVer();
             var called = false;
@@ -698,7 +731,6 @@
                     }
                     var parentMeta = getDraftMeta$1(parent);
                     var parentType = parentMeta === null || parentMeta === void 0 ? void 0 : parentMeta.selfType;
-                    // console.log(`Get parentType:${parentType} key:${key} `, 'Read KeyPath', getKeyPath(parent, key, metaVer));
                     // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
                     // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
                     // 是为了配合 data-node-processor 里的 ATTENTION_1
@@ -706,10 +738,24 @@
                         return parentMeta.copy[key];
                     }
                     // 可能会指向代理对象
-                    currentChildVal = getProxyVal(currentChildVal, { key: key, parentMeta: parentMeta, parentType: parentType, ver: metaVer, traps: limuTraps, parent: parent, patches: patches, inversePatches: inversePatches, usePatches: usePatches });
+                    currentChildVal = getProxyVal(currentChildVal, {
+                        key: key,
+                        parentMeta: parentMeta,
+                        parentType: parentType,
+                        ver: metaVer, traps: limuTraps,
+                        parent: parent,
+                        patches: patches,
+                        fast: fast,
+                        inversePatches: inversePatches,
+                        usePatches: usePatches,
+                    });
+                    var execOnRead = function () {
+                        parentMeta && onRead({ keyPath: parentMeta.keyPath.concat(key), op: 'get', value: currentChildVal });
+                    };
                     // 用下标取数组时，可直接返回
                     // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
                     if (parentType === ARRAY && canBeNum(key)) {
+                        execOnRead();
                         return currentChildVal;
                     }
                     if (carefulDataTypes[parentType]) {
@@ -725,13 +771,14 @@
                             parentType: parentType,
                             parentMeta: parentMeta,
                         });
+                        execOnRead();
                         return currentChildVal;
                     }
+                    execOnRead();
                     return currentChildVal;
                 },
                 // parent 指向的是代理之前的对象
                 set: function (parent, key, value) {
-                    // console.log('Set', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
                     var targetValue = value;
                     if (isDraft$1(value)) {
                         // see case debug/complex/set-draft-node
@@ -753,24 +800,30 @@
                     }
                     // speed up array operation
                     var parentMeta = getDraftMeta$1(parent);
+                    var execOnWrite = function () {
+                        parentMeta && onWrite({ keyPath: parentMeta.keyPath.concat(key), op: 'set', value: value });
+                    };
+                    // implement this in the future
                     // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
-                    var isArray = parentMeta.selfType === ARRAY;
-                    if (parentMeta && isArray) {
+                    if (parentMeta && parentMeta.selfType === ARRAY) {
                         // @ts-ignore
-                        if (parentMeta.copy && parentMeta.__callSet && isArray && canBeNum(key)) {
+                        if (parentMeta.copy && parentMeta.__callSet && canBeNum(key)) {
                             parentMeta.copy[key] = targetValue;
+                            execOnWrite();
                             return true;
                         }
-                        // @ts-ignore
+                        // @ts-ignore, mark is set called on parent node
                         parentMeta.__callSet = true;
                     }
                     handleDataNode(parent, { parentMeta: parentMeta, key: key, value: targetValue, metaVer: metaVer, calledBy: 'set' });
+                    execOnWrite();
                     return true;
                 },
                 deleteProperty: function (parent, key) {
                     // console.log('Delete ', parent, key);
                     var parentMeta = getDraftMeta$1(parent);
                     handleDataNode(parent, { parentMeta: parentMeta, op: 'del', key: key, value: '', metaVer: metaVer, calledBy: 'deleteProperty' });
+                    onWrite({ keyPath: parentMeta.keyPath.concat(key), op: 'del', value: null });
                     return true;
                 },
                 // trap function call
@@ -788,13 +841,13 @@
                     if (called) {
                         throw new Error('can not call new Limu().createDraft twice');
                     }
-                    var baseOri = mayDraft;
+                    var oriBase = mayDraft;
                     called = true;
                     if (isDraft$1(mayDraft)) {
                         var draftMeta = getDraftMeta$1(mayDraft);
-                        baseOri = draftMeta.self;
+                        oriBase = draftMeta.self;
                     }
-                    var meta = createScopedMeta(baseOri, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft });
+                    var meta = createScopedMeta(oriBase, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft });
                     recordVerScope(meta);
                     return meta.proxyVal;
                 },
@@ -852,19 +905,12 @@
         return deepCopy$1(meta.copy || meta.self);
     }
 
-    /**
-     * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致
-     * 和 2.0 版本处于不兼容状态
-     * 此处标记版本号辅助打包程序识别出是 2.0 版本的代码，让其不会被打包到 3.0 + 的 npm 包体中
-     */
-    var LIMU_MAJOR_VER = 3;
-
     // export interface IProduceWithPatches {
     //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
     // }
     var Limu = /** @class */ (function () {
-        function Limu() {
-            var limuApis = buildLimuApis();
+        function Limu(options) {
+            var limuApis = buildLimuApis(options);
             this.createDraft = limuApis.createDraft;
             // @ts-ignore
             this.finishDraft = limuApis.finishDraft;
@@ -872,7 +918,7 @@
         return Limu;
     }());
     function createDraft(base, options) {
-        var apis = new Limu();
+        var apis = new Limu(options);
         // @ts-ignore , add [as] just for click to see implement
         return apis.createDraft(base, options);
     }
@@ -943,6 +989,11 @@
     }
     var original = original$1;
     var current = current$1;
+    // for convenient call at brower console
+    var win = globalThis;
+    if (!win.LimuApi) {
+        win.LimuApi = { createDraft: createDraft, finishDraft: finishDraft, produce: produce, VER: VER };
+    }
 
     exports.Limu = Limu;
     exports.createDraft = createDraft;

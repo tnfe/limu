@@ -9,11 +9,11 @@ describe('check consts', () => {
   });
 
   test('other', () => {
-    expect(consts.objDesc).toBe('[object Object]');
-    expect(consts.mapDesc).toBe('[object Map]');
-    expect(consts.setDesc).toBe('[object Set]');
-    expect(consts.arrDesc).toBe('[object Array]');
-    expect(consts.fnDesc).toBe('[object Function]');
+    expect(consts.OBJ_DESC).toBe('[object Object]');
+    expect(consts.MAP_DESC).toBe('[object Map]');
+    expect(consts.SET_DESC).toBe('[object Set]');
+    expect(consts.ARR_DESC).toBe('[object Array]');
+    expect(consts.FN_DESC).toBe('[object Function]');
 
     expect(consts.desc2dataType['[object Map]']).toBe('Map');
     expect(consts.desc2dataType['[object Set]']).toBe('Set');

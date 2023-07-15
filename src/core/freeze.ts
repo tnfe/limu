@@ -1,5 +1,4 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul
@@ -40,7 +39,6 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
 
   // get all properties
   const propertyNames = Object.getOwnPropertyNames(obj);
-  // 遍历
   propertyNames.forEach(name => {
     const value = obj[name];
     if (value instanceof Object && value !== null) {

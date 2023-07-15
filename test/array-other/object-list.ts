@@ -29,18 +29,12 @@ function changeDraft(objDraft: Record<string, any>) {
   });
 }
 
-// TODO: why  
-// NO_CARE_COPY_TYPE_LIST = [carefulDataTypes.Set, carefulDataTypes.Map, 'Object']; pass
-// NO_CARE_COPY_TYPE_LIST = [carefulDataTypes.Set, carefulDataTypes.Map]; error
 function compare(objNew, objBase) {
   expect(objNew !== objBase).toBeTruthy();
-
-  console.log('objNew.list[0] ', objNew.list[0]);
-  console.log('objBase.list[1] ', objBase.list[0]);
   expect(objNew.list[0] !== objBase.list[0]).toBeTruthy();
-  // expect(objNew.list[1] !== objBase.list[1]).toBeTruthy();
-  // expect(objNew.list[2] !== objBase.list[2]).toBeTruthy();
-  // expect(objNew.list[3] === objBase.list[3]).toBeTruthy();
+  expect(objNew.list[1] !== objBase.list[1]).toBeTruthy();
+  expect(objNew.list[2] !== objBase.list[2]).toBeTruthy();
+  expect(objNew.list[3] === objBase.list[3]).toBeTruthy();
 }
 
 runObjectTestSuit('test object-list', '{list:[obj1, obj2 ...]}', getStateBase, changeDraft, compare);

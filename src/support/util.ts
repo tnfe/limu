@@ -1,10 +1,9 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import { objDesc, arrDesc, mapDesc, setDesc, fnDesc, desc2dataType } from './consts';
+import { OBJ_DESC, ARR_DESC, MAP_DESC, SET_DESC, FN_DESC, desc2dataType } from './consts';
 
 export const toString = Object.prototype.toString;
 
@@ -14,19 +13,19 @@ export function noop(...args: any[]) {
 
 export function isObject(val) {
   // attention，null desc is '[object Null]'
-  return toString.call(val) === objDesc;
+  return toString.call(val) === OBJ_DESC;
 }
 
 export function isMap(val) {
-  return toString.call(val) === mapDesc;
+  return toString.call(val) === MAP_DESC;
 }
 
 export function isSet(val) {
-  return toString.call(val) === setDesc;
+  return toString.call(val) === SET_DESC;
 }
 
 export function isFn(val) {
-  return toString.call(val) === fnDesc;
+  return toString.call(val) === FN_DESC;
 }
 
 export function getValStrDesc(val) {
@@ -41,7 +40,7 @@ export function getDataType(dataNode) {
 
 export function isPrimitive(val) {
   const desc = toString.call(val);
-  return ![objDesc, arrDesc, mapDesc, setDesc, fnDesc].includes(desc);
+  return ![OBJ_DESC, ARR_DESC, MAP_DESC, SET_DESC, FN_DESC].includes(desc);
 }
 
 export function isPromiseFn(obj) {
@@ -89,4 +88,22 @@ export function fastObjAssign(obj: any) {
     newOne[key] = obj[key];
   });
   return newOne;
+}
+
+
+const descProto = {
+  [OBJ_DESC]: Object.prototype,
+  [ARR_DESC]: Array.prototype,
+  [MAP_DESC]: Map.prototype,
+  [SET_DESC]: Set.prototype,
+  [FN_DESC]: Function.prototype,
+};
+
+export function injectMetaProto(rawObj: any) {
+  const desc = toString.call(rawObj);
+  const rootProto = descProto[desc] || Object.prototype;
+  const heluxObj = Object.create(null);
+  Object.setPrototypeOf(heluxObj, rootProto);
+  Object.setPrototypeOf(rawObj, heluxObj);
+  return rawObj;
 }

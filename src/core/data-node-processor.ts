@@ -1,5 +1,4 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul

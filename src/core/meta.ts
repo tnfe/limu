@@ -1,13 +1,12 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta, ObjectLike } from '../inner-types';
-import { META_KEY } from '../support/symbols';
+import { META_KEY } from '../support/consts';
 import { verWrap } from '../support/inner-data';
-import { isPrimitive, getDataType, noop } from '../support/util';
+import { isPrimitive, getDataType, noop, injectMetaProto } from '../support/util';
 
 
 export function markModified(meta: DraftMeta) {
@@ -23,8 +22,13 @@ export function markModified(meta: DraftMeta) {
 };
 
 
-export function attachMeta(dataNode: any, meta: DraftMeta) {
-  dataNode[META_KEY] = meta;
+export function attachMeta(dataNode: any, meta: DraftMeta, fast: boolean) {
+  if (fast) {
+    dataNode[META_KEY] = meta; // speed up read performance, especially for array forEach scene
+  } else {
+    injectMetaProto(dataNode);
+    dataNode.__proto__[META_KEY] = meta;
+  }
   return dataNode;
 }
 
@@ -66,10 +70,12 @@ export function newMeta(baseData: any, options: any) {
     keyPath,
     level,
     // @ts-ignore add later
-    proxyVal: null,
+    /** @type any */
+    proxyVal: null as any,
     proxyItems: null,
     modified: false,
     scopes: [],
+    linkCount: 1,
     finishDraft,
     ver,
     revoke: noop,

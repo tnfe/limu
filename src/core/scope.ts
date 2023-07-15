@@ -1,13 +1,11 @@
 
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta } from '../inner-types';
-import { META_KEY } from '../support/symbols';
-import { MAP, SET, ARRAY } from '../support/consts';
+import { MAP, SET, ARRAY, META_KEY  } from '../support/consts';
 import { isObject } from '../support/util';
 import { getDraftMeta } from './meta';
 

@@ -1,5 +1,4 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul
@@ -82,7 +81,7 @@ export function tryMakeCopy(val: any, throwErr?: boolean) {
 }
 
 // 调用处已保证 meta 不为空 
-export function makeCopyWithMeta(ori: any, meta: any) {
+export function makeCopyWithMeta(ori: any, meta: any, fast: boolean) {
   const ret: any = tryMakeCopy(ori, true);
-  return attachMeta(ret, meta);
+  return attachMeta(ret, meta, fast);
 }

@@ -1,10 +1,9 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { ObjectLike, ICreateDraftOptions } from './inner-types';
+import type { ObjectLike, ICreateDraftOptions, Op } from './inner-types';
 import { buildLimuApis } from './core/build-limu-apis';
 import { isDraft as isDraftFn, getDraftMeta as getDraftMetaFn } from './core/meta';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
@@ -12,10 +11,11 @@ import { deepCopy as deepCopyFn } from './core/copy';
 import { original as originalFn, current as currentFn } from './core/user-util';
 import { limuConfig } from './support/inner-data';
 import { isPromiseFn, isPromiseResult } from './support/util';
-import { LIMU_MAJOR_VER } from './support/ver';
+import { LIMU_MAJOR_VER, VER } from './support/consts';
 
-type BuLimu = ReturnType<typeof buildLimuApis>;
+type LimuApis = ReturnType<typeof buildLimuApis>;
 
+export type { ObjectLike, ICreateDraftOptions, Op };
 export type Draft<T> = T;
 export type CreateDraft = <T extends ObjectLike >(base: T, options?: ICreateDraftOptions) => Draft<T>;
 export type FinishDraft = <T extends ObjectLike >(draft: T) => T;
@@ -43,8 +43,8 @@ export class Limu {
 
   public finishDraft: FinishDraft;
 
-  constructor() {
-    const limuApis = buildLimuApis();
+  constructor(options?: ICreateDraftOptions) {
+    const limuApis = buildLimuApis(options);
     this.createDraft = limuApis.createDraft;
     // @ts-ignore
     this.finishDraft = limuApis.finishDraft;
@@ -52,26 +52,25 @@ export class Limu {
 }
 
 
-export function createDraft<T extends ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
-  const apis = new Limu();
+export function createDraft<T extends ObjectLike = ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
+  const apis = new Limu(options);
   // @ts-ignore , add [as] just for click to see implement
-  return apis.createDraft(base, options) as BuLimu['createDraft'];
+  return apis.createDraft(base, options) as LimuApis['createDraft'];
 }
 
 
-export function finishDraft<T extends ObjectLike>(draft: Draft<T>): T {
+export function finishDraft<T extends ObjectLike = ObjectLike>(draft: Draft<T>): T {
   const draftMeta = getDraftMetaFn(draft);
   let finishHandler: (FinishDraft | null) = null;
   if (draftMeta) {
     // @ts-ignore , add [as] just for click to see implement
-    finishHandler = draftMeta.finishDraft as BuLimu['finishDraft'];
+    finishHandler = draftMeta.finishDraft as LimuApis['finishDraft'];
   }
   if (!finishHandler) {
     throw new Error(`oops, not a Limu draft!`);
   }
   return finishHandler(draft);
 }
-
 
 function checkCbFn(cb) {
   if (typeof cb !== 'function') {
@@ -159,5 +158,11 @@ export const original = originalFn;
 
 export const current = currentFn;
 
+
+// for convenient call at brower console
+const win = globalThis;
+if (!win.LimuApi) {
+  win.LimuApi = { createDraft, finishDraft, produce, VER };
+}
 
 export default produce;

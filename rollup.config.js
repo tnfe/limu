@@ -6,7 +6,7 @@ import { terser } from 'rollup-plugin-terser';
 import pkgJson from './package.json';
 
 function getSrcMajorVer() {
-  const verFilePath = path.join(__dirname, './src/support/ver.ts');
+  const verFilePath = path.join(__dirname, './src/support/consts.ts');
   const content = fs.readFileSync(verFilePath).toString();
   const strList = content.split(os.EOL);
   const line = strList.find(item => item.includes('LIMU_MAJOR_VER'));
@@ -30,7 +30,7 @@ function getPkgMajorVer() {
 
 const srcMajorVer = getSrcMajorVer();
 const pkgMajorVer = getPkgMajorVer();
-// 严格限定 v2 版本的代码只能发布  npm v2 的包体
+// 严格限定 v2 版本的代码只能发布 npm v2 的包体
 if (srcMajorVer === 2 && srcMajorVer !== pkgMajorVer) {
   throw new Error(`src ver 2 is old arc, pkg ver [${pkgMajorVer}] can not be large than it`);
 }

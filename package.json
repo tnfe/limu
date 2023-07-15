@@ -23,7 +23,7 @@
     "eslint-config-prettier": "^6.15.0",
     "eslint-loader": "^4.0.2",
     "eslint-plugin-prettier": "^3.1.4",
-    "immer": "^9.0.15",
+    "immer": "^9.0.21",
     "jest": "^27.0.5",
     "prettier": "^2.2.1",
     "rollup": "^2.38.0",
@@ -31,6 +31,7 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript": "^1.0.1",
     "ts-jest": "^27.0.3",
+    "tslib": "^2.6.0",
     "typescript": "^4.1.2"
   },
   "files": [
@@ -73,5 +74,5 @@
     "lint": "eslint ./src --fix --ext js,ts,tsx",
     "pub": "npm publish --registry=https://registry.npmjs.org"
   },
-  "version": "3.2.0"
+  "version": "3.2.2"
 }

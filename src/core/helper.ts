@@ -1,5 +1,4 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul
@@ -13,10 +12,10 @@ import { recordVerScope } from './scope'
 
 
 export function createScopedMeta(baseData: any, options) {
-  const { finishDraft = noop, ver, traps, parentMeta, key } = options;
+  const { finishDraft = noop, ver, traps, parentMeta, key, fast } = options;
   const meta = newMeta(baseData, { finishDraft, ver, parentMeta, key });
 
-  const copy = makeCopyWithMeta(baseData, meta);
+  const copy = makeCopyWithMeta(baseData, meta, fast);
   meta.copy = copy;
   const ret = Proxy.revocable(copy, traps);
   meta.proxyVal = ret.proxy;
@@ -34,7 +33,7 @@ export function shouldGenerateProxyItems(parentType, key) {
 
 
 export function getProxyVal(selfVal, options: any) {
-  const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType } = options || {};
+  const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType, fast } = options;
 
   const mayCreateProxyVal = (selfVal: any, inputKey?: string) => {
     if (isPrimitive(selfVal) || !selfVal) {
@@ -47,7 +46,7 @@ export function getProxyVal(selfVal, options: any) {
     if (!isFn(selfVal)) {
       // 惰性生成代理对象和其元数据
       if (!valMeta) {
-        valMeta = createScopedMeta(selfVal, { key, parentMeta, ver, traps });
+        valMeta = createScopedMeta(selfVal, { key, parentMeta, ver, traps, fast });
         recordVerScope(valMeta);
         // child value 指向 copy
         parent[key] = valMeta.copy;
@@ -74,7 +73,7 @@ export function getProxyVal(selfVal, options: any) {
       const tmp = new Set();
       (parent as Set<any>).forEach((val) => tmp.add(mayCreateProxyVal(val)));
       replaceSetOrMapMethods(tmp, parentMeta, { dataType: SET, patches, inversePatches, usePatches });
-      proxyItems = attachMeta(tmp, parentMeta);
+      proxyItems = attachMeta(tmp, parentMeta, fast);
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
@@ -82,11 +81,11 @@ export function getProxyVal(selfVal, options: any) {
       const tmp = new Map();
       (parent as Map<any, any>).forEach((val, key) => tmp.set(key, mayCreateProxyVal(val, key)));
       replaceSetOrMapMethods(tmp, parentMeta, { dataType: MAP, patches, inversePatches, usePatches });
-      proxyItems = attachMeta(tmp, parentMeta);
+      proxyItems = attachMeta(tmp, parentMeta, fast);
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
-    } else if (parentType === ARRAY) {
+    } else if (parentType === ARRAY && key !== 'sort') {
       parentMeta.copy = parentMeta.copy || parent.slice();
       proxyItems = parentMeta.proxyVal;
     }

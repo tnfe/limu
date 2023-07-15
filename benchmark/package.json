@@ -19,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "immer": "^9.0.15",
-    "limu": "^3.0.1"
+    "limu": "^3.2.0",
+    "mutative": "^0.5.0"
   }
 }

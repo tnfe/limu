@@ -27,7 +27,6 @@ const jestConfig = {
     // '<rootDir>/test/array-base/flatMap.ts',
     // '<rootDir>/test/array-base/filter.ts',
     // '<rootDir>/test/array-base/splice.ts',
-
     // '<rootDir>/test/array-base/valueOf.ts',
     // '<rootDir>/test/array-base/values.ts',
     // '<rootDir>/test/array-base/map.ts',
@@ -38,11 +37,13 @@ const jestConfig = {
     // '<rootDir>/test/array-base/sort.ts',
     // '<rootDir>/test/array-base/forEach.ts',
     // '<rootDir>/test/array-base/delete.ts',
+
     // '<rootDir>/test/array-other/case-push.ts',
     // '<rootDir>/test/array-other/object-item-nested.ts',
     // '<rootDir>/test/array-other/object-item.ts',
     // '<rootDir>/test/array-other/object-item-2.ts',
     // '<rootDir>/test/array-other/object-item-3.ts',
+    // '<rootDir>/test/array-other/object-list.ts',
 
 
     // '<rootDir>/test/map-other/case-nested-object.ts',
@@ -72,6 +73,8 @@ const jestConfig = {
     // '<rootDir>/test/complex/case1.ts',
     // '<rootDir>/test/complex/case-push.ts',
     // '<rootDir>/test/complex/case-node-change.ts',
+
+    // '<rootDir>/test/diff-with-immer/sort.ts',
   ],
   testPathIgnorePatterns: [
     '<rootDir>/test/_util.ts',

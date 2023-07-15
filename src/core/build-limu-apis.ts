@@ -1,5 +1,4 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Tencent Corporation. All rights reserved.
  *  Licensed under the MIT License.
  * 
  *  @Author: fantasticsoul
@@ -10,23 +9,25 @@ import {
   createScopedMeta,
   getProxyVal,
 } from './helper';
-import { META_KEY } from '../support/symbols';
-import { carefulDataTypes, MAP, SET, ARRAY } from '../support/consts';
+import { carefulDataTypes, MAP, SET, ARRAY, META_KEY } from '../support/consts';
 import { limuConfig } from '../support/inner-data';
-import { canBeNum, isFn, isSymbol } from '../support/util';
+import { canBeNum, isFn, isSymbol, noop } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { genMetaVer, getDraftMeta, isDraft } from './meta';
 import { extraFinalData, isInSameScope, recordVerScope } from './scope';
 import { deepFreeze } from './freeze';
 
-// size 直接返回，
+// 可直接返回的属性
 // 避免 Cannot set property size of #<Map> which has only a getter
 // 避免 Cannot set property size of #<Set> which has only a getter
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
 const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
 
-
-export function buildLimuApis() {
+export function buildLimuApis(options?: ICreateDraftOptions) {
+  const optionsVar = options || {};
+  const onRead = optionsVar.onRead || noop;
+  const onWrite = optionsVar.onWrite || noop;
+  const fast = optionsVar.fast ?? false;
 
   const limuApis = (() => {
     const metaVer = genMetaVer();
@@ -66,8 +67,6 @@ export function buildLimuApis() {
         const parentMeta = getDraftMeta(parent) as DraftMeta;
         const parentType = parentMeta?.selfType;
 
-        // console.log(`Get parentType:${parentType} key:${key} `, 'Read KeyPath', getKeyPath(parent, key, metaVer));
-
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
         // 是为了配合 data-node-processor 里的 ATTENTION_1
@@ -77,12 +76,20 @@ export function buildLimuApis() {
         // 可能会指向代理对象
         currentChildVal = getProxyVal(
           currentChildVal,
-          { key, parentMeta, parentType, ver: metaVer, traps: limuTraps, parent, patches, inversePatches, usePatches }
+          {
+            key, parentMeta, parentType, ver: metaVer, traps: limuTraps, parent, patches, fast,
+            inversePatches, usePatches, // not implement currently
+          }
         );
+
+        const execOnRead = () => {
+          parentMeta && onRead({ keyPath: parentMeta.keyPath.concat(key), op: 'get', value: currentChildVal });
+        };
 
         // 用下标取数组时，可直接返回
         // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
         if (parentType === ARRAY && canBeNum(key)) {
+          execOnRead();
           return currentChildVal;
         }
 
@@ -94,14 +101,15 @@ export function buildLimuApis() {
               patches, inversePatches, usePatches, parentType, parentMeta,
             },
           );
+          execOnRead();
           return currentChildVal;
         }
 
+        execOnRead();
         return currentChildVal;
       },
       // parent 指向的是代理之前的对象
       set: (parent, key, value) => {
-        // console.log('Set', parent, key, value, 'Set KeyPath', getKeyPath(parent, key, metaVer));
         let targetValue = value;
 
         if (isDraft(value)) {
@@ -125,24 +133,34 @@ export function buildLimuApis() {
 
         // speed up array operation
         const parentMeta = getDraftMeta(parent);
+        const execOnWrite = () => {
+          parentMeta && onWrite({ keyPath: parentMeta.keyPath.concat(key), op: 'set', value });
+        };
+
+        // implement this in the future
         // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
-        const isArray = parentMeta.selfType === ARRAY;
-        if (parentMeta && isArray) {
+        if (parentMeta && parentMeta.selfType === ARRAY) {
           // @ts-ignore
-          if (parentMeta.copy && parentMeta.__callSet && isArray && canBeNum(key)) {
+          if (parentMeta.copy && parentMeta.__callSet && canBeNum(key)) {
             parentMeta.copy[key] = targetValue;
+            execOnWrite();
             return true;
           }
-          // @ts-ignore
+          // @ts-ignore, mark is set called on parent node
           parentMeta.__callSet = true;
         }
+
         handleDataNode(parent, { parentMeta, key, value: targetValue, metaVer, calledBy: 'set' });
+        execOnWrite();
+
         return true;
       },
       deleteProperty: (parent, key) => {
         // console.log('Delete ', parent, key);
         const parentMeta = getDraftMeta(parent);
         handleDataNode(parent, { parentMeta, op: 'del', key, value: '', metaVer, calledBy: 'deleteProperty' });
+        onWrite({ keyPath: parentMeta.keyPath.concat(key), op: 'del', value: null });
+
         return true;
       },
 
@@ -162,15 +180,15 @@ export function buildLimuApis() {
         if (called) {
           throw new Error('can not call new Limu().createDraft twice');
         }
-        let baseOri = mayDraft;
+        let oriBase = mayDraft;
         called = true;
 
         if (isDraft(mayDraft)) {
           const draftMeta = getDraftMeta(mayDraft);
-          baseOri = draftMeta.self;
+          oriBase = draftMeta.self;
         }
 
-        const meta = createScopedMeta(baseOri, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft });
+        const meta = createScopedMeta(oriBase, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft });
         recordVerScope(meta);
 
         return meta.proxyVal as T;
