@@ -70,146 +70,144 @@ console.log(nextState.c === baseState.c); // true
 ## Performance ⚡️
 It is nearly more than 2 or 20 times faster than `immer` in different situations.
 
-
-### Simple Demo
-Execute `cd benchmark` and `node ./readme-demo.js` bash command.
-
-Run [Code](https://github.com/tnfe/limu/blob/main/benchmark/case1.js) below:
-```js
-const immer = require('immer');
-const limu = require('limu');
-
-immer.setAutoFreeze(false);
-limu.setAutoFreeze(false);
-
-function getBase() {
-  const base = {
-    a: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a1: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a2: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a3: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a4: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a5: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a6: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a7: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a8: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a9: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a10: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a11: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    a12: { b: { c: { d: { e: { f: { g: { h: { i: { j: { k: { l: { m: { n: 1 } } } } } } } } } } } } },
-    arr: [1, 2, 3],
-    b: null,
-  };
-  return base;
-};
-
-function die(label) {
-  throw new Error(label);
-};
-
-function oneBenchmark(lib, base) {
-  const start = Date.now();
-  const draft = lib.createDraft(base);
-  draft.a.b.c.d.e.f.g = 999;
-  draft.arr[1] = 100;
-  const final = lib.finishDraft(draft);
-  if (final === base) {
-    die('should not be equal');
-  }
-  if (final.arr[1] !== 100) {
-    die('final.arr[1] !== 100');
-  }
-  if (base.arr[1] !== 2) {
-    die('base.arr[1] !== 1');
-  }
-
-  const draft2 = lib.createDraft(base);
-  delete draft2.b;
-  const final2 = lib.finishDraft(draft2);
-  if (final2 === base) {
-    die('should not be equal');
-  }
-  if (base.b !== null) {
-    die('base.b should be null');
-  }
-
-  const taskSpend = Date.now() - start;
-  return taskSpend;
-}
-
-
-function measureBenchmark(label, loopLimit) {
-  const immutLibs = { limu, immer };
-  const lib = immutLibs[label];
-
-  console.log(` ------------- ${label} benchmark ------------- `);
-  const base = getBase();
-  let totalSpend = 0;
-  for (let i = 0; i < loopLimit; i++) {
-    totalSpend += oneBenchmark(lib, base);
-  }
-  console.log(`${label} avg spend ${totalSpend / loopLimit} ms \n`);
-}
-
-measureBenchmark('limu', 10000);
-measureBenchmark('immer', 10000);
-```
-
-at `MacBook 2021 m1 max`, the perf result is:
+The performance testing process is as follows
 ```bash
- ------------- limu benchmark ------------- 
-limu avg spend 0.0066 ms 
-
- ------------- immer benchmark ------------- 
-immer avg spend 0.0446 ms 
-```
-as you see limu is almost seven times faster than immer at the case mentioned above.
-
-### Complex Demo
-Follow the steps below to heck more complex perf test
-```
-1. cd benchmark
-2. npm i
-3. node ./limu-vs-immer.js
+git clone https://github.com/tnfe/limu
+cd limu
+npm i
+cd benchmark
+npm i
+node caseOnlyRead.js // trigger test execution, the console echoes the result
 ```
 
-You can change the params to test perf of different situations
+Different test strategies can be adjusted by injecting `ST` value, for example `ST=1 node caseOnlyRead.js`, the default is `4` when not injected
+- ST=1, means reuse base, start freezing
+- ST=2, means not to reuse base, start freezing
+- ST=3, means reuse base, close freeze
+- ST=4, means not to reuse base, turn off freeze
+
+Prepared 2 test cases, read-only scenario `caseOnlyRead`, and read-write scenario `caseReadWrite`
+
+The test results are as follows
+### read only
+1 `ST=1 node caseOnlyRead.js`
+
+```
+loop: 200, immer avg spend 14.6 ms
+loop: 200, limu avg spend 12.68 ms
+loop: 200, mutative avg spend 9.215 ms
+loop: 200, pstr avg spend 4 ms
+loop: 200, native avg spend 0.37 ms
+```
+
+2 `ST=2 node caseOnlyRead.js`
+```
+loop: 200, immer avg spend 16.63 ms
+loop: 200, limu avg spend 15.02 ms
+loop: 200, mutative avg spend 11.685 ms
+loop: 200, pstr avg spend 5.89 ms
+loop: 200, native avg spend 1.345 ms
+```
+
+3 `ST=3 node caseOnlyRead.js`
+```
+loop: 200, immer avg spend 13.525 ms
+loop: 200, limu avg spend 11.54 ms
+loop: 200, mutative avg spend 9.53 ms
+loop: 200, pstr avg spend 3.79 ms
+loop: 200, native avg spend 0.505 ms
+```
+
+
+4 `ST=4 node caseOnlyRead.js`
+```
+loop: 200, immer avg spend 12.965 ms
+loop: 200, limu avg spend 11.2 ms
+loop: 200, mutative avg spend 8.98 ms
+loop: 200, pstr avg spend 4.045 ms
+loop: 200, native avg spend 1.065 ms
+```
+
+### read and write
+
+1 `ST=1 node caseReadWrite.js`
+
+```
+loop: 200, immer avg spend 4.045 ms
+loop: 200, limu avg spend 4.47 ms
+loop: 200, mutative avg spend 2.11 ms
+loop: 200, pstr avg spend 8.835 ms
+loop: 200, native avg spend 0.225 ms
+```
+
+2 `ST=2 node caseReadWrite.js`
+```
+loop: 200, immer avg spend 8.44 ms
+loop: 200, limu avg spend 5.855 ms
+loop: 200, mutative avg spend 5.525 ms
+loop: 200, pstr avg spend 10.18 ms
+loop: 200, native avg spend 0.895 ms
+```
+
+3 `ST=3 node caseReadWrite.js`
+```
+loop: 200, immer avg spend 10.025 ms
+loop: 200, limu avg spend 0.89 ms
+loop: 200, mutative avg spend 0.705 ms
+loop: 200, pstr avg spend 8.155 ms
+loop: 200, native avg spend 0.155 ms
+```
+
+
+4 `ST=4 node caseReadWrite.js`
+```
+loop: 200, immer avg spend 11.025 ms
+loop: 200, limu avg spend 1.61 ms
+loop: 200, mutative avg spend 1.345 ms
+loop: 200, pstr avg spend 9.225 ms
+loop: 200, native avg spend 0.915 ms
+```
+
+## about limu
+limu is an immutable js library based on shallow copy on read and tag modification on write. Based on this mechanism, it is more friendly to debugging. You can copy the following code to the console experience
+
+For example, first visit [unpkg](https://unpkg.com/), right-click to open the console, and then paste the following code to load js
 ```ts
-// ************************************************************************
-const curStrategy = process.env.ST || strategyConsts.BASE_F_AUTO_F;
-// change params 'hasArr'、'lessDeepOp' to test limu and immer performance in different situations
-// then run npm cmd: `npm run s1`、`npm run s2`、`npm run s3`、`npm run s4` to see perf result
-const hasArr = false; // operate arr or not
-const lessDeepOp = true; // has more deep operation or not
-// ************************************************************************
+function loadJs(url) {
+   const dom = document. createElement('script');
+   dom.src = url;
+   document.body.appendChild(dom);
+}
+
+loadJs('https://unpkg.com/limu@3.2.2/dist/limu.min.js');
+// loadJs('https://unpkg.com/immer@9.0.21/dist/immer.umd.production.min.js');
 ```
 
-The perf result at macbook 2021 max pro is:
-```bash
------------------------[ hasArr true, lessOp true ]-------------------
-(reuseBase: true,  autoFreeze: true)  immer 2.797 ms : limu 1.287 ms
-(reuseBase: false, autoFreeze: true)  immer 2.835 ms : limu 1.313 ms
-(reuseBase: true,  autoFreeze: false) immer 2.049 ms : limu 0.089 ms
-(reuseBase: false, autoFreeze: false) immer 2.096 ms : limu 0.146 ms
-
------------------------[ hasArr true, lessOp false ]------------------
-(reuseBase: true,  autoFreeze: true)  immer 2.946 ms : limu 1.268 ms
-(reuseBase: false, autoFreeze: true)  immer 3.005 ms : limu 1.345 ms
-(reuseBase: true,  autoFreeze: false) immer 2.162 ms : limu 0.147 ms
-(reuseBase: false, autoFreeze: false) immer 2.169 ms : limu 0.161 ms
-
------------------------[ hasArr false, lessOp true ]--------------------------
-(reuseBase: true,  autoFreeze: true)  immer 2.253 ms : limu 0.659 ms
-(reuseBase: false, autoFreeze: true)  immer 2.261 ms : limu 0.705 ms
-(reuseBase: true,  autoFreeze: false) immer 1.386 ms : limu 0.015 ms
-(reuseBase: false, autoFreeze: false) immer 1.469 ms : limu 0.017 ms
-
------------------------[ hasArr false, lessOp false ]--------------------------
-(reuseBase: true,  autoFreeze: true)  immer 2.266 ms : limu 0.604 ms
-(reuseBase: false, autoFreeze: true)  immer 2.201 ms : limu 0.643 ms
-(reuseBase: true,  autoFreeze: false) immer 1.565 ms : limu 0.055 ms
-(reuseBase: false, autoFreeze: false) immer 1.479 ms : limu 0.061 ms
+Then run the test code
+```ts
+lib = window.LimuApi;
+const base = { a: 1, b: { b1: 1, b2: 2, b3: { b31: 1 } }, c: [1, 2, 3], d: { d1: 1000 } };
+const draft = lib. createDraft(base);
+draft.a = 200;
+draft.b.b1 = 100;
+draft.c.push(4);
+const final = lib. finishDraft(draft);
+console.log(base === final); // false
+console.log(base.a === final.a); // false
+console.log(base.b === final.b); // false
+console.log(base.b.b3 === final.b.b3); // true
+console.log(base.c === final.c); // false
+console.log(base.d === final.d); //true
 ```
+
+Higher observability will greatly improve the development and debugging experience, as shown in the figure below, after unfolding the `limu` draft, you can observe all data nodes of the draft in real time
+
+<img width="574" alt="image" src="https://github.com/unadlib/mutative/assets/7334950/2f90b07d-e2e3-4104-916c-8c0add935b41">
+
+And the immer or mutative expansion is like this
+<img width="618" alt="image" src="https://github.com/unadlib/mutative/assets/7334950/44500c66-d691-4d29-b856-fa490d2bdf8f">
+
+My conclusion is that the pursuit of extreme performance `mutative` is indeed better, and the pursuit of debugging-friendly `limu` is better. In any case, in the case of freezing, both of them are several times higher than `immer`, and respect `mutative`'s immutable Exploration ∠(°ゝ°) ❤️
 
 ### Submit your test
 You are very welcome to submit your test to the benchmark directory
