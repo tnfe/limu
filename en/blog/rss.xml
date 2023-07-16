@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title>limu Blog</title>
+        <link>https://tnfe.github.io/limu/en/blog</link>
+        <description>limu Blog</description>
+        <lastBuildDate>Sun, 16 Jul 2023 15:00:50 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <language>en</language>
+        <item>
+            <title><![CDATA[fantasticsoul intro]]></title>
+            <link>https://tnfe.github.io/limu/en/blog/change1</link>
+            <guid>https://tnfe.github.io/limu/en/blog/change1</guid>
+            <pubDate>Sun, 16 Jul 2023 15:00:50 GMT</pubDate>
+            <description><![CDATA[更新]]></description>
+            <content:encoded><![CDATA[<h2 class="anchor anchorWithStickyNavbar_LWe7" id="更新">更新<a href="#更新" class="hash-link" aria-label="更新的直接链接" title="更新的直接链接">​</a></h2><p>主要做了 xxx 更新</p>]]></content:encoded>
+            <category>hel-micro</category>
+        </item>
+    </channel>
+</rss>

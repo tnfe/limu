@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkhel_doc=self.webpackChunkhel_doc||[]).push([[68],{9217:e=>{e.exports=JSON.parse('{"label":"hel-micro","permalink":"/limu/en/blog/tags/hel-micro","allTagsPath":"/limu/en/blog/tags","count":1}')}}]);
