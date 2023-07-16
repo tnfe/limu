@@ -45,7 +45,8 @@
     "dist",
     "lib",
     "es",
-    "src"
+    "src",
+    "README.md"
   ],
   "homepage": "https://github.com/tnfe/limu#readme",
   "keywords": [
