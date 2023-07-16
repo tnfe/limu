@@ -10,7 +10,7 @@ import styles from './index.module.css';
 // import MdViewer from '@site/src/components/MonacoEditor';
 import * as demoCode from '@site/src/components/demoCode';
 
-window.limu = limu;
+globalThis.limu = limu;
 
 // prism-react-renderer
 // @uiw/react-markdown-preview
@@ -72,7 +72,7 @@ function HomepageHeader() {
         </h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
-          <Link className="button button--secondary button--lg" to="/docs/tutorial/intro">
+          <Link className="button button--secondary button--lg" to="/docs/api/basic">
             快速开始 - 1 min ⏱️
           </Link>
           <div style={{ display: 'inline-block', width: '28px' }}></div>

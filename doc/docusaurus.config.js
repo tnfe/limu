@@ -33,12 +33,12 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/tnfe/hel/doc',
+          editUrl: 'https://github.com/tnfe/limu/doc',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'http://localhost:3000/hel/blog',
+          editUrl: 'http://localhost:3000/limu/blog',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -68,7 +68,7 @@ const config = {
             position: 'left',
             sidebarId: 'api',
             label: 'api',
-            docId: 'docs/api/intro',
+            docId: 'docs/api/basic',
           },
           {
             type: 'docSidebar', // docSidebar
@@ -96,8 +96,8 @@ const config = {
             title: 'Docs',
             items: [
               {
-                label: 'Tutorial',
-                to: '/docs/tutorial/intro',
+                label: 'api',
+                to: '/docs/api/basic',
               },
             ],
           },
@@ -106,7 +106,7 @@ const config = {
             items: [
               {
                 label: '议题',
-                href: 'https://github.com/tnfe/hel/issues',
+                href: 'https://github.com/tnfe/limu/issues',
               },
             ],
           },
