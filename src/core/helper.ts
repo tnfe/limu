@@ -4,14 +4,14 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import { isObject, noop, isPrimitive, isFn } from '../support/util';
-import { proxyItemFnKeys, oppositeOps, MAP, SET, ARRAY } from '../support/consts';
+import { PROXYITEM_FNKEYS, oppositeOps, MAP, SET, ARRAY } from '../support/consts';
 import { DraftMeta } from '../inner-types';
 import { getDraftMeta, markModified, newMeta, attachMeta } from './meta'
 import { makeCopyWithMeta } from './copy'
 import { recordVerScope } from './scope'
 
 
-export function createScopedMeta(baseData: any, options) {
+export function createScopedMeta(baseData: any, options: any) {
   const { finishDraft = noop, ver, traps, parentMeta, key, fast } = options;
   const meta = newMeta(baseData, { finishDraft, ver, parentMeta, key });
 
@@ -24,15 +24,15 @@ export function createScopedMeta(baseData: any, options) {
   return meta;
 }
 
-export function shouldGenerateProxyItems(parentType, key) {
+export function shouldGenerateProxyItems(parentType: any, key: any) {
   // !!! 对于 Array，直接生成 proxyItems
   if (parentType === ARRAY) return true;
-  const fnKeys = proxyItemFnKeys[parentType] || [];
+  const fnKeys = PROXYITEM_FNKEYS[parentType] || [];
   return fnKeys.includes(key);
 }
 
 
-export function getProxyVal(selfVal, options: any) {
+export function getProxyVal(selfVal: any, options: any) {
   const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType, fast } = options;
 
   const mayCreateProxyVal = (selfVal: any, inputKey?: string) => {
@@ -98,7 +98,7 @@ export function getProxyVal(selfVal, options: any) {
 };
 
 
-export function getUnProxyValue(value) {
+export function getUnProxyValue(value: any) {
   if (!isObject(value)) {
     return value;
   }
@@ -129,18 +129,18 @@ export function replaceSetOrMapMethods(
   const oriDel = mapOrSet.delete.bind(mapOrSet);
   const oriClear = mapOrSet.clear.bind(mapOrSet);
 
-  mapOrSet.delete = function limuDelete(...args) {
+  mapOrSet.delete = function limuDelete(...args: any[]) {
     markModified(meta);
     return oriDel(...args);
   };
-  mapOrSet.clear = function limuClear(...args) {
+  mapOrSet.clear = function limuClear(...args: any[]) {
     markModified(meta);
     return oriClear(...args);
   };
 
   if (dataType === SET) {
     const oriAdd = mapOrSet.add.bind(mapOrSet);
-    mapOrSet.add = function limuAdd(...args) {
+    mapOrSet.add = function limuAdd(...args: any[]) {
       markModified(meta);
       // recordPatch({ meta, ...options });
       return oriAdd(...args);
@@ -149,7 +149,7 @@ export function replaceSetOrMapMethods(
 
   if (dataType === MAP) {
     const oriSet = mapOrSet.set.bind(mapOrSet);
-    mapOrSet.set = function limuSet(...args) {
+    mapOrSet.set = function limuSet(...args: any[]) {
       markModified(meta);
       // recordPatch({ meta, ...options });
       // @ts-ignore

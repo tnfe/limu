@@ -1,3 +1,4 @@
+
 /*---------------------------------------------------------------------------------------------
  *  Licensed under the MIT License.
  *
@@ -8,19 +9,21 @@ type AnyObject = {
 };
 type AnyArray = Array<any>;
 
+export type Key = string | symbol;
 export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
-
-export interface DraftMeta<T extends ObjectLike = ObjectLike> {
+export type Op = 'del' | 'set' | 'get';
+export type DataType = 'Map' | 'Set' | 'Array' | 'Object';
+export interface DraftMeta<T extends ObjectLike = any> {
   rootMeta: DraftMeta,
   parentMeta: null | DraftMeta,
   parent: null | ObjectLike,
   parents: ObjectLike[],
-  selfType: string,
+  selfType: DataType,
   self: T,
   copy: T,
   modified: boolean,
   isPartial: boolean,
-  isDel?: boolean,
+  isDel: boolean,
   // TODO: 探索使用linkCount代替isDel，看是否能解决多应用问题
   linkCount: number,
   key: string,
@@ -35,7 +38,13 @@ export interface DraftMeta<T extends ObjectLike = ObjectLike> {
   revoke: any,
 }
 
-export type Op = 'del' | 'set' | 'get';
+export interface IOperateParams {
+  parentType: DataType;
+  keyPath: string[];
+  key: string;
+  op: Op;
+  value: any;
+}
 
 export interface ICreateDraftOptions {
   /**
@@ -45,8 +54,12 @@ export interface ICreateDraftOptions {
   autoFreeze?: boolean;
   /** it does't works currently */
   usePatches?: boolean;
-  onRead?: (params: { keyPath: string[], op: Op, value: any }) => {};
-  onWrite?: (params: { keyPath: string[], op: Op, value: any }) => {};
+  /**
+   * any draft operation will trigger this callback
+   */
+  onOperate?: (params: IOperateParams) => void;
+  onRead?: (params: { keyPath: string[], op: Op, value: any }) => void;
+  onWrite?: (params: { keyPath: string[], op: Op, value: any }) => void;
   /**
    * default: false
    * set this param true only if need extremly fast performance

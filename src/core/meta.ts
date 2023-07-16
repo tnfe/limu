@@ -33,7 +33,7 @@ export function attachMeta(dataNode: any, meta: DraftMeta, fast: boolean) {
 }
 
 
-export function getKeyPath(draftNode, curKey) {
+export function getKeyPath(draftNode: any, curKey: string) {
   const pathArr: string[] = [curKey];
   const meta = getDraftMeta(draftNode);
   if (meta && meta.level > 0) {
@@ -75,6 +75,7 @@ export function newMeta(baseData: any, options: any) {
     proxyItems: null,
     modified: false,
     scopes: [],
+    isDel: false,
     linkCount: 1,
     finishDraft,
     ver,
@@ -94,7 +95,7 @@ export function newMeta(baseData: any, options: any) {
  * @param mayDraft
  * @returns
  */
-export function isDraft(mayDraft) {
+export function isDraft(mayDraft: any) {
   if (isPrimitive(mayDraft)) {
     return false;
   }
@@ -117,17 +118,19 @@ export function genMetaVer() {
 }
 
 
-export function getNextMetaLevel(mayContainMetaObj) {
+export function getNextMetaLevel(mayContainMetaObj: any) {
   const meta = getDraftMeta(mayContainMetaObj);
   return meta ? meta.level + 1 : 1;
 }
 
 
 export function getDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> {
+  // @ts-ignore
   return proxyDraft[META_KEY];
 }
 
 
 export function getUnsafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> | null {
+  // @ts-ignore
   return proxyDraft ? proxyDraft[META_KEY] : null;
 }

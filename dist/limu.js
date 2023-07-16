@@ -45,25 +45,20 @@
         return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
     };
 
-    /*---------------------------------------------------------------------------------------------
-     *  Licensed under the MIT License.
-     *
-     *  @Author: fantasticsoul
-     *--------------------------------------------------------------------------------------------*/
     var _a$1, _b, _c;
     /**
      * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
      * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
      */
     var LIMU_MAJOR_VER = 3;
-    var VER = '3.2.2';
+    var VER$1 = '3.3.0';
     // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
     var META_KEY = Symbol('M');
     var MAP = 'Map';
     var SET = 'Set';
     var ARRAY = 'Array';
     var OBJECT = 'Object';
-    var carefulDataTypes = { Map: MAP, Set: SET, Array: ARRAY };
+    var CAREFUL_TYPES = { Map: MAP, Set: SET, Array: ARRAY };
     var OBJ_DESC = '[object Object]';
     var MAP_DESC = '[object Map]';
     var SET_DESC = '[object Set]';
@@ -97,12 +92,12 @@
     __spreadArray(__spreadArray([], setIgnoreFnKeys, true), [
         'size',
     ], false);
-    var carefulFnKeys = (_b = {},
+    var CAREFUL_FNKEYS = (_b = {},
         _b[MAP] = mapFnKeys,
         _b[SET] = setFnKeys,
         _b[ARRAY] = arrFnKeys,
         _b);
-    var proxyItemFnKeys = (_c = {},
+    var PROXYITEM_FNKEYS = (_c = {},
         _c[MAP] = ['forEach', 'get'],
         _c[SET] = ['forEach'],
         _c[ARRAY] = ['forEach', 'map'],
@@ -244,6 +239,7 @@
             proxyItems: null,
             modified: false,
             scopes: [],
+            isDel: false,
             linkCount: 1,
             finishDraft: finishDraft,
             ver: ver,
@@ -286,9 +282,11 @@
         return meta ? meta.level + 1 : 1;
     }
     function getDraftMeta$1(proxyDraft) {
+        // @ts-ignore
         return proxyDraft[META_KEY];
     }
     function getUnsafeDraftMeta(proxyDraft) {
+        // @ts-ignore
         return proxyDraft ? proxyDraft[META_KEY] : null;
     }
 
@@ -354,7 +352,7 @@
             return new Set(val);
         }
         if (throwErr) {
-            throw new Error("make copy err, type can only be object(except null) or array");
+            throw new Error("make copy err, type can only be map, set, object(except null) or array");
         }
         return val;
     }
@@ -368,8 +366,7 @@
         if (!isObject(mayDraftNode)) {
             return true;
         }
-        var ret = getDraftMeta$1(mayDraftNode).ver === callerScopeVer;
-        return ret;
+        return getDraftMeta$1(mayDraftNode).ver === callerScopeVer;
     }
     function clearScopes(rootMeta) {
         rootMeta.scopes.forEach(function (meta) {
@@ -437,7 +434,7 @@
         // !!! 对于 Array，直接生成 proxyItems
         if (parentType === ARRAY)
             return true;
-        var fnKeys = proxyItemFnKeys[parentType] || [];
+        var fnKeys = PROXYITEM_FNKEYS[parentType] || [];
         return fnKeys.includes(key);
     }
     function getProxyVal(selfVal, options) {
@@ -595,7 +592,7 @@
         var self = parentMeta.self, parentCopy = parentMeta.copy;
         mayMarkModified({ calledBy: calledBy, parentMeta: parentMeta, op: op, key: key, parentType: parentType });
         // 是 Map, Set, Array 类型的方法操作或者值获取
-        var fnKeys = carefulFnKeys[parentType] || [];
+        var fnKeys = CAREFUL_FNKEYS[parentType] || [];
         // 是函数调用
         if (fnKeys.includes(op) && isFn(mayProxyValue)) {
             // slice 操作无需使用 copy，返回自身即可
@@ -694,8 +691,7 @@
     function buildLimuApis(options) {
         var _a;
         var optionsVar = options || {};
-        var onRead = optionsVar.onRead || noop;
-        var onWrite = optionsVar.onWrite || noop;
+        var onOperate = optionsVar.onOperate || noop;
         var fast = (_a = optionsVar.fast) !== null && _a !== void 0 ? _a : false;
         var limuApis = (function () {
             var metaVer = genMetaVer();
@@ -709,11 +705,11 @@
              * 如果数据节点上人工赋值了其他 draft 的话，当前 draft 结束后不能够被冻结（ 见set逻辑 ）
              */
             var canFreezeDraft = true;
-            // 暂未实现
+            // 暂未实现 to be implemented in the future
             var usePatches = limuConfig.usePatches;
             var patches = [];
             var inversePatches = [];
-            // >= 3.0+ ver, copy on read, mark modified on write
+            // >= 3.0+ ver, shadow copy on read, mark modified on write
             var limuTraps = {
                 // parent指向的是代理之前的对象
                 get: function (parent, key) {
@@ -749,16 +745,22 @@
                         inversePatches: inversePatches,
                         usePatches: usePatches,
                     });
-                    var execOnRead = function () {
-                        parentMeta && onRead({ keyPath: parentMeta.keyPath.concat(key), op: 'get', value: currentChildVal });
+                    var execOnOperate = function () {
+                        parentMeta && onOperate({
+                            parentType: parentType,
+                            op: 'get', keyPath: parentMeta.keyPath,
+                            key: key,
+                            value: currentChildVal,
+                        });
                     };
                     // 用下标取数组时，可直接返回
                     // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
                     if (parentType === ARRAY && canBeNum(key)) {
-                        execOnRead();
+                        execOnOperate();
                         return currentChildVal;
                     }
-                    if (carefulDataTypes[parentType]) {
+                    // @ts-ignore
+                    if (CAREFUL_TYPES[parentType]) {
                         currentChildVal = handleDataNode(parent, {
                             op: key,
                             key: key,
@@ -771,10 +773,10 @@
                             parentType: parentType,
                             parentMeta: parentMeta,
                         });
-                        execOnRead();
+                        execOnOperate();
                         return currentChildVal;
                     }
-                    execOnRead();
+                    execOnOperate();
                     return currentChildVal;
                 },
                 // parent 指向的是代理之前的对象
@@ -800,8 +802,12 @@
                     }
                     // speed up array operation
                     var parentMeta = getDraftMeta$1(parent);
-                    var execOnWrite = function () {
-                        parentMeta && onWrite({ keyPath: parentMeta.keyPath.concat(key), op: 'set', value: value });
+                    var execOnOperate = function () {
+                        parentMeta && onOperate({
+                            parentType: parentMeta.selfType, op: 'set', keyPath: parentMeta.keyPath,
+                            key: key,
+                            value: value,
+                        });
                     };
                     // implement this in the future
                     // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
@@ -809,21 +815,25 @@
                         // @ts-ignore
                         if (parentMeta.copy && parentMeta.__callSet && canBeNum(key)) {
                             parentMeta.copy[key] = targetValue;
-                            execOnWrite();
+                            execOnOperate();
                             return true;
                         }
                         // @ts-ignore, mark is set called on parent node
                         parentMeta.__callSet = true;
                     }
                     handleDataNode(parent, { parentMeta: parentMeta, key: key, value: targetValue, metaVer: metaVer, calledBy: 'set' });
-                    execOnWrite();
+                    execOnOperate();
                     return true;
                 },
+                // delete or Reflect.deleteProperty will trigger this trap
                 deleteProperty: function (parent, key) {
-                    // console.log('Delete ', parent, key);
                     var parentMeta = getDraftMeta$1(parent);
                     handleDataNode(parent, { parentMeta: parentMeta, op: 'del', key: key, value: '', metaVer: metaVer, calledBy: 'deleteProperty' });
-                    onWrite({ keyPath: parentMeta.keyPath.concat(key), op: 'del', value: null });
+                    parentMeta && onOperate({
+                        parentType: parentMeta.selfType, op: 'del', keyPath: parentMeta.keyPath,
+                        key: key,
+                        value: null,
+                    });
                     return true;
                 },
                 // trap function call
@@ -889,12 +899,11 @@
         }
         var meta = getDraftMeta$1(mayDraftNode);
         var self = (meta === null || meta === void 0 ? void 0 : meta.self) || null;
-        // 上面已经 return 出去，正常情况一定能获取到 meta.self 的
-        var existedSelf = self;
         if (trustLimu) {
-            return existedSelf;
+            // 正常情况一定能获取到 meta.self 的
+            return self;
         }
-        return existedSelf || null;
+        return self;
     }
     function current$1(mayDraftNode) {
         // TODO: 考虑添加 trustLimu 参数，和 original 保持一致？
@@ -908,6 +917,7 @@
     // export interface IProduceWithPatches {
     //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
     // }
+    var VER = VER$1;
     var Limu = /** @class */ (function () {
         function Limu(options) {
             var limuApis = buildLimuApis(options);
@@ -942,7 +952,7 @@
     // see issue https://github.com/tnfe/limu/issues/5
     function checkCbPromise(cb, result) {
         if (isPromiseFn(cb) || isPromiseResult(result)) {
-            throw new Error('produce callback can not be a promise function');
+            throw new Error('produce callback can not be a promise function or result');
         }
     }
     function innerProduce(baseState, cb, options) {
@@ -989,13 +999,9 @@
     }
     var original = original$1;
     var current = current$1;
-    // for convenient call at brower console
-    var win = globalThis;
-    if (!win.LimuApi) {
-        win.LimuApi = { createDraft: createDraft, finishDraft: finishDraft, produce: produce, VER: VER };
-    }
 
     exports.Limu = Limu;
+    exports.VER = VER;
     exports.createDraft = createDraft;
     exports.current = current;
     exports.deepCopy = deepCopy;

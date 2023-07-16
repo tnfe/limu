@@ -30,8 +30,6 @@ describe('complex-case1', () => {
     expect(base !== final).toBeTruthy();
     expect(base.mixArr !== final.mixArr).toBeTruthy();
 
-    console.log('final.mixArr[0] ', final.mixArr[0]);
-    console.log('base.mixArr[0] ', base.mixArr[0]);
     expect(final.mixArr[0] === 100).toBeTruthy();
     expect(base.mixArr[0] === 1).toBeTruthy();
 

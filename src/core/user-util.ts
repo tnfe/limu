@@ -18,12 +18,11 @@ export function original<T extends ObjectLike = ObjectLike, Trust extends boolea
 
   const meta = getDraftMeta<T>(mayDraftNode);
   const self = meta?.self || null;
-  // 上面已经 return 出去，正常情况一定能获取到 meta.self 的
-  const existedSelf = self as T;
   if (trustLimu) {
-    return existedSelf;
+    // 正常情况一定能获取到 meta.self 的
+    return self as T;
   }
-  return existedSelf || null;
+  return self;
 }
 
 

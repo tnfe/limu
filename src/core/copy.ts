@@ -26,7 +26,7 @@ export function deepCopy<T extends ObjectLike>(obj: T, metaVer?: string): T {
     let newNode = obj;
     if (Array.isArray(obj)) {
       newNode = obj.slice();
-      newNode.forEach((item, idx) => {
+      newNode.forEach((item: any, idx: number) => {
         newNode[idx] = innerDeep(item);
       });
     }
@@ -74,7 +74,7 @@ export function tryMakeCopy(val: any, throwErr?: boolean) {
     return new Set(val);
   }
   if (throwErr) {
-    throw new Error(`make copy err, type can only be object\(except null\) or array`);
+    throw new Error(`make copy err, type can only be map, set, object\(except null\) or array`);
   }
 
   return val;

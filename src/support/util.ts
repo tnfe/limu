@@ -3,6 +3,7 @@
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
+import type { DataType } from '../inner-types'
 import { OBJ_DESC, ARR_DESC, MAP_DESC, SET_DESC, FN_DESC, desc2dataType } from './consts';
 
 export const toString = Object.prototype.toString;
@@ -11,39 +12,39 @@ export function noop(...args: any[]) {
   return args;
 }
 
-export function isObject(val) {
+export function isObject(val: any) {
   // attention，null desc is '[object Null]'
   return toString.call(val) === OBJ_DESC;
 }
 
-export function isMap(val) {
+export function isMap(val: any) {
   return toString.call(val) === MAP_DESC;
 }
 
-export function isSet(val) {
+export function isSet(val: any) {
   return toString.call(val) === SET_DESC;
 }
 
-export function isFn(val) {
+export function isFn(val: any) {
   return toString.call(val) === FN_DESC;
 }
 
-export function getValStrDesc(val) {
+export function getValStrDesc(val: any) {
   return toString.call(val);
 }
 
-export function getDataType(dataNode) {
+export function getDataType(dataNode: any) : DataType {
   var strDesc = getValStrDesc(dataNode);
   const dataType = desc2dataType[strDesc];
   return dataType;
 }
 
-export function isPrimitive(val) {
+export function isPrimitive(val: any) {
   const desc = toString.call(val);
   return ![OBJ_DESC, ARR_DESC, MAP_DESC, SET_DESC, FN_DESC].includes(desc);
 }
 
-export function isPromiseFn(obj) {
+export function isPromiseFn(obj: any) {
   return obj.constructor.name === 'AsyncFunction' || 'function' === typeof obj.then;
 }
 
@@ -51,47 +52,18 @@ export function isPromiseResult(result: any) {
   return typeof Promise !== "undefined" && result instanceof Promise;
 }
 
-export function canHaveProto(val) {
-  return !isPrimitive(val);
-}
-
-export function canBeNum(val) {
+export function canBeNum(val: any) {
   var valType = typeof val;
   if (valType === 'number') return true;
   if (valType === 'string') return /^[0-9]*$/.test(val);
   return false;
 }
 
-export function isSymbol(maySymbol) {
+export function isSymbol(maySymbol: any) {
   return typeof maySymbol === 'symbol';
 }
 
-export function isFrozenObj(mayObj) {
-  if (mayObj && !isPrimitive(mayObj)) {
-    return Object.isFrozen(mayObj);
-  }
-  return false;
-}
-
-export function safeMapGet(map: Map<string, any>, key: any) {
-  let val = map.get(key)
-  if (!val) {
-    val = {};
-    map[key] = val;
-  }
-  return val;
-}
-
-export function fastObjAssign(obj: any) {
-  const newOne = {};
-  Object.keys(obj).forEach(key => {
-    newOne[key] = obj[key];
-  });
-  return newOne;
-}
-
-
-const descProto = {
+const descProto: Record<string, any> = {
   [OBJ_DESC]: Object.prototype,
   [ARR_DESC]: Array.prototype,
   [MAP_DESC]: Map.prototype,

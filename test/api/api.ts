@@ -61,17 +61,32 @@ describe('check apis', () => {
     }
 
     try {
+      // @ts-ignore
+      produce(Promise.resolve(2));
+    } catch (e: any) {
+      expect(e.message).toMatch(/(?=produce callback is not a function)/);
+    }
+
+    try {
       const curryCb = produce(async () => { });
       curryCb({ tip: 'react base state' });
     } catch (e: any) {
-      expect(e.message).toMatch(/(?=produce callback can not be a promise function)/);
+      expect(e.message).toMatch(/(?=produce callback can not be a promise function or result)/);
+    }
+
+    try {
+      const curryCb = produce(() => Promise.resolve(2));
+      curryCb({ tip: 'react base state' });
+    } catch (e: any) {
+      console.log('e.message ', e.message);
+      expect(e.message).toMatch(/(?=produce callback can not be a promise function or result)/);
     }
 
     try {
       const curryCb = produce((draft: any) => { draft.a = 1 });
       curryCb(2);
     } catch (e: any) {
-      expect(e.message).toMatch(/(?=type can only be object\(except null\) or array)/);
+      expect(e.message).toMatch(/(?=type can only be map, set, object\(except null\) or array)/);
     }
   });
 
@@ -161,4 +176,117 @@ describe('check apis', () => {
     expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}');
   });
 
+  test('original with trust for current obj', () => {
+    const base = { key1: { x: 1 }, key2: { x: 100 } };
+    const draft = createDraft(base);
+    draft.key1.x++;
+    const orig = original(draft, false);
+    const curr = current(draft); // draft snapshot
+    expect(strfy(orig)).toBe('{"key1":{"x":1},"key2":{"x":100}}');
+    expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}');
+  });
+
+  test('original not draft', () => {
+    const base = { tip: 'not draft' };
+    const orig = original(base);
+    expect(base === orig).toBeTruthy();
+  });
+
+  test('current complex obj', () => {
+    const base = {
+      a: 1,
+      b: [1, 2, 3],
+      c: { c1: 1, c2: 2 },
+      d: new Map([
+        [1, 1],
+        [2, 2],
+      ]),
+      e: new Map([
+        [1, { a: 1 }],
+        [2, { a: 1 }],
+      ]),
+      f: new Set([1, 2, 3, 4]),
+      nested: {
+        a: 1,
+        b: [1, 2, 3],
+        c: { c1: 1, c2: 2 },
+        d: new Map([
+          [1, 1],
+          [2, 2],
+        ]),
+        e: new Map([
+          [1, { a: 1 }],
+          [2, { a: 1 }],
+        ]),
+        f: new Set([1, 2, 3, 4]),
+      }
+    };
+    const draft = createDraft(base);
+    draft.c.c2 = 2000;
+    draft.b[2] = 2000;
+    draft.b.push(3000);
+    draft.b.push(4000);
+    // @ts-ignore
+    draft.e.get(2).a = 2000;
+    draft.f.add(2000);
+    draft.nested.b[2] = 2000;
+    draft.nested.f.add(2000);
+    draft.nested.b.push(3000);
+    draft.nested.b.push(4000);
+
+    const tmpCopy = current(draft);
+    expect(draft !== tmpCopy).toBeTruthy();
+    expect(tmpCopy.c.c2 === 2000).toBeTruthy();
+
+    draft.c.c2 = 3000;
+    expect(draft.c.c2 === 3000).toBeTruthy();
+    expect(tmpCopy.c.c2 === 2000).toBeTruthy();
+  });
+
+
+  test('test onOperate', () => {
+    const base = { a: 1, b: 2, c: { c1: 3 } };
+    const draft = createDraft(base, {
+      onOperate: (params) => {
+        const { key, op, value } = params;
+        if (key === 'a') {
+          expect(op === 'set').toBeTruthy();
+          expect(value === 200).toBeTruthy();
+        }
+        if (key === 'b') {
+          expect(op === 'del').toBeTruthy();
+          expect(value === null).toBeTruthy();
+        }
+        if (key === 'c') {
+          expect(op === 'get').toBeTruthy();
+        }
+        if (key === 'c1') {
+          expect(op === 'set').toBeTruthy();
+          expect(value === 300).toBeTruthy();
+        }
+      }
+    });
+    draft.a = 200;
+    // @ts-ignore
+    delete draft.b;
+    draft.c.c1 = 300;
+  });
+
+  test('fast mode', () => {
+    const base = { a: 1, b: 2, c: { c1: 3 } };
+    const draft = createDraft(base, { fast: true });
+    draft.a = 200;
+    // @ts-ignore
+    delete draft.b;
+    draft.c.c1 = 300;
+    const final = finishDraft(draft);
+
+    expect(base !== final).toBeTruthy();
+    expect(base.a === 1).toBeTruthy();
+    expect(base.b === 2 ).toBeTruthy();
+    expect(base.c).toMatchObject({ c1: 3 });
+    expect(final.a === 200).toBeTruthy();
+    expect(final.b === undefined ).toBeTruthy();
+    expect(final.c).toMatchObject({ c1: 300 });
+  });
 });

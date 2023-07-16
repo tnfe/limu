@@ -5,19 +5,16 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta } from '../inner-types';
-import { MAP, SET, ARRAY, META_KEY  } from '../support/consts';
+import { MAP, SET, ARRAY, META_KEY } from '../support/consts';
 import { isObject } from '../support/util';
 import { getDraftMeta } from './meta';
-
 
 export function isInSameScope(mayDraftNode: any, callerScopeVer: string) {
   if (!isObject(mayDraftNode)) {
     return true;
   }
-  const ret = getDraftMeta(mayDraftNode).ver === callerScopeVer;
-  return ret;
+  return getDraftMeta(mayDraftNode).ver === callerScopeVer;
 }
-
 
 export function clearScopes(rootMeta: DraftMeta) {
   rootMeta.scopes.forEach(meta => {

@@ -29,10 +29,6 @@ describe('check util', () => {
     expect(util.isSymbol('1')).toBeFalsy();
   });
 
-  test('canHaveProto', () => {
-    expect(util.canHaveProto('1')).toBeFalsy();
-  });
-
   test('isPromiseResult', () => {
     expect(util.isPromiseResult('1')).toBeFalsy();
   });

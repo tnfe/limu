@@ -3,6 +3,7 @@
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
+import type { DataType } from '../inner-types'
 
 /**
  * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
@@ -10,7 +11,7 @@
  */
 export const LIMU_MAJOR_VER = 3;
 
-export const VER = '3.2.2';
+export const VER = '3.3.0';
 
 // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
 export const META_KEY = Symbol('M');
@@ -27,7 +28,7 @@ export const SET = 'Set';
 export const ARRAY = 'Array';
 export const OBJECT = 'Object';
 
-export const carefulDataTypes = { Map: MAP, Set: SET, Array: ARRAY } as const;
+export const CAREFUL_TYPES = { Map: MAP, Set: SET, Array: ARRAY } as const;
 
 export const OBJ_DESC = '[object Object]';
 
@@ -39,7 +40,7 @@ export const ARR_DESC = '[object Array]';
 
 export const FN_DESC = '[object Function]';
 
-export const desc2dataType = {
+export const desc2dataType: Record<string, DataType> = {
   [MAP_DESC]: MAP,
   [SET_DESC]: SET,
   [ARR_DESC]: ARRAY,
@@ -80,13 +81,13 @@ export const setIgnoreFnOrAttributeKeys = [
   'size',
 ];
 
-export const carefulFnKeys = {
+export const CAREFUL_FNKEYS: Record<string, string[]> = {
   [MAP]: mapFnKeys,
   [SET]: setFnKeys,
   [ARRAY]: arrFnKeys,
 };
 
-export const proxyItemFnKeys = {
+export const PROXYITEM_FNKEYS: Record<string, string[]> = {
   [MAP]: ['forEach', 'get'],
   [SET]: ['forEach'],
   [ARRAY]: ['forEach', 'map'],

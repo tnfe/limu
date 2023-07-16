@@ -1,8 +1,8 @@
 import type { ObjectLike } from '../src/index';
-// import * as limu from '../src/index'; // test limu source code
-import { lib as limu } from '../benchmark/lib/mutative'; // test mutative
+import * as limu from '../src/index'; // test limu source code
+// import * as limu from '../benchmark/lib/limu'; // test limu compiled code
+// import { lib as limu } from '../benchmark/lib/mutative'; // test mutative
 // import * as limu from '../benchmark/lib/immer'; // test mutative
-// import * as limu from '.../benchmark/lib/limu'; // test limu compiled code
 
 // @ts-ignore only works for immer
 if (limu.enableMapSet) {

@@ -6,7 +6,7 @@
 import type { DraftMeta } from '../inner-types';
 import { isFn } from '../support/util';
 import {
-  carefulFnKeys,
+  CAREFUL_FNKEYS,
   SHOULD_REASSIGN_SET_METHODS,
   SHOULD_REASSIGN_ARR_METHODS,
   SHOULD_REASSIGN_MAP_METHODS,
@@ -32,7 +32,7 @@ function mayMarkModified(options: { calledBy: string, parentMeta: DraftMeta, op:
 }
 
 
-export function handleDataNode(parentDataNode, copyCtx) {
+export function handleDataNode(parentDataNode: any, copyCtx: any) {
   const {
     op, key, value: mayProxyValue, calledBy, parentType, parentMeta,
   } = copyCtx;
@@ -64,7 +64,7 @@ export function handleDataNode(parentDataNode, copyCtx) {
   mayMarkModified({ calledBy, parentMeta, op, key, parentType });
 
   // 是 Map, Set, Array 类型的方法操作或者值获取
-  const fnKeys = carefulFnKeys[parentType] || [];
+  const fnKeys = CAREFUL_FNKEYS[parentType] || [];
   // 是函数调用
   if (fnKeys.includes(op) && isFn(mayProxyValue)) {
     // slice 操作无需使用 copy，返回自身即可

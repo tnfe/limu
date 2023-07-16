@@ -11,7 +11,7 @@ import { deepCopy as deepCopyFn } from './core/copy';
 import { original as originalFn, current as currentFn } from './core/user-util';
 import { limuConfig } from './support/inner-data';
 import { isPromiseFn, isPromiseResult } from './support/util';
-import { LIMU_MAJOR_VER, VER } from './support/consts';
+import { LIMU_MAJOR_VER, VER as v } from './support/consts';
 
 type LimuApis = ReturnType<typeof buildLimuApis>;
 
@@ -37,7 +37,17 @@ export interface IProduce {
 //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
 // }
 
+export const VER = v;
 
+/**
+ * 使用 Limu 类创建实例后调用 createDraft finishDraft api（大多数时候，可直接从包里导出 createDraft 调用，不需要用此方式 ）
+ * ```
+ *  const limuIns = new Limu();
+ *  const draft = limuIns.createDraft({ key: 1 });
+ *  // change draft ...
+ *  limuIns.finishDraft(draft); // 必须用当前 ins 来调用 finishDraft， 使用别的会报错
+ * ```
+ */
 export class Limu {
   public createDraft: CreateDraft;
 
@@ -72,7 +82,7 @@ export function finishDraft<T extends ObjectLike = ObjectLike>(draft: Draft<T>):
   return finishHandler(draft);
 }
 
-function checkCbFn(cb) {
+function checkCbFn(cb: any) {
   if (typeof cb !== 'function') {
     throw new Error('produce callback is not a function');
   }
@@ -80,18 +90,18 @@ function checkCbFn(cb) {
 
 
 // see issue https://github.com/tnfe/limu/issues/5
-function checkCbPromise(cb, result: any) {
+function checkCbPromise(cb: any, result: any) {
   if (isPromiseFn(cb) || isPromiseResult(result)) {
-    throw new Error('produce callback can not be a promise function');
+    throw new Error('produce callback can not be a promise function or result');
   }
 }
 
 
-function innerProduce(baseState, cb, options?: ICreateDraftOptions) {
+function innerProduce(baseState: any, cb: any, options?: ICreateDraftOptions) {
   checkCbFn(cb);
   const draft = createDraft(baseState, options);
   const result = cb(draft);
-  checkCbPromise(cb, result)
+  checkCbPromise(cb, result);
   return finishDraft(draft);
 }
 
@@ -103,7 +113,7 @@ function produceFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
     const mayCb = baseState;
     const mayOptions = cb;
     checkCbFn(baseState);
-    return (state) => {
+    return (state: any) => {
       return innerProduce(state, mayCb, mayOptions);
     };
   }
@@ -158,11 +168,5 @@ export const original = originalFn;
 
 export const current = currentFn;
 
-
-// for convenient call at brower console
-const win = globalThis;
-if (!win.LimuApi) {
-  win.LimuApi = { createDraft, finishDraft, produce, VER };
-}
 
 export default produce;

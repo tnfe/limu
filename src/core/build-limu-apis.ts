@@ -9,7 +9,7 @@ import {
   createScopedMeta,
   getProxyVal,
 } from './helper';
-import { carefulDataTypes, MAP, SET, ARRAY, META_KEY } from '../support/consts';
+import { CAREFUL_TYPES, MAP, SET, ARRAY, META_KEY } from '../support/consts';
 import { limuConfig } from '../support/inner-data';
 import { canBeNum, isFn, isSymbol, noop } from '../support/util';
 import { handleDataNode } from './data-node-processor';
@@ -25,8 +25,7 @@ const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
 
 export function buildLimuApis(options?: ICreateDraftOptions) {
   const optionsVar = options || {};
-  const onRead = optionsVar.onRead || noop;
-  const onWrite = optionsVar.onWrite || noop;
+  const onOperate = optionsVar.onOperate || noop;
   const fast = optionsVar.fast ?? false;
 
   const limuApis = (() => {
@@ -41,15 +40,15 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
      * 如果数据节点上人工赋值了其他 draft 的话，当前 draft 结束后不能够被冻结（ 见set逻辑 ）
      */
     let canFreezeDraft = true;
-    // 暂未实现
+    // 暂未实现 to be implemented in the future
     let usePatches = limuConfig.usePatches;
     const patches: any[] = [];
     const inversePatches: any[] = [];
 
-    // >= 3.0+ ver, copy on read, mark modified on write
+    // >= 3.0+ ver, shadow copy on read, mark modified on write
     const limuTraps = {
       // parent指向的是代理之前的对象
-      get: (parent, key) => {
+      get: (parent: any, key: any) => {
         let currentChildVal = parent[key];
         if (key === '__proto__' || key === META_KEY) {
           return currentChildVal;
@@ -82,18 +81,21 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
           }
         );
 
-        const execOnRead = () => {
-          parentMeta && onRead({ keyPath: parentMeta.keyPath.concat(key), op: 'get', value: currentChildVal });
+        const execOnOperate = () => {
+          parentMeta && onOperate({
+            parentType, op: 'get', keyPath: parentMeta.keyPath, key, value: currentChildVal,
+          });
         };
 
         // 用下标取数组时，可直接返回
         // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
         if (parentType === ARRAY && canBeNum(key)) {
-          execOnRead();
+          execOnOperate();
           return currentChildVal;
         }
 
-        if (carefulDataTypes[parentType]) {
+        // @ts-ignore
+        if (CAREFUL_TYPES[parentType]) {
           currentChildVal = handleDataNode(
             parent,
             {
@@ -101,15 +103,15 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
               patches, inversePatches, usePatches, parentType, parentMeta,
             },
           );
-          execOnRead();
+          execOnOperate();
           return currentChildVal;
         }
 
-        execOnRead();
+        execOnOperate();
         return currentChildVal;
       },
       // parent 指向的是代理之前的对象
-      set: (parent, key, value) => {
+      set: (parent: any, key: any, value: any) => {
         let targetValue = value;
 
         if (isDraft(value)) {
@@ -133,8 +135,10 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
 
         // speed up array operation
         const parentMeta = getDraftMeta(parent);
-        const execOnWrite = () => {
-          parentMeta && onWrite({ keyPath: parentMeta.keyPath.concat(key), op: 'set', value });
+        const execOnOperate = () => {
+          parentMeta && onOperate({
+            parentType: parentMeta.selfType, op: 'set', keyPath: parentMeta.keyPath, key, value,
+          });
         };
 
         // implement this in the future
@@ -143,7 +147,7 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
           // @ts-ignore
           if (parentMeta.copy && parentMeta.__callSet && canBeNum(key)) {
             parentMeta.copy[key] = targetValue;
-            execOnWrite();
+            execOnOperate();
             return true;
           }
           // @ts-ignore, mark is set called on parent node
@@ -151,21 +155,22 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
         }
 
         handleDataNode(parent, { parentMeta, key, value: targetValue, metaVer, calledBy: 'set' });
-        execOnWrite();
+        execOnOperate();
 
         return true;
       },
-      deleteProperty: (parent, key) => {
-        // console.log('Delete ', parent, key);
+      // delete or Reflect.deleteProperty will trigger this trap
+      deleteProperty: (parent: any, key: any) => {
         const parentMeta = getDraftMeta(parent);
         handleDataNode(parent, { parentMeta, op: 'del', key, value: '', metaVer, calledBy: 'deleteProperty' });
-        onWrite({ keyPath: parentMeta.keyPath.concat(key), op: 'del', value: null });
+        parentMeta && onOperate({
+          parentType: parentMeta.selfType, op: 'del', keyPath: parentMeta.keyPath, key, value: null,
+        });
 
         return true;
       },
-
       // trap function call
-      apply: function (target, thisArg, args) {
+      apply: function (target: any, thisArg: any, args: any[]) {
         return target.apply(thisArg, args);
       },
     };
@@ -193,7 +198,7 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
 
         return meta.proxyVal as T;
       },
-      finishDraft: (proxyDraft) => {
+      finishDraft: (proxyDraft: any) => {
         // attention: if pass a revoked proxyDraft
         // it will throw: Cannot perform 'set' on a proxy that has been revoked
         const rootMeta = getDraftMeta(proxyDraft);

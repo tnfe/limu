@@ -1,4 +1,11 @@
 {
+  "name": "limu",
+  "version": "3.3.0",
+  "main": "dist/limu.min.js",
+  "module": "lib/index.js",
+  "unpkg": "dist/limu.min.js",
+  "types": "lib/index.d.ts",
+  "npmName": "limu",
   "author": {
     "name": "fantasticsoul",
     "email": "624313307@qq.com",
@@ -14,7 +21,7 @@
   },
   "bundleDependencies": [],
   "deprecated": false,
-  "description": "Born for creating immutable state",
+  "description": "A fast js lib of immutable data, based on shallow copy on read and mark modified on write mechanism",
   "devDependencies": {
     "@types/jest": "^27.0.0",
     "@typescript-eslint/eslint-plugin": "^4.7.0",
@@ -46,16 +53,12 @@
     "immutable js",
     "immutable-js",
     "immer",
+    "faster than immer",
     "replace immer",
-    "limu"
+    "limu",
+    "high performance"
   ],
   "license": "MIT",
-  "name": "limu",
-  "main": "dist/limu.min.js",
-  "module": "lib/index.js",
-  "unpkg": "dist/limu.min.js",
-  "types": "lib/index.d.ts",
-  "npmName": "limu",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tnfe/limu.git"
@@ -73,6 +76,5 @@
     "dev": "tsc --watch",
     "lint": "eslint ./src --fix --ext js,ts,tsx",
     "pub": "npm publish --registry=https://registry.npmjs.org"
-  },
-  "version": "3.2.2"
+  }
 }

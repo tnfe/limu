@@ -4,13 +4,15 @@ const jestConfig = {
   testEnvironment: "node",
   collectCoverageFrom: [
     '<rootDir>/src/**/*.ts',
+    // '<rootDir>/benchmark/lib/mutative.js',
     '!<rootDir>/src/inner-types.ts',
-    '!<rootDir>/src/core/helper.ts',
+    // '!<rootDir>/src/core/helper.ts',
   ],
   setupFilesAfterEnv: [
   ],
   testMatch: [
     '<rootDir>/test/**/*.ts',
+
     // '<rootDir>/test/complex/scope-change.ts',
     // '<rootDir>/test/map-other/case-nested-object.ts',
 
