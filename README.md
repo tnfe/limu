@@ -11,14 +11,12 @@
 It is fast, It is nearly more than **2 or 20** times faster than `immer` in different situations.
 Click this [online perf demo](https://codesandbox.io/s/limu-simple-perf-case-ycky1t?file=/src/index.js) to review the amazing result.
 
+- Debugging friendly, view draft directly anytime without `current`.
+- Smaller package, only 4.3kb gzip.
+- No freeze by default, At least 10 times faster than immer at this situation.
+- Natural Support for map and Set.
 
-See more perf test result
-```
-1. git clone git@github.com:tnfe/limu.git
-2. cd benchmark
-3. npm i
-4. node ./limu-vs-immer.js
-```
+> Pay attention, limu can only run on JavaScript runtime that supports proxy
 
 ## Quick Start
 install
@@ -51,6 +49,16 @@ console.log(nextState.a === baseState.a); // false
 console.log(nextState.b === baseState.b); // false
 console.log(nextState.c === baseState.c); // true
 ```
+
+Currying call
+```js
+const producer = produce((draft)=>{
+  draft.a = 2;
+  draft.b['2'] = 100;
+});
+const nextState = producer(baseState);
+```
+
 
 ### createDraft, finishDraft
 ```js
