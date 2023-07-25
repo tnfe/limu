@@ -17,7 +17,7 @@ const limu = require('../dist/limu'); console.log('\nRUN LIMU !!!\n');
 // const limu = require('immer');
 // limu.enableMapSet();
 
-exports.Limu = limu.Limu;
+exports.immut = limu.immut;
 
 exports.createDraft = limu.createDraft;
 

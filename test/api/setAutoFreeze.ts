@@ -1,24 +1,10 @@
-import { Limu, produce, createDraft, finishDraft, getAutoFreeze, setAutoFreeze } from '../../src';
+import { produce, createDraft, finishDraft, getAutoFreeze, setAutoFreeze } from '../../src';
 import '../_util';
 
 describe('set autoFreeze', () => {
   test('get set', () => {
     setAutoFreeze(true);
     expect(getAutoFreeze()).toBe(true);
-  });
-
-  test('new Limu', () => {
-    const base = { key: 1 };
-    const limuApis = new Limu();
-    const draft = limuApis.createDraft(base, { autoFreeze: true });
-    draft.key = 2;
-    const final = limuApis.finishDraft(draft);
-    expect(final.key === 2).toBeTruthy();
-    expect(base.key === 1).toBeTruthy();
-
-    base.key = 100; // base is unfrozen
-    expect(base.key).toBe(100);
-    expect(final.key === 2).toBeTruthy();
   });
 
   test('produce', () => {

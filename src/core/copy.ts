@@ -3,8 +3,9 @@
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { ObjectLike } from '../inner-types';
+import type { ObjectLike, FastModeRange } from '../inner-types';
 import { isObject, isMap, isSet, isPrimitive } from '../support/util';
+import { ARRAY } from '../support/consts';
 import { getDraftMeta, attachMeta } from './meta'
 
 
@@ -60,28 +61,37 @@ export function deepCopy<T extends ObjectLike>(obj: T, metaVer?: string): T {
  * @param val 
  * @returns
  */
-export function tryMakeCopy(val: any, throwErr?: boolean) {
+export function tryMakeCopy(val: any, options: { parentType, fastModeRange: FastModeRange }) {
+  const { parentType, fastModeRange } = options;
+
   if (Array.isArray(val)) {
-    return val.slice();
-  }
-  if (val && isObject(val)) {
-    return { ...val };
-  }
-  if (isMap(val)) {
-    return new Map(val);
-  }
-  if (isSet(val)) {
-    return new Set(val);
-  }
-  if (throwErr) {
-    throw new Error(`make copy err, type can only be map, set, object\(except null\) or array`);
+    return { copy: val.slice(), fast: false };
   }
 
-  return val;
+  const fast = (fastModeRange === 'array' && parentType === ARRAY) || fastModeRange === 'all';
+  let copy = val;
+  if (val && isObject(val)) {
+    copy = { ...val };
+  }
+  if (isMap(val)) {
+    copy = new Map(val);
+  }
+  if (isSet(val)) {
+    copy = new Set(val);
+  }
+
+  return { copy, fast }
 }
 
 // 调用处已保证 meta 不为空 
-export function makeCopyWithMeta(ori: any, meta: any, fast: boolean) {
-  const ret: any = tryMakeCopy(ori, true);
-  return attachMeta(ret, meta, fast);
+export function makeCopyWithMeta(
+  ori: any,
+  meta: any,
+  options: { parentType: string, fastModeRange: FastModeRange, immutBase: boolean },
+) {
+  if (!options.immutBase) {
+    const { copy, fast } = tryMakeCopy(ori, options);
+    return attachMeta(copy, meta, fast);
+  }
+  return attachMeta(ori, meta, false);
 }

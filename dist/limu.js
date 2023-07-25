@@ -51,9 +51,10 @@
      * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
      */
     var LIMU_MAJOR_VER = 3;
-    var VER$1 = '3.3.0';
+    var VER$1 = '3.3.2';
     // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
     var META_KEY = Symbol('M');
+    var IMMUT_BASE = Symbol('IMMUT_BASE');
     var MAP = 'Map';
     var SET = 'Set';
     var ARRAY = 'Array';
@@ -176,15 +177,19 @@
      *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     var verWrap = { value: 0, usablePrefix: 1 };
-    var limuConfig = {
-        autoFreeze: true,
+    var conf = {
+        autoFreeze: false,
+        /**
+         * to be implemented in the future
+         */
         usePatches: false,
+        fastModeRange: 'array',
     };
 
     function markModified(meta) {
         meta.rootMeta.modified = true;
         var doMark = function (meta) {
-            if (meta) {
+            if (meta && !meta.modified) {
                 meta.modified = true;
                 doMark(meta.parentMeta);
             }
@@ -211,7 +216,7 @@
         return pathArr;
     }
     function newMeta(baseData, options) {
-        var finishDraft = options.finishDraft, ver = options.ver, _a = options.parentMeta, parentMeta = _a === void 0 ? null : _a, key = options.key;
+        var finishDraft = options.finishDraft, ver = options.ver, _a = options.parentMeta, parentMeta = _a === void 0 ? null : _a, key = options.key, immutBase = options.immutBase;
         var dataType = getDataType(baseData);
         var keyPath = [];
         var level = 0;
@@ -239,6 +244,7 @@
             proxyItems: null,
             modified: false,
             scopes: [],
+            isImmutBase: immutBase,
             isDel: false,
             linkCount: 1,
             finishDraft: finishDraft,
@@ -263,7 +269,10 @@
             return false;
         }
         var meta = mayDraft[META_KEY];
-        return !!meta;
+        if (!meta) {
+            return false;
+        }
+        return !meta.isImmutBase;
     }
     function genMetaVer() {
         if (verWrap.value >= Number.MAX_SAFE_INTEGER) {
@@ -338,28 +347,31 @@
      * @param val
      * @returns
      */
-    function tryMakeCopy(val, throwErr) {
+    function tryMakeCopy(val, options) {
+        var parentType = options.parentType, fastModeRange = options.fastModeRange;
         if (Array.isArray(val)) {
-            return val.slice();
+            return { copy: val.slice(), fast: false };
         }
+        var fast = (fastModeRange === 'array' && parentType === ARRAY) || fastModeRange === 'all';
+        var copy = val;
         if (val && isObject(val)) {
-            return __assign({}, val);
+            copy = __assign({}, val);
         }
         if (isMap(val)) {
-            return new Map(val);
+            copy = new Map(val);
         }
         if (isSet(val)) {
-            return new Set(val);
+            copy = new Set(val);
         }
-        if (throwErr) {
-            throw new Error("make copy err, type can only be map, set, object(except null) or array");
-        }
-        return val;
+        return { copy: copy, fast: fast };
     }
     // 调用处已保证 meta 不为空 
-    function makeCopyWithMeta(ori, meta, fast) {
-        var ret = tryMakeCopy(ori, true);
-        return attachMeta(ret, meta, fast);
+    function makeCopyWithMeta(ori, meta, options) {
+        if (!options.immutBase) {
+            var _a = tryMakeCopy(ori, options), copy = _a.copy, fast = _a.fast;
+            return attachMeta(copy, meta, fast);
+        }
+        return attachMeta(ori, meta, false);
     }
 
     function isInSameScope(mayDraftNode, callerScopeVer) {
@@ -421,13 +433,20 @@
      *  @Author: fantasticsoul
      *--------------------------------------------------------------------------------------------*/
     function createScopedMeta(baseData, options) {
-        var _a = options.finishDraft, finishDraft = _a === void 0 ? noop : _a, ver = options.ver, traps = options.traps, parentMeta = options.parentMeta, key = options.key, fast = options.fast;
-        var meta = newMeta(baseData, { finishDraft: finishDraft, ver: ver, parentMeta: parentMeta, key: key });
-        var copy = makeCopyWithMeta(baseData, meta, fast);
+        var _a = options.finishDraft, finishDraft = _a === void 0 ? noop : _a, ver = options.ver, traps = options.traps, parentType = options.parentType, parentMeta = options.parentMeta, key = options.key, fastModeRange = options.fastModeRange, immutBase = options.immutBase;
+        var meta = newMeta(baseData, { finishDraft: finishDraft, ver: ver, parentMeta: parentMeta, key: key, immutBase: immutBase });
+        var copy = makeCopyWithMeta(baseData, meta, { parentType: parentType, fastModeRange: fastModeRange, immutBase: immutBase });
         meta.copy = copy;
-        var ret = Proxy.revocable(copy, traps);
-        meta.proxyVal = ret.proxy;
-        meta.revoke = ret.revoke;
+        if (immutBase) {
+            var ret = new Proxy(copy, traps);
+            meta.proxyVal = ret;
+            meta.revoke = noop;
+        }
+        else {
+            var ret = Proxy.revocable(copy, traps);
+            meta.proxyVal = ret.proxy;
+            meta.revoke = ret.revoke;
+        }
         return meta;
     }
     function shouldGenerateProxyItems(parentType, key) {
@@ -438,7 +457,7 @@
         return fnKeys.includes(key);
     }
     function getProxyVal(selfVal, options) {
-        var key = options.key, parentMeta = options.parentMeta, ver = options.ver, traps = options.traps, parent = options.parent, patches = options.patches, inversePatches = options.inversePatches, usePatches = options.usePatches, parentType = options.parentType, fast = options.fast;
+        var key = options.key, parentMeta = options.parentMeta, ver = options.ver, traps = options.traps, parent = options.parent, patches = options.patches, inversePatches = options.inversePatches, usePatches = options.usePatches, parentType = options.parentType, fastModeRange = options.fastModeRange, immutBase = options.immutBase, readOnly = options.readOnly;
         var mayCreateProxyVal = function (selfVal, inputKey) {
             if (isPrimitive(selfVal) || !selfVal) {
                 return selfVal;
@@ -448,7 +467,7 @@
             if (!isFn(selfVal)) {
                 // 惰性生成代理对象和其元数据
                 if (!valMeta) {
-                    valMeta = createScopedMeta(selfVal, { key: key, parentMeta: parentMeta, ver: ver, traps: traps, fast: fast });
+                    valMeta = createScopedMeta(selfVal, { key: key, parentMeta: parentMeta, parentType: parentType, ver: ver, traps: traps, fastModeRange: fastModeRange, immutBase: immutBase, readOnly: readOnly });
                     recordVerScope(valMeta);
                     // child value 指向 copy
                     parent[key] = valMeta.copy;
@@ -471,7 +490,7 @@
                 var tmp_1 = new Set();
                 parent.forEach(function (val) { return tmp_1.add(mayCreateProxyVal(val)); });
                 replaceSetOrMapMethods(tmp_1, parentMeta, { dataType: SET, patches: patches, inversePatches: inversePatches, usePatches: usePatches });
-                proxyItems = attachMeta(tmp_1, parentMeta, fast);
+                proxyItems = attachMeta(tmp_1, parentMeta, fastModeRange);
                 // 区别于 2.0.2 版本，这里提前把copy指回来
                 parentMeta.copy = proxyItems;
             }
@@ -479,7 +498,7 @@
                 var tmp_2 = new Map();
                 parent.forEach(function (val, key) { return tmp_2.set(key, mayCreateProxyVal(val, key)); });
                 replaceSetOrMapMethods(tmp_2, parentMeta, { dataType: MAP, patches: patches, inversePatches: inversePatches, usePatches: usePatches });
-                proxyItems = attachMeta(tmp_2, parentMeta, fast);
+                proxyItems = attachMeta(tmp_2, parentMeta, fastModeRange);
                 // 区别于 2.0.2 版本，这里提前把copy指回来
                 parentMeta.copy = proxyItems;
             }
@@ -568,8 +587,9 @@
     }
     function handleDataNode(parentDataNode, copyCtx) {
         var op = copyCtx.op, key = copyCtx.key, mayProxyValue = copyCtx.value, calledBy = copyCtx.calledBy, parentType = copyCtx.parentType, parentMeta = copyCtx.parentMeta;
+        // https://javascript.info/json#custom-tojson
+        // 兼容 JSON.stringify 调用 
         if (op === 'toJSON' && !mayProxyValue) {
-            // 兼容 JSON.stringify 调用 
             return;
         }
         /**
@@ -651,9 +671,7 @@
         }
         // @ts-ignore
         if (Array.isArray(obj) && obj.length > 0) {
-            obj.forEach(function (item) {
-                deepFreeze$1(item);
-            });
+            obj.forEach(deepFreeze$1);
             return Object.freeze(obj);
         }
         if (isSet(obj)) {
@@ -689,24 +707,26 @@
     var PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
     var TYPE_BLACK_LIST = [ARRAY, SET, MAP];
     function buildLimuApis(options) {
-        var _a;
-        var optionsVar = options || {};
-        var onOperate = optionsVar.onOperate || noop;
-        var fast = (_a = optionsVar.fast) !== null && _a !== void 0 ? _a : false;
+        var _a, _b, _c, _d;
+        var opts = options || {};
+        var onOperate = opts.onOperate || noop;
+        var fastModeRange = opts.fastModeRange || conf.fastModeRange;
+        var immutBase = (_a = opts[IMMUT_BASE]) !== null && _a !== void 0 ? _a : false;
+        var readOnly = (_b = opts.readOnly) !== null && _b !== void 0 ? _b : false;
+        // 调用那一刻起，确定 autoFreeze 值
+        // allow user overwrite autoFreeze setting in current call process
+        var autoFreeze = (_c = opts.autoFreeze) !== null && _c !== void 0 ? _c : conf.autoFreeze;
+        // 暂未实现 to be implemented in the future
+        var usePatches = (_d = opts.usePatches) !== null && _d !== void 0 ? _d : conf.usePatches;
         var limuApis = (function () {
             var metaVer = genMetaVer();
-            var called = false;
             // let revoke: null | (() => void) = null;
-            // 调用那一刻起，确定 autoFreeze 值
-            var autoFreeze = limuConfig.autoFreeze;
             /**
              * 为了和下面这个 immer case 保持行为一致
              * https://github.com/immerjs/immer/issues/960
              * 如果数据节点上人工赋值了其他 draft 的话，当前 draft 结束后不能够被冻结（ 见set逻辑 ）
              */
             var canFreezeDraft = true;
-            // 暂未实现 to be implemented in the future
-            var usePatches = limuConfig.usePatches;
             var patches = [];
             var inversePatches = [];
             // >= 3.0+ ver, shadow copy on read, mark modified on write
@@ -741,7 +761,9 @@
                         ver: metaVer, traps: limuTraps,
                         parent: parent,
                         patches: patches,
-                        fast: fast,
+                        fastModeRange: fastModeRange,
+                        immutBase: immutBase,
+                        readOnly: readOnly,
                         inversePatches: inversePatches,
                         usePatches: usePatches,
                     });
@@ -782,6 +804,14 @@
                 // parent 指向的是代理之前的对象
                 set: function (parent, key, value) {
                     var targetValue = value;
+                    if (key === META_KEY) {
+                        parent[key] = targetValue;
+                        return true;
+                    }
+                    if (readOnly) {
+                        console.warn('modify fail at readOnly mode');
+                        return true;
+                    }
                     if (isDraft$1(value)) {
                         // see case debug/complex/set-draft-node
                         if (isInSameScope(value, metaVer)) {
@@ -795,10 +825,6 @@
                             // assign another version V2 scope draft node value to current scope V1 draft node
                             canFreezeDraft = false;
                         }
-                    }
-                    if (key === META_KEY) {
-                        parent[key] = targetValue;
-                        return true;
                     }
                     // speed up array operation
                     var parentMeta = getDraftMeta$1(parent);
@@ -842,22 +868,20 @@
                 },
             };
             return {
-                createDraft: function (mayDraft, options) {
-                    var _a, _b;
-                    // allow user overwrite autoFreeze setting in current call process
-                    var opts = options || {};
-                    autoFreeze = (_a = opts.autoFreeze) !== null && _a !== void 0 ? _a : autoFreeze;
-                    usePatches = (_b = opts.usePatches) !== null && _b !== void 0 ? _b : usePatches;
-                    if (called) {
-                        throw new Error('can not call new Limu().createDraft twice');
+                createDraft: function (mayDraft) {
+                    if (isPrimitive(mayDraft)) {
+                        throw new Error('base state can not be primitive');
                     }
                     var oriBase = mayDraft;
-                    called = true;
-                    if (isDraft$1(mayDraft)) {
-                        var draftMeta = getDraftMeta$1(mayDraft);
+                    var draftMeta = getDraftMeta$1(mayDraft);
+                    if (draftMeta) {
+                        // 总是返回同一个 immutBase 代理对象
+                        if (immutBase && draftMeta.isImmutBase) {
+                            return draftMeta.proxyVal;
+                        }
                         oriBase = draftMeta.self;
                     }
-                    var meta = createScopedMeta(oriBase, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft });
+                    var meta = createScopedMeta(oriBase, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft, immutBase: immutBase, readOnly: readOnly });
                     recordVerScope(meta);
                     return meta.proxyVal;
                 },
@@ -871,10 +895,11 @@
                     if (rootMeta.level !== 0) {
                         throw new Error('oops, can not finish sub draft node!');
                     }
-                    // 再次检查，以免用户是用 new Limu() 返回的 finishDraft
-                    // 去结束另一个 new Limu() createDraft 的 草稿对象
-                    if (metaVer !== rootMeta.ver) {
-                        throw new Error('oops, the input draft does not match finishDraft handler');
+                    // immutBase 是一个一直可用的对象
+                    // 对 immut() 返回的对象调用 finishDraft 则总是返回 immutBase 自身代理
+                    // 将 immut() 返回结果传给 finishDraft 是无意义的
+                    if (rootMeta.isImmutBase) {
+                        return proxyDraft;
                     }
                     var final = extraFinalData(rootMeta);
                     if (autoFreeze && canFreezeDraft) {
@@ -893,24 +918,23 @@
         return limuApis;
     }
 
-    function original$1(mayDraftNode, trustLimu) {
-        if (!isDraft$1(mayDraftNode)) {
+    function original$1(mayDraftNode) {
+        if (isPrimitive(mayDraftNode)) {
             return mayDraftNode;
         }
         var meta = getDraftMeta$1(mayDraftNode);
-        var self = (meta === null || meta === void 0 ? void 0 : meta.self) || null;
-        if (trustLimu) {
-            // 正常情况一定能获取到 meta.self 的
-            return self;
-        }
+        var self = (meta === null || meta === void 0 ? void 0 : meta.self) || mayDraftNode;
         return self;
     }
     function current$1(mayDraftNode) {
         // TODO: 考虑添加 trustLimu 参数，和 original 保持一致？
-        if (!isDraft$1(mayDraftNode)) {
+        if (isPrimitive(mayDraftNode)) {
             return mayDraftNode;
         }
         var meta = getDraftMeta$1(mayDraftNode);
+        if (!meta) {
+            return mayDraftNode;
+        }
         return deepCopy$1(meta.copy || meta.self);
     }
 
@@ -918,19 +942,10 @@
     //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
     // }
     var VER = VER$1;
-    var Limu = /** @class */ (function () {
-        function Limu(options) {
-            var limuApis = buildLimuApis(options);
-            this.createDraft = limuApis.createDraft;
-            // @ts-ignore
-            this.finishDraft = limuApis.finishDraft;
-        }
-        return Limu;
-    }());
     function createDraft(base, options) {
-        var apis = new Limu(options);
+        var apis = buildLimuApis(options);
         // @ts-ignore , add [as] just for click to see implement
-        return apis.createDraft(base, options);
+        return apis.createDraft(base);
     }
     function finishDraft(draft) {
         var draftMeta = getDraftMeta$1(draft);
@@ -945,7 +960,7 @@
         return finishHandler(draft);
     }
     function checkCbFn(cb) {
-        if (typeof cb !== 'function') {
+        if (!isFn(cb)) {
             throw new Error('produce callback is not a function');
         }
     }
@@ -963,7 +978,7 @@
         return finishDraft(draft);
     }
     function produceFn(baseState, cb, options) {
-        if (!cb || typeof cb !== 'function') {
+        if (!cb || !isFn(cb)) {
             // expect baseState to be a callback, support curried invocation
             // expect cb to be options
             var mayCb_1 = baseState;
@@ -985,14 +1000,20 @@
     // to be implemented in the future
     // export const produceWithPatches = producePatchesFn as unknown as IProduceWithPatches;
     var deepFreeze = deepFreeze$1;
-    var deepCopy = function (obj) {
+    function deepCopy(obj) {
         return deepCopy$1(obj);
-    };
+    }
+    function immut(base) {
+        var _a;
+        var limuApis = buildLimuApis((_a = { readOnly: true }, _a[IMMUT_BASE] = true, _a));
+        var immutData = limuApis.createDraft(base);
+        return immutData;
+    }
     function setAutoFreeze(autoFreeze) {
-        limuConfig.autoFreeze = autoFreeze;
+        conf.autoFreeze = autoFreeze;
     }
     function getAutoFreeze() {
-        return limuConfig.autoFreeze;
+        return conf.autoFreeze;
     }
     function getMajorVer() {
         return LIMU_MAJOR_VER;
@@ -1000,7 +1021,6 @@
     var original = original$1;
     var current = current$1;
 
-    exports.Limu = Limu;
     exports.VER = VER;
     exports.createDraft = createDraft;
     exports.current = current;
@@ -1011,6 +1031,7 @@
     exports.getAutoFreeze = getAutoFreeze;
     exports.getDraftMeta = getDraftMeta;
     exports.getMajorVer = getMajorVer;
+    exports.immut = immut;
     exports.isDraft = isDraft;
     exports.original = original;
     exports.produce = produce;

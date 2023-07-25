@@ -36,8 +36,9 @@ export function handleDataNode(parentDataNode: any, copyCtx: any) {
   const {
     op, key, value: mayProxyValue, calledBy, parentType, parentMeta,
   } = copyCtx;
+  // https://javascript.info/json#custom-tojson
+  // 兼容 JSON.stringify 调用 
   if (op === 'toJSON' && !mayProxyValue) {
-    // 兼容 JSON.stringify 调用 
     return;
   }
 
@@ -110,7 +111,6 @@ export function handleDataNode(parentDataNode: any, copyCtx: any) {
       // for test/complex/data-node-change (node-change 2)
       tryMarkDel();
     }
-
     delete parentCopy[key];
     return;
   }

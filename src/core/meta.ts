@@ -12,7 +12,7 @@ import { isPrimitive, getDataType, noop, injectMetaProto } from '../support/util
 export function markModified(meta: DraftMeta) {
   meta.rootMeta.modified = true;
   const doMark = (meta: DraftMeta | null) => {
-    if (meta) {
+    if (meta && !meta.modified) {
       meta.modified = true;
       doMark(meta.parentMeta);
     }
@@ -45,7 +45,7 @@ export function getKeyPath(draftNode: any, curKey: string) {
 
 
 export function newMeta(baseData: any, options: any) {
-  const { finishDraft, ver, parentMeta = null, key } = options;
+  const { finishDraft, ver, parentMeta = null, key, immutBase } = options;
   const dataType = getDataType(baseData);
 
   let keyPath: string[] = [];
@@ -75,6 +75,7 @@ export function newMeta(baseData: any, options: any) {
     proxyItems: null,
     modified: false,
     scopes: [],
+    isImmutBase: immutBase,
     isDel: false,
     linkCount: 1,
     finishDraft,
@@ -100,7 +101,11 @@ export function isDraft(mayDraft: any) {
     return false;
   }
   const meta = mayDraft[META_KEY];
-  return !!meta;
+  if (!meta) {
+    return false;
+  }
+
+  return !meta.isImmutBase;
 }
 
 

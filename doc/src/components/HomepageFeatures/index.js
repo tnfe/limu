@@ -4,7 +4,7 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
-    title: '默认不冻结，在大对象小修改场景比immer快10倍或更多',
+    title: '默认不冻结，在大对象小修改场景比immer快3到5倍或更多',
     color: '#f04231',
     imageUrl: 'https://user-images.githubusercontent.com/7334950/253807518-dee752ee-7f94-43fc-8186-3a5725bfc755.png',
     description: <div style={{ textAlign: 'left' }}>immer的冻结行为造成了大量性能损耗，且此配置关闭后性能仅有少许提升，limu采用读时浅复制写时标记修改的策略压榨出了更强劲的性能</div>,

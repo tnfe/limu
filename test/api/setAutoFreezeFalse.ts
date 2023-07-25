@@ -3,20 +3,6 @@ import { Limu, produce, createDraft, finishDraft } from '../../src';
 import * as util from '../_util';
 
 describe('set autoFreeze false', () => {
-  test('new Limu', () => {
-    const base = { key: 1 };
-    const limuApis = new Limu();
-    const draft = limuApis.createDraft(base, { autoFreeze: false });
-    draft.key = 2;
-    const final = limuApis.finishDraft(draft);
-    expect(final.key === 2).toBeTruthy();
-    expect(base.key === 1).toBeTruthy();
-
-    base.key = 100; // base is unfrozen
-    expect(base.key).toBe(100);
-    expect(final.key === 2).toBeTruthy();
-  });
-
   test('produce', () => {
     const base = { key: 1 };
     const final = produce(base, (draft) => {

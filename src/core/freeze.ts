@@ -14,9 +14,7 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
 
   // @ts-ignore
   if (Array.isArray(obj) && obj.length > 0) {
-    obj.forEach(item => {
-      deepFreeze(item);
-    });
+    obj.forEach(deepFreeze);
     return Object.freeze(obj);
   }
 

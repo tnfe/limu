@@ -13,6 +13,7 @@ export type Key = string | symbol;
 export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
 export type Op = 'del' | 'set' | 'get';
 export type DataType = 'Map' | 'Set' | 'Array' | 'Object';
+export type FastModeRange = 'array' | 'all' | 'none';
 export interface DraftMeta<T extends ObjectLike = any> {
   rootMeta: DraftMeta,
   parentMeta: null | DraftMeta,
@@ -22,6 +23,7 @@ export interface DraftMeta<T extends ObjectLike = any> {
   self: T,
   copy: T,
   modified: boolean,
+  isImmutBase: boolean;
   isPartial: boolean,
   isDel: boolean,
   // TODO: 探索使用linkCount代替isDel，看是否能解决多应用问题
@@ -61,10 +63,19 @@ export interface ICreateDraftOptions {
   onRead?: (params: { keyPath: string[], op: Op, value: any }) => void;
   onWrite?: (params: { keyPath: string[], op: Op, value: any }) => void;
   /**
-   * default: false
-   * set this param true only if need extremly fast performance
-   * when false: LIMU_META stored at obj.__proto__
-   * when true: LIMU_META stored at obj.self with a symbol key
+   * default: 'array', means fastMode effect range
+   * set this param 'all' only if need extremly fast performance
+   * when disable fastMode: LIMU_META stored at obj.copy.__proto__
+   * when enable fastMode: LIMU_META stored at obj.copy with a symbol key
+   * 
+   * 'none' means disalbe fastMode for all dataNode
+   * 'array' means enable fastMode for array items
+   * 'all' means enable fastMode for all dataNode
    */
-  fast?: boolean;
+  fastModeRange?: FastModeRange;
+  readOnly?: boolean;
+}
+
+export interface IInnerCreateDraftOptions extends ICreateDraftOptions {
+  [ key: symbol ]: any;
 }

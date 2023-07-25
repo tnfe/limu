@@ -11,10 +11,12 @@ import type { DataType } from '../inner-types'
  */
 export const LIMU_MAJOR_VER = 3;
 
-export const VER = '3.3.0';
+export const VER = '3.3.2';
 
 // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
 export const META_KEY = Symbol('M');
+
+export const IMMUT_BASE = Symbol('IMMUT_BASE');
 
 export const oppositeOps = {
   add: 'remove',

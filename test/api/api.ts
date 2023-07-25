@@ -1,26 +1,18 @@
 import {
-  Limu, produce, getDraftMeta, createDraft, finishDraft,
+  produce, getDraftMeta, createDraft, finishDraft,
   deepFreeze, getAutoFreeze, original, current, getMajorVer,
 } from '../../src';
 import { assignFrozenDataInJest, strfy } from '../_util';
 
 describe('check apis', () => {
+  test('getAutoFreeze', () => {
+    expect(getAutoFreeze).toBeTruthy();
+    expect(typeof getAutoFreeze() === 'boolean').toBeTruthy();
+  });
+
   test('getMajorVer', () => {
     expect(getMajorVer).toBeTruthy();
     expect(typeof getMajorVer() === 'number').toBeTruthy();
-  });
-
-  test('new Limu', () => {
-    const limuApis = new Limu();
-    expect(limuApis.createDraft).toBeTruthy();
-    expect(limuApis.finishDraft).toBeTruthy();
-
-    const base = { key: 1 };
-    const draft = limuApis.createDraft(base);
-    expect(getDraftMeta(draft)).toBeTruthy();
-    const final = limuApis.finishDraft(draft);
-    expect(final).toBeTruthy();
-    console.log('getAutoFreeze ', getAutoFreeze());
   });
 
   test('produce', () => {
@@ -33,7 +25,6 @@ describe('check apis', () => {
 
     base.key = 100;
     expect(base.key).toBe(100); // base is unfrozen
-    console.log('getAutoFreeze ', getAutoFreeze());
   });
 
   test('produce curry', () => {
@@ -78,7 +69,6 @@ describe('check apis', () => {
       const curryCb = produce(() => Promise.resolve(2));
       curryCb({ tip: 'react base state' });
     } catch (e: any) {
-      console.log('e.message ', e.message);
       expect(e.message).toMatch(/(?=produce callback can not be a promise function or result)/);
     }
 
@@ -86,7 +76,7 @@ describe('check apis', () => {
       const curryCb = produce((draft: any) => { draft.a = 1 });
       curryCb(2);
     } catch (e: any) {
-      expect(e.message).toMatch(/(?=type can only be map, set, object\(except null\) or array)/);
+      expect(e.message).toMatch(/(?=base state can not be primitive)/);
     }
   });
 
@@ -98,17 +88,6 @@ describe('check apis', () => {
     }
   });
 
-  test('wrong finishDraft 2', () => {
-    try {
-      const limu1 = new Limu();
-      const draft1 = limu1.createDraft({ a: 1 })
-      const limu2 = new Limu();
-
-      limu2.finishDraft(draft1);
-    } catch (e: any) {
-      expect(e.message).toMatch(/(?=does not match finishDraft handler)/);
-    }
-  });
 
   test('getDraftMeta', () => {
     const base = { key: 1 };
@@ -173,16 +152,6 @@ describe('check apis', () => {
     const final = finishDraft(draft);
     expect(strfy(base)).toBe('{"key1":{"x":1},"key2":{"x":100}}');
     expect(strfy(final)).toBe('{"key1":{"x":3},"key2":{"x":100}}');
-    expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}');
-  });
-
-  test('original with trust for current obj', () => {
-    const base = { key1: { x: 1 }, key2: { x: 100 } };
-    const draft = createDraft(base);
-    draft.key1.x++;
-    const orig = original(draft, false);
-    const curr = current(draft); // draft snapshot
-    expect(strfy(orig)).toBe('{"key1":{"x":1},"key2":{"x":100}}');
     expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}');
   });
 
@@ -272,9 +241,9 @@ describe('check apis', () => {
     draft.c.c1 = 300;
   });
 
-  test('fast mode', () => {
+  function testForFast(fastModeRange) {
     const base = { a: 1, b: 2, c: { c1: 3 } };
-    const draft = createDraft(base, { fast: true });
+    const draft = createDraft(base, { fastModeRange });
     draft.a = 200;
     // @ts-ignore
     delete draft.b;
@@ -283,10 +252,18 @@ describe('check apis', () => {
 
     expect(base !== final).toBeTruthy();
     expect(base.a === 1).toBeTruthy();
-    expect(base.b === 2 ).toBeTruthy();
+    expect(base.b === 2).toBeTruthy();
     expect(base.c).toMatchObject({ c1: 3 });
     expect(final.a === 200).toBeTruthy();
-    expect(final.b === undefined ).toBeTruthy();
+    expect(final.b === undefined).toBeTruthy();
     expect(final.c).toMatchObject({ c1: 300 });
+  }
+
+  test('fastModeRange all', () => {
+    testForFast('all');
+  });
+
+  test('fastModeRange none', () => {
+    testForFast('none');
   });
 });

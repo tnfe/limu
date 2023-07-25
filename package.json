@@ -1,6 +1,6 @@
 {
   "name": "limu",
-  "version": "3.3.0",
+  "version": "3.3.2",
   "main": "dist/limu.min.js",
   "module": "lib/index.js",
   "unpkg": "dist/limu.min.js",

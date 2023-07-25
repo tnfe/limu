@@ -1,5 +1,5 @@
 
 // for local debug
 
-// require('./caseOnlyRead');
+require('./caseOnlyRead');
 // require('./caseReadWrite');

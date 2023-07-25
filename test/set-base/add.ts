@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { runTestSuit, getSetBase, logStr } from '../_util';
+import { runTestSuit, getSetBase } from '../_util';
 
 function changeDraft(setDraft: Set<any>) {
   setDraft.forEach((v, v2, set) => {
@@ -14,8 +14,8 @@ function changeDraft(setDraft: Set<any>) {
 
 function compare(setNew, setBase) {
   expect(setNew !== setBase).toBeTruthy();
-  logStr(Array.from(setNew));
-  logStr(Array.from(setBase));
+  // logStr(Array.from(setNew));
+  // logStr(Array.from(setBase));
 
   expect(setNew.size).toEqual(5);
   expect(setBase.size).toEqual(3);

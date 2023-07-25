@@ -1,7 +1,6 @@
 const immer = require('./lib/immer');
 const mutative = require('./lib/mutative');
-const limu = require('./lib/limu');
-const limuFast = require('./lib/limuFast');
+const { limu, limuFast, limuSlow } = require('./lib/limu');
 const pstr = require('./lib/pstr');
 const native = require('./lib/native');
 const util = require('./_util');
@@ -10,6 +9,7 @@ const immutLibs = {
   immer,
   limu,
   limuFast,
+  limuSlow,
   mutative,
   pstr,
   native, // just to see native js operation perf
@@ -57,6 +57,7 @@ function getBaseDataMap(arrLen) {
       mutative: getBase(arrLen),
       limu: getBase(arrLen),
       limuFast: getBase(arrLen),
+      limuSlow: getBase(arrLen),
       pstr: getBase(arrLen),
       native: getBase(arrLen),
     }
@@ -73,7 +74,7 @@ function oneBenchmark(libName, options) {
   }
 
   const base = reuseBase ? getBaseDataMap(arrLen)[libName] : getBase(arrLen);
-  userBenchmark({ lib, base, operateArr: OP_ARR, moreDeepOp: MORE_DEEP_OP });
+  userBenchmark({ libName, lib, base, operateArr: OP_ARR, moreDeepOp: MORE_DEEP_OP });
   const taskSpend = Date.now() - start;
 
   return taskSpend;
@@ -85,16 +86,16 @@ function oneBenchmark(libName, options) {
 function measureBenchmark(libName, options) {
   const loopLimit = options.loopLimit || LOOP_LIMIT;
 
-  let totalLibSpend = 0;
+  let totalSpend = 0;
   const runForLoop = (limit) => {
     for (let i = 0; i < limit; i++) {
-      totalLibSpend += oneBenchmark(libName, options);
+      totalSpend += oneBenchmark(libName, options);
     }
   };
   // preheat
   oneBenchmark(libName, options);
   runForLoop(loopLimit);
-  console.log(`loop: ${loopLimit}, ${libName} avg spend ${totalLibSpend / loopLimit} ms`);
+  console.log(`loop: ${loopLimit}, ${libName} avg spend ${totalSpend / loopLimit} ms`);
 }
 
 
@@ -111,13 +112,14 @@ exports.runPerfCase = async function (options) {
   util.showMem('Before measure', true);
 
   measureBenchmark('immer', options);
+  // measureBenchmark('limuFast', options); // works for: ST=3 node caseOnlyRead.js ( bad way loop )
   measureBenchmark('limu', options);
-  // measureBenchmark('limuFast', options);
+  // measureBenchmark('limuSlow', options); // works for: ST=3 node caseOnlyRead.js ( bad way loop )
   measureBenchmark('mutative', options);
   measureBenchmark('pstr', options);
   measureBenchmark('native', options);
 
-  // show mem leak or not
+  // see if mem leak or not
   console.log('');
   for (let i = 0; i < 2; i++) {
     await util.sleep();

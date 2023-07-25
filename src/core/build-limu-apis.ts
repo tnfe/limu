@@ -3,15 +3,15 @@
  * 
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { ObjectLike, DraftMeta, ICreateDraftOptions } from '../inner-types';
+import type { ObjectLike, DraftMeta, ICreateDraftOptions, IInnerCreateDraftOptions } from '../inner-types';
 import {
   getUnProxyValue,
   createScopedMeta,
   getProxyVal,
 } from './helper';
-import { CAREFUL_TYPES, MAP, SET, ARRAY, META_KEY } from '../support/consts';
-import { limuConfig } from '../support/inner-data';
-import { canBeNum, isFn, isSymbol, noop } from '../support/util';
+import { CAREFUL_TYPES, MAP, SET, ARRAY, META_KEY, IMMUT_BASE } from '../support/consts';
+import { conf } from '../support/inner-data';
+import { canBeNum, isFn, isSymbol, noop, isPrimitive } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { genMetaVer, getDraftMeta, isDraft } from './meta';
 import { extraFinalData, isInSameScope, recordVerScope } from './scope';
@@ -23,25 +23,27 @@ import { deepFreeze } from './freeze';
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
 const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
 
-export function buildLimuApis(options?: ICreateDraftOptions) {
-  const optionsVar = options || {};
-  const onOperate = optionsVar.onOperate || noop;
-  const fast = optionsVar.fast ?? false;
+export function buildLimuApis(options?: ICreateDraftOptions | IInnerCreateDraftOptions) {
+  const opts = options || {};
+  const onOperate = opts.onOperate || noop;
+  const fastModeRange = opts.fastModeRange || conf.fastModeRange;
+  const immutBase = opts[IMMUT_BASE] ?? false;
+  const readOnly = opts.readOnly ?? false;
+  // 调用那一刻起，确定 autoFreeze 值
+  // allow user overwrite autoFreeze setting in current call process
+  const autoFreeze = opts.autoFreeze ?? conf.autoFreeze;
+  // 暂未实现 to be implemented in the future
+  const usePatches = opts.usePatches ?? conf.usePatches;
 
   const limuApis = (() => {
     const metaVer = genMetaVer();
-    let called = false;
     // let revoke: null | (() => void) = null;
-    // 调用那一刻起，确定 autoFreeze 值
-    let autoFreeze = limuConfig.autoFreeze;
     /**
      * 为了和下面这个 immer case 保持行为一致
      * https://github.com/immerjs/immer/issues/960
      * 如果数据节点上人工赋值了其他 draft 的话，当前 draft 结束后不能够被冻结（ 见set逻辑 ）
      */
     let canFreezeDraft = true;
-    // 暂未实现 to be implemented in the future
-    let usePatches = limuConfig.usePatches;
     const patches: any[] = [];
     const inversePatches: any[] = [];
 
@@ -76,7 +78,8 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
         currentChildVal = getProxyVal(
           currentChildVal,
           {
-            key, parentMeta, parentType, ver: metaVer, traps: limuTraps, parent, patches, fast,
+            key, parentMeta, parentType, ver: metaVer, traps: limuTraps, parent, patches, fastModeRange,
+            immutBase, readOnly,
             inversePatches, usePatches, // not implement currently
           }
         );
@@ -113,6 +116,15 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
       // parent 指向的是代理之前的对象
       set: (parent: any, key: any, value: any) => {
         let targetValue = value;
+        if (key === META_KEY) {
+          parent[key] = targetValue;
+          return true;
+        }
+
+        if (readOnly) {
+          console.warn('modify fail at readOnly mode');
+          return true;
+        }
 
         if (isDraft(value)) {
           // see case debug/complex/set-draft-node
@@ -126,11 +138,6 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
             // assign another version V2 scope draft node value to current scope V1 draft node
             canFreezeDraft = false;
           }
-        }
-
-        if (key === META_KEY) {
-          parent[key] = targetValue;
-          return true;
         }
 
         // speed up array operation
@@ -176,24 +183,25 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
     };
 
     return {
-      createDraft: <T extends ObjectLike>(mayDraft: T, options?: ICreateDraftOptions): T => {
-        // allow user overwrite autoFreeze setting in current call process
-        const opts = options || {};
-        autoFreeze = opts.autoFreeze ?? autoFreeze;
-        usePatches = opts.usePatches ?? usePatches;
-
-        if (called) {
-          throw new Error('can not call new Limu().createDraft twice');
+      createDraft: <T extends ObjectLike>(mayDraft: T): T => {
+        if (isPrimitive(mayDraft)) {
+          throw new Error('base state can not be primitive');
         }
         let oriBase = mayDraft;
-        called = true;
 
-        if (isDraft(mayDraft)) {
-          const draftMeta = getDraftMeta(mayDraft);
+        const draftMeta = getDraftMeta(mayDraft);
+        if (draftMeta) {
+          // 总是返回同一个 immutBase 代理对象
+          if (immutBase && draftMeta.isImmutBase) {
+            return draftMeta.proxyVal as T;
+          }
           oriBase = draftMeta.self;
         }
 
-        const meta = createScopedMeta(oriBase, { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft });
+        const meta = createScopedMeta(
+          oriBase,
+          { key: '', ver: metaVer, traps: limuTraps, finishDraft: limuApis.finishDraft, immutBase, readOnly },
+        );
         recordVerScope(meta);
 
         return meta.proxyVal as T;
@@ -208,10 +216,11 @@ export function buildLimuApis(options?: ICreateDraftOptions) {
         if (rootMeta.level !== 0) {
           throw new Error('oops, can not finish sub draft node!');
         }
-        // 再次检查，以免用户是用 new Limu() 返回的 finishDraft
-        // 去结束另一个 new Limu() createDraft 的 草稿对象
-        if (metaVer !== rootMeta.ver) {
-          throw new Error('oops, the input draft does not match finishDraft handler');
+        // immutBase 是一个一直可用的对象
+        // 对 immut() 返回的对象调用 finishDraft 则总是返回 immutBase 自身代理
+        // 将 immut() 返回结果传给 finishDraft 是无意义的
+        if (rootMeta.isImmutBase) {
+          return proxyDraft;
         }
 
         let final = extraFinalData(rootMeta);

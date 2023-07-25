@@ -12,14 +12,20 @@ import { recordVerScope } from './scope'
 
 
 export function createScopedMeta(baseData: any, options: any) {
-  const { finishDraft = noop, ver, traps, parentMeta, key, fast } = options;
-  const meta = newMeta(baseData, { finishDraft, ver, parentMeta, key });
+  const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase } = options;
+  const meta = newMeta(baseData, { finishDraft, ver, parentMeta, key, immutBase });
 
-  const copy = makeCopyWithMeta(baseData, meta, fast);
+  const copy = makeCopyWithMeta(baseData, meta, { parentType, fastModeRange, immutBase });
   meta.copy = copy;
-  const ret = Proxy.revocable(copy, traps);
-  meta.proxyVal = ret.proxy;
-  meta.revoke = ret.revoke;
+  if (immutBase) {
+    const ret = new Proxy(copy, traps);
+    meta.proxyVal = ret;
+    meta.revoke = noop;
+  } else {
+    const ret = Proxy.revocable(copy, traps);
+    meta.proxyVal = ret.proxy;
+    meta.revoke = ret.revoke;
+  }
 
   return meta;
 }
@@ -33,7 +39,10 @@ export function shouldGenerateProxyItems(parentType: any, key: any) {
 
 
 export function getProxyVal(selfVal: any, options: any) {
-  const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType, fast } = options;
+  const {
+    key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches,
+    parentType, fastModeRange, immutBase, readOnly,
+  } = options;
 
   const mayCreateProxyVal = (selfVal: any, inputKey?: string) => {
     if (isPrimitive(selfVal) || !selfVal) {
@@ -46,7 +55,7 @@ export function getProxyVal(selfVal: any, options: any) {
     if (!isFn(selfVal)) {
       // 惰性生成代理对象和其元数据
       if (!valMeta) {
-        valMeta = createScopedMeta(selfVal, { key, parentMeta, ver, traps, fast });
+        valMeta = createScopedMeta(selfVal, { key, parentMeta, parentType, ver, traps, fastModeRange, immutBase, readOnly });
         recordVerScope(valMeta);
         // child value 指向 copy
         parent[key] = valMeta.copy;
@@ -73,7 +82,7 @@ export function getProxyVal(selfVal: any, options: any) {
       const tmp = new Set();
       (parent as Set<any>).forEach((val) => tmp.add(mayCreateProxyVal(val)));
       replaceSetOrMapMethods(tmp, parentMeta, { dataType: SET, patches, inversePatches, usePatches });
-      proxyItems = attachMeta(tmp, parentMeta, fast);
+      proxyItems = attachMeta(tmp, parentMeta, fastModeRange);
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
@@ -81,7 +90,7 @@ export function getProxyVal(selfVal: any, options: any) {
       const tmp = new Map();
       (parent as Map<any, any>).forEach((val, key) => tmp.set(key, mayCreateProxyVal(val, key)));
       replaceSetOrMapMethods(tmp, parentMeta, { dataType: MAP, patches, inversePatches, usePatches });
-      proxyItems = attachMeta(tmp, parentMeta, fast);
+      proxyItems = attachMeta(tmp, parentMeta, fastModeRange);
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
@@ -142,7 +151,7 @@ export function replaceSetOrMapMethods(
     const oriAdd = mapOrSet.add.bind(mapOrSet);
     mapOrSet.add = function limuAdd(...args: any[]) {
       markModified(meta);
-      // recordPatch({ meta, ...options });
+      recordPatch({ meta, ...options });
       return oriAdd(...args);
     };
   }
@@ -151,7 +160,7 @@ export function replaceSetOrMapMethods(
     const oriSet = mapOrSet.set.bind(mapOrSet);
     mapOrSet.set = function limuSet(...args: any[]) {
       markModified(meta);
-      // recordPatch({ meta, ...options });
+      recordPatch({ meta, ...options });
       // @ts-ignore
       return oriSet(...args);
     };

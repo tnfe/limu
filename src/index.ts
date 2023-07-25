@@ -9,9 +9,9 @@ import { isDraft as isDraftFn, getDraftMeta as getDraftMetaFn } from './core/met
 import { deepFreeze as deepFreezeFn } from './core/freeze';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { original as originalFn, current as currentFn } from './core/user-util';
-import { limuConfig } from './support/inner-data';
-import { isPromiseFn, isPromiseResult } from './support/util';
-import { LIMU_MAJOR_VER, VER as v } from './support/consts';
+import { conf } from './support/inner-data';
+import { isPromiseFn, isPromiseResult, isFn } from './support/util';
+import { LIMU_MAJOR_VER, VER as v, IMMUT_BASE } from './support/consts';
 
 type LimuApis = ReturnType<typeof buildLimuApis>;
 
@@ -39,33 +39,10 @@ export interface IProduce {
 
 export const VER = v;
 
-/**
- * 使用 Limu 类创建实例后调用 createDraft finishDraft api（大多数时候，可直接从包里导出 createDraft 调用，不需要用此方式 ）
- * ```
- *  const limuIns = new Limu();
- *  const draft = limuIns.createDraft({ key: 1 });
- *  // change draft ...
- *  limuIns.finishDraft(draft); // 必须用当前 ins 来调用 finishDraft， 使用别的会报错
- * ```
- */
-export class Limu {
-  public createDraft: CreateDraft;
-
-  public finishDraft: FinishDraft;
-
-  constructor(options?: ICreateDraftOptions) {
-    const limuApis = buildLimuApis(options);
-    this.createDraft = limuApis.createDraft;
-    // @ts-ignore
-    this.finishDraft = limuApis.finishDraft;
-  }
-}
-
-
 export function createDraft<T extends ObjectLike = ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
-  const apis = new Limu(options);
+  const apis = buildLimuApis(options);
   // @ts-ignore , add [as] just for click to see implement
-  return apis.createDraft(base, options) as LimuApis['createDraft'];
+  return apis.createDraft(base) as LimuApis['createDraft'];
 }
 
 
@@ -83,7 +60,7 @@ export function finishDraft<T extends ObjectLike = ObjectLike>(draft: Draft<T>):
 }
 
 function checkCbFn(cb: any) {
-  if (typeof cb !== 'function') {
+  if (!isFn(cb)) {
     throw new Error('produce callback is not a function');
   }
 }
@@ -107,7 +84,7 @@ function innerProduce(baseState: any, cb: any, options?: ICreateDraftOptions) {
 
 
 function produceFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
-  if (!cb || typeof cb !== 'function') {
+  if (!cb || !isFn(cb)) {
     // expect baseState to be a callback, support curried invocation
     // expect cb to be options
     const mayCb = baseState;
@@ -143,18 +120,24 @@ export const produce = produceFn as unknown as IProduce;
 export const deepFreeze = deepFreezeFn;
 
 
-export const deepCopy = function <T extends ObjectLike>(obj: T) {
+export function deepCopy<T extends ObjectLike>(obj: T) {
   return deepCopyFn(obj);
+}
+
+export function immut<T extends ObjectLike>(base: T): T {
+  const limuApis = buildLimuApis({ readOnly: true, [IMMUT_BASE]: true });
+  const immutData = limuApis.createDraft(base);
+  return immutData;
 }
 
 
 export function setAutoFreeze(autoFreeze: boolean) {
-  limuConfig.autoFreeze = autoFreeze;
+  conf.autoFreeze = autoFreeze;
 }
 
 
 export function getAutoFreeze() {
-  return limuConfig.autoFreeze;
+  return conf.autoFreeze;
 }
 
 
