@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createDraft, finishDraft, logStr, strfy, isNewArch } from '../_util';
+import { createDraft, finishDraft, isNewArch, logStr, strfy } from '../_util';
 
 describe('arr print', () => {
   test('pass', () => {
@@ -58,7 +58,6 @@ describe('arr print', () => {
       // @ts-ignore
       expect(base.b.c).toBe(888);
       expect(strfy(base)).toBe('{"a":{"b":{"c":888,"e":"to del"}},"b":{"c":888,"e":"to del"},"c":[1,2,3]}');
-
     } else {
       const draft = createDraft(base);
       // @ts-ignore
@@ -80,7 +79,5 @@ describe('arr print', () => {
       expect(base.b.c).toBe(888);
       expect(strfy(base)).toBe('{"a":{"b":{"c":888,"e":"to del"}},"b":{"c":888,"e":"to del"},"c":[1,2,3]}');
     }
-
   });
-
-})
+});

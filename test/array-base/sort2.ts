@@ -1,4 +1,4 @@
-import { runTestSuit, noop } from '../_util';
+import { noop, runTestSuit } from '../_util';
 
 function getAnArrCanBeSort() {
   return [3, 1, 2, 4, 4, 5];
@@ -19,14 +19,19 @@ function compare(arrNew, arrBase) {
 
 runTestSuit('arr is base', 'sort2', getAnArrCanBeSort, sortDraft, compare);
 
-runTestSuit('arr in base obj', 'sort2',
-  () => { // get base state
+runTestSuit(
+  'arr in base obj',
+  'sort2',
+  () => {
+    // get base state
     return { arr: getAnArrCanBeSort() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     sortDraft(draft.arr);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final !== base).toBeTruthy();
     compare(final.arr, base.arr);
   },

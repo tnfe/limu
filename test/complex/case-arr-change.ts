@@ -8,8 +8,8 @@ describe('case-node-change', () => {
       b: null,
       c: [1, 2, 3],
       d: { d1: { d2: { d3: { d4: { d5: { d6: 1 } } } } } },
-      e: [{ e1: { e2: 222 } }]
-    }
+      e: [{ e1: { e2: 222 } }],
+    };
     const draft = createDraft(base);
     draft.a.b.c = { newKey: { key2: 2 } };
     expect(draft.a.b.c.newKey.key2).toBe(2);
@@ -31,6 +31,5 @@ describe('case-node-change', () => {
     expect(base.b).toBe(null);
     expect(final.b).toMatchObject({ b1: 'hi b' });
     expect(final.a.b.c).toMatchObject({ newKey: { key2: 888 } });
-
-  })
+  });
 });

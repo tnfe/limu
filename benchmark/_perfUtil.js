@@ -1,8 +1,8 @@
-const immer = require('./lib/immer');
-const mutative = require('./lib/mutative');
-const { limu, limuFast, limuSlow } = require('./lib/limu');
-const pstr = require('./lib/pstr');
-const native = require('./lib/native');
+const immer = require('./libs/immer');
+const mutative = require('./libs/mutative');
+const { limu, limuFast, limuSlow } = require('./libs/limu');
+const pstr = require('./libs/pstr');
+const native = require('./libs/native');
 const util = require('./_util');
 
 const immutLibs = {
@@ -17,10 +17,10 @@ const immutLibs = {
 const LOOP_LIMIT = 500;
 const ARR_LEN = 10000;
 const strategyConsts = {
-  BASE_T_AUTO_T: '1',    // reuseBase: true   autoFreeze: true       
-  BASE_F_AUTO_T: '2',    // reuseBase: false  autoFreeze: true       
-  BASE_T_AUTO_F: '3',    // reuseBase: true   autoFreeze: false
-  BASE_F_AUTO_F: '4',    // reuseBase: false  autoFreeze: false      
+  BASE_T_AUTO_T: '1', // reuseBase: true   autoFreeze: true
+  BASE_F_AUTO_T: '2', // reuseBase: false  autoFreeze: true
+  BASE_T_AUTO_F: '3', // reuseBase: true   autoFreeze: false
+  BASE_F_AUTO_F: '4', // reuseBase: false  autoFreeze: false
 };
 
 // ************************************************************************
@@ -47,7 +47,7 @@ limu.setAutoFreeze(AUTO_FREEZE);
 
 function getBase(arrLen = ARR_LEN) {
   return util.getBase(arrLen, false);
-};
+}
 
 let baseDataMap = null;
 function getBaseDataMap(arrLen) {
@@ -60,7 +60,7 @@ function getBaseDataMap(arrLen) {
       limuSlow: getBase(arrLen),
       pstr: getBase(arrLen),
       native: getBase(arrLen),
-    }
+    };
   }
   return baseDataMap;
 }
@@ -74,14 +74,20 @@ function oneBenchmark(libName, options) {
   }
 
   const base = reuseBase ? getBaseDataMap(arrLen)[libName] : getBase(arrLen);
-  userBenchmark({ libName, lib, base, operateArr: OP_ARR, moreDeepOp: MORE_DEEP_OP });
+  userBenchmark({
+    libName,
+    lib,
+    base,
+    operateArr: OP_ARR,
+    moreDeepOp: MORE_DEEP_OP,
+  });
   const taskSpend = Date.now() - start;
 
   return taskSpend;
 }
 
 /**
- * @param {string} libName 
+ * @param {string} libName
  */
 function measureBenchmark(libName, options) {
   const loopLimit = options.loopLimit || LOOP_LIMIT;
@@ -98,9 +104,8 @@ function measureBenchmark(libName, options) {
   console.log(`loop: ${loopLimit}, ${libName} avg spend ${totalSpend / loopLimit} ms`);
 }
 
-
 /**
- * @param {object} options 
+ * @param {object} options
  * @param {number} [options.loopLimit] - 循环次数
  * @param {number} [options.arrLen] - 数组长度
  * @param {boolean} [options.reuseBase] - 是否复用base
@@ -125,4 +130,4 @@ exports.runPerfCase = async function (options) {
     await util.sleep();
     util.showMem(`After ${5000 * (i + 1)} ms`);
   }
-}
+};

@@ -13,7 +13,9 @@ function compare(arrNew, arrBase) {
 
 runTestSuit('arr is base', 'pop', getArrBase, changeDraft, compare);
 
-runTestSuit('arr in base obj', 'pop',
+runTestSuit(
+  'arr in base obj',
+  'pop',
   function getArrBase() {
     return { arr: [1, 2, 3, 4] };
   },

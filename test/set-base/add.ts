@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { runTestSuit, getSetBase } from '../_util';
+import { getSetBase, runTestSuit } from '../_util';
 
 function changeDraft(setDraft: Set<any>) {
   setDraft.forEach((v, v2, set) => {
@@ -23,14 +23,19 @@ function compare(setNew, setBase) {
 
 runTestSuit('set is base', 'add', getSetBase, changeDraft, compare);
 
-runTestSuit('set in base obj', 'add',
-  () => { // get base state
+runTestSuit(
+  'set in base obj',
+  'add',
+  () => {
+    // get base state
     return { set: getSetBase() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     changeDraft(draft.set);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final !== base).toBeTruthy();
     compare(final.set, base.set);
   },

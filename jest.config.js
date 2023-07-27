@@ -1,15 +1,13 @@
-
 const jestConfig = {
   roots: ['<rootDir>'],
-  testEnvironment: "node",
+  testEnvironment: 'node',
   collectCoverageFrom: [
     '<rootDir>/src/**/*.ts',
     // '<rootDir>/benchmark/lib/mutative.js',
     '!<rootDir>/src/inner-types.ts',
     // '!<rootDir>/src/core/helper.ts',
   ],
-  setupFilesAfterEnv: [
-  ],
+  setupFilesAfterEnv: [],
   testMatch: [
     '<rootDir>/test/**/*.ts',
 
@@ -77,16 +75,12 @@ const jestConfig = {
 
     // '<rootDir>/test/diff-with-immer/sort.ts',
   ],
-  testPathIgnorePatterns: [
-    '<rootDir>/test/_util.ts',
-  ],
+  testPathIgnorePatterns: ['<rootDir>/test/_util.ts'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'ts-jest',
     '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '<rootDir>/fileTransform.js',
   },
-  transformIgnorePatterns: [
-    '[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx)$',
-  ],
+  transformIgnorePatterns: ['[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx)$'],
   modulePaths: ['<rootDir>/src'],
   moduleFileExtensions: ['js', 'ts', 'json'],
   collectCoverage: true,
@@ -105,9 +99,11 @@ if (testMatch) {
   jestConfig.testMatch = [prefixedTestMatch];
   console.log(`computed testMatch: ${JSON.stringify(jestConfig.testMatch)}`);
 } else {
-  console.log('Start loading the jest configuration file. If it is executed locally and you want to narrow the scope of a single test, you can add the testmatch prefix to execute it, such as');
+  console.log(
+    'Start loading the jest configuration file. If it is executed locally and you want to narrow the scope of a single test, you can add the testmatch prefix to execute it, such as',
+  );
   // testMatch='test/yyy.ts' npm run test
-  console.log('testMatch=\'test/yyy.ts\' npm run test');
+  console.log("testMatch='test/yyy.ts' npm run test");
 }
 
 module.exports = jestConfig;

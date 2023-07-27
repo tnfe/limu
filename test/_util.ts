@@ -19,7 +19,6 @@ if (process.env.AUTO_FREEZE === '0') {
   limu.setAutoFreeze(false);
 }
 
-
 // 本地 jest 运行时为了方便定位console上显示的错误代码位置，可使用 dist的源码做调试，注意要先执行 npm run build
 // 如果为了调试源码，可去 debug 目录加用例并测试，debug 配置参考如下
 /*
@@ -123,7 +122,6 @@ export function getSetObjBase() {
   return new Set([{ name: 'k1' }, { name: 'k2' }, { name: 'k3' }]);
 }
 
-
 // const jestExpect = expect;
 
 // // @ts-ignore
@@ -145,11 +143,9 @@ export function expectToBe(actualVal, exceptVal) {
   expect(actualVal).toBe(exceptVal);
 }
 
-
 export function exceptNotEqual(actualVal, exceptVal) {
   expect(actualVal === exceptVal).toBeFalsy();
 }
-
 
 /**
  * common compare handler
@@ -168,8 +164,8 @@ export function shouldBeNotEqual(final, base) {
 
 /**
  * use (createDraftTip,finishDraft) and (produce) to test target case
- * @param testSuitDesc 
- * @param testCaseDesc 
+ * @param testSuitDesc
+ * @param testCaseDesc
  * @param getBase
  * @param operateDraft
  * @param executeAssertLogic
@@ -201,14 +197,14 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
     if (RUN_PRODUCE) {
       test(produceTip(testCaseDesc), () => {
         const base = getBase();
-        const final = produce(base, draft => {
+        const final = produce(base, (draft) => {
           // @ts-ignore
           operateDraft(draft, base);
         });
         if (executeAssertLogic) executeAssertLogic(final, base);
       });
     }
-  })
+  });
 }
 
 type Dict = any;
@@ -232,19 +228,19 @@ export function runObjectTestSuit(
     if (RUN_PRODUCE) {
       test(produceTip(testCaseDesc), () => {
         const objBase = getObjectBase();
-        const objNew = produce(objBase, objDraft => {
+        const objNew = produce(objBase, (objDraft) => {
           operateDraft(objDraft, objBase);
         });
         executeAssertLogic(objNew, objBase);
       });
     }
-  })
+  });
 }
 
 /**
- * 
- * @param testSuitDesc 
- * @param testCaseDesc 
+ *
+ * @param testSuitDesc
+ * @param testCaseDesc
  * @param getMapBase
  * @param operateDraft
  * @param executeAssertLogic
@@ -268,7 +264,7 @@ export function runMapTestSuit(
     if (RUN_PRODUCE) {
       test(produceTip(testCaseDesc), () => {
         const mapBase = getMapBase();
-        const mapNew = produce(mapBase, mapDraft => {
+        const mapNew = produce(mapBase, (mapDraft) => {
           operateDraft(mapDraft, mapBase);
         });
         executeAssertLogic(mapNew, mapBase);
@@ -278,9 +274,9 @@ export function runMapTestSuit(
 }
 
 /**
- * 
- * @param testSuitDesc 
- * @param testCaseDesc 
+ *
+ * @param testSuitDesc
+ * @param testCaseDesc
  * @param getSetBase
  * @param operateDraft
  * @param executeAssertLogic
@@ -304,7 +300,7 @@ export function runSetTestSuit(
     if (RUN_PRODUCE) {
       test(produceTip(testCaseDesc), () => {
         const setBase = getSetBase();
-        const setNew = produce(setBase, setDraft => {
+        const setNew = produce(setBase, (setDraft) => {
           operateDraft(setDraft, setBase);
         });
         executeAssertLogic(setNew, setBase);
@@ -317,7 +313,7 @@ export function runEmptyTestSuit() {
   describe('empty suite', () => {
     test('empty case', () => {
       expect(1 === 1).toBeTruthy();
-    })
+    });
   });
 }
 

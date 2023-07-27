@@ -5,14 +5,7 @@ describe('complex-case1', () => {
   test('run case1', () => {
     const base = {
       numArr: [1, 2, 3, 4],
-      mixArr: [
-        1,
-        { a: 1, b: { c: [1, 2, 3] } },
-        new Map([
-          ['name', { addr: 'bj' }],
-        ]),
-        new Set([1, 2, 3, 4]),
-      ],
+      mixArr: [1, { a: 1, b: { c: [1, 2, 3] } }, new Map([['name', { addr: 'bj' }]]), new Set([1, 2, 3, 4])],
       mixMap: new Map([
         ['key1', { addr: 'bj' }],
         ['key2', 2],
@@ -40,7 +33,6 @@ describe('complex-case1', () => {
     // @ts-ignore
     expect(base.mixArr[2].get('name').addr === 'bj').toBeTruthy();
 
-
     expect(base.mixMap === final.mixMap).toBeTruthy();
     expect(base.obj1 === final.obj1).toBeTruthy();
     expect(base.obj2 === final.obj2).toBeTruthy();
@@ -49,14 +41,7 @@ describe('complex-case1', () => {
   test('forEach then change arr item', () => {
     const base = {
       numArr: [1, 2, 3, 4],
-      mixArr: [
-        1,
-        { a: 1, b: { c: [1, 2, 3] } },
-        new Map([
-          ['name', { addr: 'bj' }],
-        ]),
-        new Set([1, 2, 3, 4]),
-      ],
+      mixArr: [1, { a: 1, b: { c: [1, 2, 3] } }, new Map([['name', { addr: 'bj' }]]), new Set([1, 2, 3, 4])],
       mixMap: new Map([
         ['key1', { addr: 'bj' }],
         ['key2', 2],
@@ -88,7 +73,6 @@ describe('complex-case1', () => {
     // @ts-ignore
     expect(base.mixArr[2].get('name').addr === 'bj').toBeTruthy();
 
-
     expect(base.mixMap === final.mixMap).toBeTruthy();
     expect(base.obj1 === final.obj1).toBeTruthy();
     expect(base.obj2 === final.obj2).toBeTruthy();
@@ -97,14 +81,7 @@ describe('complex-case1', () => {
   test('change arr item then forEach', () => {
     const base = {
       numArr: [1, 2, 3, 4],
-      mixArr: [
-        1,
-        { a: 1, b: { c: [1, 2, 3] } },
-        new Map([
-          ['name', { addr: 'bj' }],
-        ]),
-        new Set([1, 2, 3, 4]),
-      ],
+      mixArr: [1, { a: 1, b: { c: [1, 2, 3] } }, new Map([['name', { addr: 'bj' }]]), new Set([1, 2, 3, 4])],
       mixMap: new Map([
         ['key1', { addr: 'bj' }],
         ['key2', 2],
@@ -137,9 +114,8 @@ describe('complex-case1', () => {
     // @ts-ignore
     expect(base.mixArr[2].get('name').addr === 'bj').toBeTruthy();
 
-
     expect(base.mixMap === final.mixMap).toBeTruthy();
     expect(base.obj1 === final.obj1).toBeTruthy();
     expect(base.obj2 === final.obj2).toBeTruthy();
-  })
+  });
 });

@@ -1,13 +1,12 @@
 /*---------------------------------------------------------------------------------------------
  *  Licensed under the MIT License.
- * 
+ *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { ObjectLike, FastModeRange } from '../inner-types';
-import { isObject, isMap, isSet, isPrimitive } from '../support/util';
+import type { FastModeRange, ObjectLike } from '../inner-types';
 import { ARRAY } from '../support/consts';
-import { getDraftMeta, attachMeta } from './meta'
-
+import { isMap, isObject, isPrimitive, isSet } from '../support/util';
+import { attachMeta, getDraftMeta } from './meta';
 
 export function deepCopy<T extends ObjectLike>(obj: T, metaVer?: string): T {
   const innerDeep = (obj: any) => {
@@ -46,7 +45,7 @@ export function deepCopy<T extends ObjectLike>(obj: T, metaVer?: string): T {
     }
     if (isObject(obj)) {
       newNode = {};
-      Object.keys(obj).forEach(key => {
+      Object.keys(obj).forEach((key) => {
         newNode[key] = innerDeep(obj[key]);
       });
     }
@@ -58,10 +57,10 @@ export function deepCopy<T extends ObjectLike>(obj: T, metaVer?: string): T {
 
 /**
  * 尝试生成copy
- * @param val 
+ * @param val
  * @returns
  */
-export function tryMakeCopy(val: any, options: { parentType, fastModeRange: FastModeRange }) {
+export function tryMakeCopy(val: any, options: { parentType; fastModeRange: FastModeRange }) {
   const { parentType, fastModeRange } = options;
 
   if (Array.isArray(val)) {
@@ -80,14 +79,18 @@ export function tryMakeCopy(val: any, options: { parentType, fastModeRange: Fast
     copy = new Set(val);
   }
 
-  return { copy, fast }
+  return { copy, fast };
 }
 
-// 调用处已保证 meta 不为空 
+// 调用处已保证 meta 不为空
 export function makeCopyWithMeta(
   ori: any,
   meta: any,
-  options: { parentType: string, fastModeRange: FastModeRange, immutBase: boolean },
+  options: {
+    parentType: string;
+    fastModeRange: FastModeRange;
+    immutBase: boolean;
+  },
 ) {
   if (!options.immutBase) {
     const { copy, fast } = tryMakeCopy(ori, options);

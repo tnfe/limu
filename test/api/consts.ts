@@ -1,5 +1,5 @@
-import '../_util';
 import * as consts from '../../src/support/consts';
+import '../_util';
 
 describe('check consts', () => {
   test('CAREFUL_TYPES', () => {
@@ -20,5 +20,4 @@ describe('check consts', () => {
     expect(consts.desc2dataType['[object Array]']).toBe('Array');
     expect(consts.desc2dataType['[object Object]']).toBe('Object');
   });
-
 });

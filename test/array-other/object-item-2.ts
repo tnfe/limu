@@ -1,12 +1,8 @@
 // @ts-nocheck
 import { runTestSuit } from '../_util';
 
-
 function getObjectItemArr() {
-  return [
-    { name: 'cool' },
-    { name: 'cool2' },
-  ];
+  return [{ name: 'cool' }, { name: 'cool2' }];
 }
 
 function changeDraftObjectItem(arrDraft: any[]) {

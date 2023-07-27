@@ -2,8 +2,16 @@ import { runTestSuit } from '../_util';
 
 function getArrBase() {
   return [
-    { id: 1, a: { b: [{ b1: [{ c1: 1 }] }], b_rest: { r1: 1 } }, rest: { r1: 1 } },
-    { id: 2, a: { b: [{ b1: [{ c1: 1 }] }], b_rest: { r1: 1 } }, rest: { r1: 1 } },
+    {
+      id: 1,
+      a: { b: [{ b1: [{ c1: 1 }] }], b_rest: { r1: 1 } },
+      rest: { r1: 1 },
+    },
+    {
+      id: 2,
+      a: { b: [{ b1: [{ c1: 1 }] }], b_rest: { r1: 1 } },
+      rest: { r1: 1 },
+    },
   ];
 }
 

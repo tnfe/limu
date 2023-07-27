@@ -1,4 +1,4 @@
-import { produce, createDraft, finishDraft, getAutoFreeze, setAutoFreeze } from '../../src';
+import { createDraft, finishDraft, getAutoFreeze, produce, setAutoFreeze } from '../../src';
 import '../_util';
 
 describe('set autoFreeze', () => {
@@ -9,9 +9,13 @@ describe('set autoFreeze', () => {
 
   test('produce', () => {
     const base = { key: 1 };
-    const final = produce(base, (draft) => {
-      draft.key = 2;
-    }, { autoFreeze: true });
+    const final = produce(
+      base,
+      (draft) => {
+        draft.key = 2;
+      },
+      { autoFreeze: true },
+    );
     expect(base.key === 1).toBeTruthy();
     expect(final.key === 2).toBeTruthy();
 
@@ -22,9 +26,12 @@ describe('set autoFreeze', () => {
 
   test('produce curry', () => {
     const base = { key: 1 };
-    const cb = produce<typeof base>((draft) => {
-      draft.key = 2;
-    }, { autoFreeze: true });
+    const cb = produce<typeof base>(
+      (draft) => {
+        draft.key = 2;
+      },
+      { autoFreeze: true },
+    );
     const final = cb(base);
     expect(base.key === 1).toBeTruthy();
     expect(final.key === 2).toBeTruthy();
@@ -33,7 +40,6 @@ describe('set autoFreeze', () => {
     expect(base.key).toBe(100);
     expect(final.key === 2).toBeTruthy();
   });
-
 
   test('createDraft and finishDraft', () => {
     const base = { key: 1 };
@@ -50,5 +56,4 @@ describe('set autoFreeze', () => {
     expect(base.key).toBe(100);
     expect(final.key === 2).toBeTruthy();
   });
-
 });

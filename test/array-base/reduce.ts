@@ -10,14 +10,19 @@ function changeDraft(arrDraft) {
 
 runTestSuit('arr is base', 'reduce', getArrBase, changeDraft, shouldBeEqual);
 
-runTestSuit('arr in base obj', 'reduce',
-  () => { // get base state
+runTestSuit(
+  'arr in base obj',
+  'reduce',
+  () => {
+    // get base state
     return { arr: getArrBase() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     changeDraft(draft.arr);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final === base).toBeTruthy();
     shouldBeEqual(final.arr, base.arr);
   },

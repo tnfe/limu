@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { runTestSuit, getSetBase, shouldBeEqual, noop } from '../_util';
+import { noop, runTestSuit } from '../_util';
 
 function noopDraft(setDraft: Set<any>) {
-  setDraft.forEach(item => noop(item));
+  setDraft.forEach((item) => noop(item));
 }
 
 // runTestSuit('set is base', 'forEach', getSetBase, noopDraft, shouldBeEqual);
@@ -25,7 +25,7 @@ function getObiItemSet() {
 }
 
 function changeWithDraft(setDraft: Set<any>) {
-  setDraft.forEach(item => {
+  setDraft.forEach((item) => {
     item.key = 'new';
   });
 }
@@ -37,15 +37,15 @@ function changeWithCbDraft(setDraft: Set<any>) {
     const arr = Array.from(set);
     const itemOfArr = arr[i];
     itemOfArr.key = 'new';
-    i++
+    i++;
   });
 }
 
 function compare(final: Set<any>, base: Set<any>) {
-  final.forEach(item => {
+  final.forEach((item) => {
     expect(item.key.includes('new')).toBeTruthy();
   });
-  base.forEach(item => {
+  base.forEach((item) => {
     expect(item.key.includes('old')).toBeTruthy();
   });
 }

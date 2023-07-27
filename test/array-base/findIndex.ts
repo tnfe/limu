@@ -1,18 +1,20 @@
-import { runTestSuit, getArrBase, shouldBeEqual, noop } from '../_util';
+import { getArrBase, noop, runTestSuit, shouldBeEqual } from '../_util';
 
 function changeDraft(arrDraft) {
-  const result = arrDraft.findIndex(item => item === 1);
+  const result = arrDraft.findIndex((item) => item === 1);
   expect(result === 0).toBeTruthy();
 }
 
 runTestSuit('arr is base', 'findIndex', getArrBase, changeDraft, shouldBeEqual);
 
-runTestSuit('arr in base obj', 'findIndex',
+runTestSuit(
+  'arr in base obj',
+  'findIndex',
   function getArrBase() {
     return { arr: [1, 2, 3, 4] };
   },
   function changeDraft(draft) {
-    const result = draft.arr.findIndex(item => item === 1);
+    const result = draft.arr.findIndex((item) => item === 1);
     expect(result === 0).toBeTruthy();
   },
   function compare(final, base) {

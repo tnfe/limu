@@ -3,22 +3,22 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { ObjectLike, ICreateDraftOptions, Op } from './inner-types';
 import { buildLimuApis } from './core/build-limu-apis';
-import { isDraft as isDraftFn, getDraftMeta as getDraftMetaFn } from './core/meta';
-import { deepFreeze as deepFreezeFn } from './core/freeze';
 import { deepCopy as deepCopyFn } from './core/copy';
-import { original as originalFn, current as currentFn } from './core/user-util';
+import { deepFreeze as deepFreezeFn } from './core/freeze';
+import { getDraftMeta as getDraftMetaFn, isDraft as isDraftFn } from './core/meta';
+import { current as currentFn, original as originalFn } from './core/user-util';
+import type { ICreateDraftOptions, ObjectLike, Op } from './inner-types';
+import { IMMUT_BASE, LIMU_MAJOR_VER, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
-import { isPromiseFn, isPromiseResult, isFn } from './support/util';
-import { LIMU_MAJOR_VER, VER as v, IMMUT_BASE } from './support/consts';
+import { isFn, isPromiseFn, isPromiseResult } from './support/util';
 
 type LimuApis = ReturnType<typeof buildLimuApis>;
 
 export type { ObjectLike, ICreateDraftOptions, Op };
 export type Draft<T> = T;
-export type CreateDraft = <T extends ObjectLike >(base: T, options?: ICreateDraftOptions) => Draft<T>;
-export type FinishDraft = <T extends ObjectLike >(draft: T) => T;
+export type CreateDraft = <T extends ObjectLike>(base: T, options?: ICreateDraftOptions) => Draft<T>;
+export type FinishDraft = <T extends ObjectLike>(draft: T) => T;
 export type ProduceCb<T> = (draft: Draft<T>) => void;
 export type GenNewStateCb<T> = (state: T) => T;
 // export type GenNewPatchesCb<T> = (state: T) => any[];
@@ -45,10 +45,9 @@ export function createDraft<T extends ObjectLike = ObjectLike>(base: T, options?
   return apis.createDraft(base) as LimuApis['createDraft'];
 }
 
-
 export function finishDraft<T extends ObjectLike = ObjectLike>(draft: Draft<T>): T {
   const draftMeta = getDraftMetaFn(draft);
-  let finishHandler: (FinishDraft | null) = null;
+  let finishHandler: FinishDraft | null = null;
   if (draftMeta) {
     // @ts-ignore , add [as] just for click to see implement
     finishHandler = draftMeta.finishDraft as LimuApis['finishDraft'];
@@ -65,14 +64,12 @@ function checkCbFn(cb: any) {
   }
 }
 
-
 // see issue https://github.com/tnfe/limu/issues/5
 function checkCbPromise(cb: any, result: any) {
   if (isPromiseFn(cb) || isPromiseResult(result)) {
     throw new Error('produce callback can not be a promise function or result');
   }
 }
-
 
 function innerProduce(baseState: any, cb: any, options?: ICreateDraftOptions) {
   checkCbFn(cb);
@@ -81,7 +78,6 @@ function innerProduce(baseState: any, cb: any, options?: ICreateDraftOptions) {
   checkCbPromise(cb, result);
   return finishDraft(draft);
 }
-
 
 function produceFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
   if (!cb || !isFn(cb)) {
@@ -95,30 +91,23 @@ function produceFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
     };
   }
   return innerProduce(baseState, cb, options) as any;
-};
-
+}
 
 // function producePatchesFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
 //   const copyOpts: ICreateDraftOptions = { ... (options || {}), usePatches: true };
 //   return produceFn(baseState, cb, copyOpts);
 // };
 
-
 export const getDraftMeta = getDraftMetaFn;
-
 
 export const isDraft = isDraftFn;
 
-
 export const produce = produceFn as unknown as IProduce;
-
 
 // to be implemented in the future
 // export const produceWithPatches = producePatchesFn as unknown as IProduceWithPatches;
 
-
 export const deepFreeze = deepFreezeFn;
-
 
 export function deepCopy<T extends ObjectLike>(obj: T) {
   return deepCopyFn(obj);
@@ -130,26 +119,20 @@ export function immut<T extends ObjectLike>(base: T): T {
   return immutData;
 }
 
-
 export function setAutoFreeze(autoFreeze: boolean) {
   conf.autoFreeze = autoFreeze;
 }
-
 
 export function getAutoFreeze() {
   return conf.autoFreeze;
 }
 
-
 export function getMajorVer() {
   return LIMU_MAJOR_VER;
 }
 
-
 export const original = originalFn;
 
-
 export const current = currentFn;
-
 
 export default produce;

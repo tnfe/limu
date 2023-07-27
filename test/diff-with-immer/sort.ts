@@ -1,6 +1,8 @@
 import { runTestSuit } from '../_util';
 
-runTestSuit('diff: arr in base obj', 'ordered sort',
+runTestSuit(
+  'diff: arr in base obj',
+  'ordered sort',
   () => {
     return { arr: [1, 2, 3, 4, 5] };
   },
@@ -15,7 +17,9 @@ runTestSuit('diff: arr in base obj', 'ordered sort',
   },
 );
 
-runTestSuit('diff: arr in base obj', 'unordered sort',
+runTestSuit(
+  'diff: arr in base obj',
+  'unordered sort',
   () => {
     return { arr: [1, 2, 3, 4, 5, 1] };
   },

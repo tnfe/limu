@@ -52,5 +52,4 @@ describe('check util', () => {
   test('isFn', () => {
     expect(util.isFn(() => 2)).toBeTruthy();
   });
-
 });

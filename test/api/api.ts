@@ -1,6 +1,14 @@
 import {
-  produce, getDraftMeta, createDraft, finishDraft,
-  deepFreeze, getAutoFreeze, original, current, getMajorVer,
+  createDraft,
+  current,
+  deepCopy,
+  deepFreeze,
+  finishDraft,
+  getAutoFreeze,
+  getDraftMeta,
+  getMajorVer,
+  original,
+  produce,
 } from '../../src';
 import { assignFrozenDataInJest, strfy } from '../_util';
 
@@ -73,7 +81,9 @@ describe('check apis', () => {
     }
 
     try {
-      const curryCb = produce((draft: any) => { draft.a = 1 });
+      const curryCb = produce((draft: any) => {
+        draft.a = 1;
+      });
       curryCb(2);
     } catch (e: any) {
       expect(e.message).toMatch(/(?=base state can not be primitive)/);
@@ -87,7 +97,6 @@ describe('check apis', () => {
       expect(e.message).toMatch(/(?=oops, not a Limu draft)/);
     }
   });
-
 
   test('getDraftMeta', () => {
     const base = { key: 1 };
@@ -145,7 +154,7 @@ describe('check apis', () => {
     expect(strfy(orig)).toBe('{"key1":{"x":1},"key2":{"x":100}}');
     expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}');
 
-    draft.key1.x++
+    draft.key1.x++;
     expect(strfy(draft)).toBe('{"key1":{"x":3},"key2":{"x":100}}'); // draft changed
     expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}'); // curr not changed, still be 2
 
@@ -153,6 +162,22 @@ describe('check apis', () => {
     expect(strfy(base)).toBe('{"key1":{"x":1},"key2":{"x":100}}');
     expect(strfy(final)).toBe('{"key1":{"x":3},"key2":{"x":100}}');
     expect(strfy(curr)).toBe('{"key1":{"x":2},"key2":{"x":100}}');
+  });
+
+  test('original current primitve', () => {
+    const base = { key1: { x: 1 }, key2: { x: 100 } };
+    const draft = createDraft(base);
+    draft.key1.x++;
+    const orig = original(draft.key1.x);
+    const curr = current(draft.key1.x);
+    expect(orig === 2).toBeTruthy();
+    expect(curr === 2).toBeTruthy();
+
+    // second way to get x
+    const orig2 = original(draft).key1.x;
+    const curr2 = current(draft).key1.x;
+    expect(orig2 === 1).toBeTruthy();
+    expect(curr2 === 2).toBeTruthy();
   });
 
   test('original not draft', () => {
@@ -188,7 +213,7 @@ describe('check apis', () => {
           [2, { a: 1 }],
         ]),
         f: new Set([1, 2, 3, 4]),
-      }
+      },
     };
     const draft = createDraft(base);
     draft.c.c2 = 2000;
@@ -212,19 +237,19 @@ describe('check apis', () => {
     expect(tmpCopy.c.c2 === 2000).toBeTruthy();
   });
 
-
   test('test onOperate', () => {
     const base = { a: 1, b: 2, c: { c1: 3 } };
     const draft = createDraft(base, {
       onOperate: (params) => {
-        const { key, op, value } = params;
+        const { key, op, value, isChange } = params;
+        if (!isChange) return;
         if (key === 'a') {
           expect(op === 'set').toBeTruthy();
           expect(value === 200).toBeTruthy();
         }
         if (key === 'b') {
           expect(op === 'del').toBeTruthy();
-          expect(value === null).toBeTruthy();
+          expect(value === 2).toBeTruthy();
         }
         if (key === 'c') {
           expect(op === 'get').toBeTruthy();
@@ -233,7 +258,7 @@ describe('check apis', () => {
           expect(op === 'set').toBeTruthy();
           expect(value === 300).toBeTruthy();
         }
-      }
+      },
     });
     draft.a = 200;
     // @ts-ignore
@@ -242,12 +267,25 @@ describe('check apis', () => {
   });
 
   function testForFast(fastModeRange) {
-    const base = { a: 1, b: 2, c: { c1: 3 } };
-    const draft = createDraft(base, { fastModeRange });
+    const base = { a: 1, b: 2, c: { c1: 3 }, d: [1, 2, 3] };
+    let onOperateHit = 0;
+    let opArrHit = 0;
+    const draft = createDraft(base, {
+      fastModeRange,
+      onOperate: (params) => {
+        if (!params.isChange || params.isBuiltInFnKey) return;
+        console.log(params);
+        onOperateHit += 1;
+        if (params.parentType === 'Array') opArrHit += 1;
+      },
+    });
     draft.a = 200;
     // @ts-ignore
     delete draft.b;
     draft.c.c1 = 300;
+    draft.d.push(1);
+    draft.d.push(2);
+    draft.d.push(3);
     const final = finishDraft(draft);
 
     expect(base !== final).toBeTruthy();
@@ -257,6 +295,9 @@ describe('check apis', () => {
     expect(final.a === 200).toBeTruthy();
     expect(final.b === undefined).toBeTruthy();
     expect(final.c).toMatchObject({ c1: 300 });
+
+    expect(onOperateHit === 9).toBeTruthy();
+    expect(opArrHit === 6).toBeTruthy();
   }
 
   test('fastModeRange all', () => {
@@ -265,5 +306,31 @@ describe('check apis', () => {
 
   test('fastModeRange none', () => {
     testForFast('none');
+  });
+
+  test('deepCopy', () => {
+    const base = { a: 1, b: 2, c: { c1: 3 }, d: [1, 2, 3] };
+    const final = deepCopy(base);
+    final.a = 100;
+    final.d.push(4);
+
+    expect(base !== final).toBeTruthy();
+    expect(base.a === 1).toBeTruthy();
+    expect(final.a === 100).toBeTruthy();
+    expect(base.d.length === 3).toBeTruthy();
+    expect(final.d.length === 4).toBeTruthy();
+  });
+
+  test('deepCopy root arr', () => {
+    const base = [{ a: 1 }, { a: 1 }, { a: 1 }];
+    const final = deepCopy(base);
+    final[0].a = 100;
+    final.push({ a: 4 });
+
+    expect(base !== final).toBeTruthy();
+    expect(base[0].a === 1).toBeTruthy();
+    expect(final[0].a === 100).toBeTruthy();
+    expect(base.length === 3).toBeTruthy();
+    expect(final.length === 4).toBeTruthy();
   });
 });

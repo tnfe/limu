@@ -78,7 +78,6 @@ console.log('base.anonymous', base.get('anonymous')); // still existed
 console.log('final.anonymous', final.get('anonymous')); // undefined
 `;
 
-
 export default {
   produce,
   createDraft,

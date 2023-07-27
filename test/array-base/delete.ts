@@ -1,4 +1,4 @@
-import { runTestSuit, getArrBase, noop } from '../_util';
+import { getArrBase, noop, runTestSuit } from '../_util';
 
 function changeDraft(arrDraft) {
   delete arrDraft['0'];
@@ -16,14 +16,19 @@ function compare(final, base) {
 
 runTestSuit('arr is base', 'delete', getArrBase, changeDraft, compare);
 
-runTestSuit('arr in base obj', 'delete',
-  () => { // get base state
+runTestSuit(
+  'arr in base obj',
+  'delete',
+  () => {
+    // get base state
     return { arr: getArrBase() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     changeDraft(draft.arr);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final !== base).toBeTruthy();
     compare(final.arr, base.arr);
   },

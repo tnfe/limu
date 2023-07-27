@@ -1,4 +1,4 @@
-import { runObjectTestSuit, noop, isNewArch } from '../_util';
+import { isNewArch, noop, runObjectTestSuit } from '../_util';
 
 function getStateBase() {
   const toReturn = {
@@ -8,8 +8,7 @@ function getStateBase() {
   return toReturn;
 }
 
-type Obj = { set: Set<{ name: string }>, count: number };
-
+type Obj = { set: Set<{ name: string }>; count: number };
 
 function changeDraft(objDraft: Obj) {
   objDraft.count = 3;
@@ -21,8 +20,7 @@ function changeDraft(objDraft: Obj) {
   noop('see if error occurred', objDraft.set.size);
 }
 
-
-// MARK: fail in immer, 
+// MARK: fail in immer,
 function compare(final: Obj, base: Obj) {
   expect(final !== base).toBeTruthy();
   expect(final.set !== base.set).toBeTruthy();
@@ -33,7 +31,7 @@ function compare(final: Obj, base: Obj) {
   expect(arr1[2] === arr2[2]).toBeTruthy();
 }
 
-if(!isNewArch()){
+if (!isNewArch()) {
   runObjectTestSuit('test object-set-primitive-item', 'primitive-item', getStateBase, changeDraft, compare);
 }
 

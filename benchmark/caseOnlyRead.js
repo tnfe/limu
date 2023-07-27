@@ -30,15 +30,13 @@ runPerfCase({
 
     if (operateArr) {
       // draft.arr.forEach((item, idx) => { // bad way
-      lib.original(draft.arr).forEach((item, idx) => { // good way
+      lib.original(draft.arr).forEach((item, idx) => {
+        // good way
         // if (idx === 100) { draft.arr[1].a = 1; }
         // draft.arr[1].a = 1;
       });
     }
 
     const final = lib.finishDraft(draft);
-
   },
 }).catch(console.error);
-
-

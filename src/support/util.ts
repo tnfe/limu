@@ -1,10 +1,10 @@
 /*---------------------------------------------------------------------------------------------
  *  Licensed under the MIT License.
- * 
+ *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DataType } from '../inner-types'
-import { OBJ_DESC, ARR_DESC, MAP_DESC, SET_DESC, FN_DESC, desc2dataType } from './consts';
+import type { DataType } from '../inner-types';
+import { ARR_DESC, desc2dataType, FN_DESC, MAP_DESC, OBJ_DESC, SET_DESC } from './consts';
 
 export const toString = Object.prototype.toString;
 
@@ -33,7 +33,7 @@ export function getValStrDesc(val: any) {
   return toString.call(val);
 }
 
-export function getDataType(dataNode: any) : DataType {
+export function getDataType(dataNode: any): DataType {
   var strDesc = getValStrDesc(dataNode);
   const dataType = desc2dataType[strDesc];
   return dataType;
@@ -49,7 +49,7 @@ export function isPromiseFn(obj: any) {
 }
 
 export function isPromiseResult(result: any) {
-  return typeof Promise !== "undefined" && result instanceof Promise;
+  return typeof Promise !== 'undefined' && result instanceof Promise;
 }
 
 export function canBeNum(val: any) {

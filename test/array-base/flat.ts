@@ -12,7 +12,9 @@ function changeDraft(arrDraft) {
 
 runTestSuit('arr is base', 'flat', getArrBase, changeDraft, shouldBeEqual);
 
-runTestSuit('arr in base obj', 'flat',
+runTestSuit(
+  'arr in base obj',
+  'flat',
   function getArrBase() {
     return { arr: [1, [2, [3, [4, 5]]], 6] };
   },
@@ -26,4 +28,3 @@ runTestSuit('arr in base obj', 'flat',
     expect(draft.arr === base.arr).toBeTruthy();
   },
 );
-

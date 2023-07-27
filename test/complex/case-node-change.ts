@@ -9,19 +9,18 @@ describe('case-node-change', () => {
           c: {
             d: {
               e: {
-                f: 1
-              }
-            }
-          }
-        }
-      }
+                f: 1,
+              },
+            },
+          },
+        },
+      },
     };
     const draft = createDraft(base);
 
     draft.a.b.c = { newKey: { key2: 2 } };
     expect(draft.a.b.c).toMatchObject({ newKey: { key2: 2 } });
     expect(base.a.b.c).toMatchObject({ d: { e: { f: 1 } } });
-
 
     draft.a.b.c.newKey.key2 = 888;
     expect(draft.a.b.c.newKey.key2).toBe(888);
@@ -45,12 +44,12 @@ describe('case-node-change', () => {
           c: {
             d: {
               e: {
-                f: 1
-              }
-            }
-          }
-        }
-      }
+                f: 1,
+              },
+            },
+          },
+        },
+      },
     };
     const draft = createDraft(base);
 
@@ -75,47 +74,47 @@ describe('case-node-change', () => {
           c: {
             d: {
               e: {
-                f: 1
-              }
-            }
-          }
-        }
-      }
+                f: 1,
+              },
+            },
+          },
+        },
+      },
     };
     const draft = createDraft(base);
 
     const cVal = draft.a.b.c;
-    draft.a1 = cVal
+    draft.a1 = cVal;
     cVal.d = 'oops';
     const final = finishDraft(draft);
 
-    expect(final).toMatchObject({ a: { b: { c: { d: 'oops' } } }, a1: { d: 'oops' } });
+    expect(final).toMatchObject({
+      a: { b: { c: { d: 'oops' } } },
+      a1: { d: 'oops' },
+    });
     expect(base).toMatchObject({ a: { b: { c: { d: { e: { f: 1 } } } } } });
   });
-
 
   test('delete arr', () => {
     const base = {
       a: {
         b: {
-          c: [1, 2, 3]
-        }
-      }
+          c: [1, 2, 3],
+        },
+      },
     };
     const draft = createDraft(base);
 
     const cVal = draft.a.b.c;
-    draft.a1 = cVal
+    draft.a1 = cVal;
     cVal.push(4);
     delete draft.a.b.c;
     cVal.push(5);
     const final = finishDraft(draft);
 
-    expect(final).toMatchObject({ a: { b: { } }, a1: [1, 2, 3, 4, 5] });
+    expect(final).toMatchObject({ a: { b: {} }, a1: [1, 2, 3, 4, 5] });
     expect(base).toMatchObject({ a: { b: { c: [1, 2, 3] } } });
   });
-
-
 
   test('node-change 4 allowMultiRef', () => {
     if (isNewArch()) {
@@ -124,15 +123,15 @@ describe('case-node-change', () => {
     const cVal = {
       d: {
         e: {
-          f: 1
-        }
-      }
+          f: 1,
+        },
+      },
     };
     const base = {
       a: {
         b: {
-          c: cVal
-        }
+          c: cVal,
+        },
       },
       a1: cVal,
     };
@@ -146,7 +145,13 @@ describe('case-node-change', () => {
     draft.a1.d = 222;
     const final = finishDraft(draft);
 
-    expect(final).toMatchObject({ a: { b: { c: { d: 222 } } }, a1: { d: 222 } });
-    expect(base).toMatchObject({ a: { b: { c: { d: { e: { f: 1 } } } } },  a1: { d: { e: { f: 1 } } } });
+    expect(final).toMatchObject({
+      a: { b: { c: { d: 222 } } },
+      a1: { d: 222 },
+    });
+    expect(base).toMatchObject({
+      a: { b: { c: { d: { e: { f: 1 } } } } },
+      a1: { d: { e: { f: 1 } } },
+    });
   });
 });

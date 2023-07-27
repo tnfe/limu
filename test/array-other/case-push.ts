@@ -2,7 +2,6 @@ import { createDraft, finishDraft } from '../_util';
 
 describe('case push', () => {
   test('push', () => {
-
     var base = { a: { b: { c: 1 } }, b: null, c: [1, 2, 3] };
     // @ts-ignore
     base.b = base.a.b;
@@ -27,5 +26,4 @@ describe('case push', () => {
     // @ts-ignore
     expect(final2.b.c).toBe(1000);
   });
-
-})
+});

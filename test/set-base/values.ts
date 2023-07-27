@@ -1,4 +1,4 @@
-import { runTestSuit, getSetBase, shouldBeEqual } from '../_util';
+import { getSetBase, runTestSuit, shouldBeEqual } from '../_util';
 
 function operateDraft(setDraft: Set<any>) {
   const values = setDraft.values();
@@ -7,14 +7,19 @@ function operateDraft(setDraft: Set<any>) {
 
 runTestSuit('set is base', 'values', getSetBase, operateDraft, shouldBeEqual);
 
-runTestSuit('set in base obj', 'values',
-  () => { // get base state
+runTestSuit(
+  'set in base obj',
+  'values',
+  () => {
+    // get base state
     return { set: getSetBase() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     operateDraft(draft.set);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final === base).toBeTruthy();
     shouldBeEqual(final.set, base.set);
   },

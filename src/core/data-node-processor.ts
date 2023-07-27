@@ -1,43 +1,40 @@
 /*---------------------------------------------------------------------------------------------
  *  Licensed under the MIT License.
- * 
+ *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta } from '../inner-types';
-import { isFn } from '../support/util';
 import {
+  ARRAY,
   CAREFUL_FNKEYS,
-  SHOULD_REASSIGN_SET_METHODS,
+  MAP,
+  SET,
   SHOULD_REASSIGN_ARR_METHODS,
   SHOULD_REASSIGN_MAP_METHODS,
-  SET, ARRAY, MAP,
+  SHOULD_REASSIGN_SET_METHODS,
 } from '../support/consts';
+import { isFn } from '../support/util';
 import { getUnProxyValue } from './helper';
-import { markModified, getUnsafeDraftMeta } from './meta';
+import { getUnsafeDraftMeta, markModified } from './meta';
 
-
-function mayMarkModified(options: { calledBy: string, parentMeta: DraftMeta, op: string, parentType: string, key: string | number }) {
+function mayMarkModified(options: { calledBy: string; parentMeta: DraftMeta; op: string; parentType: string; key: string | number }) {
   const { calledBy, parentMeta, op, parentType } = options;
   // 对于由 set 陷阱触发的 handleDataNode 调用，需要替换掉爷爷数据节点 key 指向的 value
-  if (['deleteProperty', 'set'].includes(calledBy)
-    ||
-    (calledBy === 'get' && (
-      (parentType === SET && SHOULD_REASSIGN_SET_METHODS.includes(op)) // 针对 Set.add
-      || (parentType === ARRAY && SHOULD_REASSIGN_ARR_METHODS.includes(op)) // 针对 Array 一系列的改变操作
-      || (parentType === MAP && SHOULD_REASSIGN_MAP_METHODS.includes(op)) // 针对 Map 一系列的改变操作
-    ))
+  if (
+    ['deleteProperty', 'set'].includes(calledBy) ||
+    (calledBy === 'get' &&
+      ((parentType === SET && SHOULD_REASSIGN_SET_METHODS.includes(op)) || // 针对 Set.add
+        (parentType === ARRAY && SHOULD_REASSIGN_ARR_METHODS.includes(op)) || // 针对 Array 一系列的改变操作
+        (parentType === MAP && SHOULD_REASSIGN_MAP_METHODS.includes(op)))) // 针对 Map 一系列的改变操作
   ) {
     markModified(parentMeta);
   }
 }
 
-
 export function handleDataNode(parentDataNode: any, copyCtx: any) {
-  const {
-    op, key, value: mayProxyValue, calledBy, parentType, parentMeta,
-  } = copyCtx;
+  const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta } = copyCtx;
   // https://javascript.info/json#custom-tojson
-  // 兼容 JSON.stringify 调用 
+  // 兼容 JSON.stringify 调用
   if (op === 'toJSON' && !mayProxyValue) {
     return;
   }

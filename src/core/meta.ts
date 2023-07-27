@@ -1,13 +1,12 @@
 /*---------------------------------------------------------------------------------------------
  *  Licensed under the MIT License.
- * 
+ *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta, ObjectLike } from '../inner-types';
 import { META_KEY } from '../support/consts';
 import { verWrap } from '../support/inner-data';
-import { isPrimitive, getDataType, noop, injectMetaProto } from '../support/util';
-
+import { getDataType, injectMetaProto, isPrimitive, noop } from '../support/util';
 
 export function markModified(meta: DraftMeta) {
   meta.rootMeta.modified = true;
@@ -19,8 +18,7 @@ export function markModified(meta: DraftMeta) {
   };
 
   doMark(meta);
-};
-
+}
 
 export function attachMeta(dataNode: any, meta: DraftMeta, fast: boolean) {
   if (fast) {
@@ -32,7 +30,6 @@ export function attachMeta(dataNode: any, meta: DraftMeta, fast: boolean) {
   return dataNode;
 }
 
-
 export function getKeyPath(draftNode: any, curKey: string) {
   const pathArr: string[] = [curKey];
   const meta = getDraftMeta(draftNode);
@@ -42,7 +39,6 @@ export function getKeyPath(draftNode: any, curKey: string) {
   }
   return pathArr;
 }
-
 
 export function newMeta(baseData: any, options: any) {
   const { finishDraft, ver, parentMeta = null, key, immutBase } = options;
@@ -90,7 +86,6 @@ export function newMeta(baseData: any, options: any) {
   return meta;
 }
 
-
 /**
  * 是否是 proxy 代理指向的草稿对象
  * @param mayDraft
@@ -108,7 +103,6 @@ export function isDraft(mayDraft: any) {
   return !meta.isImmutBase;
 }
 
-
 export function genMetaVer() {
   if (verWrap.value >= Number.MAX_SAFE_INTEGER) {
     verWrap.value = 1;
@@ -122,18 +116,15 @@ export function genMetaVer() {
   return metaVer;
 }
 
-
 export function getNextMetaLevel(mayContainMetaObj: any) {
   const meta = getDraftMeta(mayContainMetaObj);
   return meta ? meta.level + 1 : 1;
 }
 
-
 export function getDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> {
   // @ts-ignore
   return proxyDraft[META_KEY];
 }
-
 
 export function getUnsafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> | null {
   // @ts-ignore

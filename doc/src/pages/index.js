@@ -1,8 +1,8 @@
-import * as limu from 'limu';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import MdViewer from '@site/src/components/MdViewer';
+import { bindLimuToGlobal } from '@site/src/utils/index';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import React from 'react';
@@ -10,7 +10,7 @@ import styles from './index.module.css';
 // import MdViewer from '@site/src/components/MonacoEditor';
 import * as demoCode from '@site/src/components/demoCode';
 
-globalThis.limu = limu;
+bindLimuToGlobal();
 
 // prism-react-renderer
 // @uiw/react-markdown-preview
@@ -62,10 +62,7 @@ function DemoArea() {
 function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <header
-      className={clsx('hero hero--primary', styles.heroBanner)}
-      style={{ height: '400px' }}
-    >
+    <header className={clsx('hero hero--primary', styles.heroBanner)} style={{ height: '400px' }}>
       <div className="container">
         <h1 className="hero__title" style={{ fontSize: '88px', fontWeight: 600 }}>
           {siteConfig.title}

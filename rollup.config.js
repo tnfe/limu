@@ -1,19 +1,19 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import * as os from 'os';
-import typescript from 'rollup-plugin-typescript';
+import * as path from 'path';
 import { terser } from 'rollup-plugin-terser';
+import typescript from 'rollup-plugin-typescript';
 import pkgJson from './package.json';
 
 function getSrcMajorVer() {
   const verFilePath = path.join(__dirname, './src/support/consts.ts');
   const content = fs.readFileSync(verFilePath).toString();
   const strList = content.split(os.EOL);
-  const line = strList.find(item => item.includes('LIMU_MAJOR_VER'));
+  const line = strList.find((item) => item.includes('LIMU_MAJOR_VER'));
   let [, verStr] = line.split('=');
   verStr = verStr.replace(/ /g, '');
   let pureVerStr = '';
-  verStr.split('').forEach(char => {
+  verStr.split('').forEach((char) => {
     if (new RegExp('^[0-9]*$').test(char)) {
       pureVerStr += char;
     }
@@ -40,7 +40,7 @@ const plugins = [
     exclude: 'node_modules/**',
     typescript: require('typescript'),
   }),
-]
+];
 let umdOutput = {
   format: 'umd',
   name: 'limu',
@@ -55,7 +55,5 @@ if (process.env.MIN === 'true') {
 module.exports = {
   input: 'src/index.ts',
   plugins,
-  output: [
-    umdOutput,
-  ],
+  output: [umdOutput],
 };

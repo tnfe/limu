@@ -1,4 +1,4 @@
-import { runTestSuit, getMapBase, shouldBeEqual } from '../_util';
+import { getMapBase, runTestSuit, shouldBeEqual } from '../_util';
 
 function changeDraft(mapDraft: Map<any, any>) {
   // return MapIterator
@@ -8,14 +8,19 @@ function changeDraft(mapDraft: Map<any, any>) {
 
 runTestSuit('map is base', 'keys', getMapBase, changeDraft, shouldBeEqual);
 
-runTestSuit('map in base obj', 'keys',
-  () => { // get base state
+runTestSuit(
+  'map in base obj',
+  'keys',
+  () => {
+    // get base state
     return { map: getMapBase() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     changeDraft(draft.map);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final === base).toBeTruthy();
     shouldBeEqual(final.map, base.map);
   },

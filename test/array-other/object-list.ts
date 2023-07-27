@@ -15,7 +15,7 @@ let i = 1;
 function getI() {
   return i++;
 }
-getI()
+getI();
 
 function changeDraft(objDraft: Record<string, any>) {
   objDraft.list[0].name = 'new_name_' + getI(); // item_0 changed

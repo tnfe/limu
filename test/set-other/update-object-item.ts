@@ -1,4 +1,4 @@
-import { runSetTestSuit, getSetObjBase, noop } from '../_util';
+import { getSetObjBase, noop, runSetTestSuit } from '../_util';
 // import { runSetTestSuit, getSetObjBase } from '../_util';
 
 function changeDraft(setDraft: Set<any>) {

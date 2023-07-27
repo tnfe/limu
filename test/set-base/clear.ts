@@ -1,4 +1,4 @@
-import { runTestSuit, getSetBase } from '../_util';
+import { getSetBase, runTestSuit } from '../_util';
 
 function changeDraft(setDraft: Set<any>) {
   setDraft.clear();
@@ -13,14 +13,19 @@ function compare(setNew, setBase) {
 
 runTestSuit('set is base', 'clear', getSetBase, changeDraft, compare);
 
-runTestSuit('set in base obj', 'clear',
-  () => { // get base state
+runTestSuit(
+  'set in base obj',
+  'clear',
+  () => {
+    // get base state
     return { set: getSetBase() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     changeDraft(draft.set);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final !== base).toBeTruthy();
     compare(final.set, base.set);
   },

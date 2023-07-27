@@ -22,8 +22,5 @@
     "lib": ["es2019"]
   },
   "include": ["src/**/*"],
-  "exclude": [
-    "node_modules",
-    "debug/**/*",
-  ]
+  "exclude": ["node_modules", "debug/**/*"]
 }

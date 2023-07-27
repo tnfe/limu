@@ -1,4 +1,4 @@
-import { runMapTestSuit, getMapBase, shouldBeEqual, noop } from '../_util';
+import { getMapBase, noop, runMapTestSuit, shouldBeEqual } from '../_util';
 
 function changeDraft(mapDraft) {
   noop(mapDraft);

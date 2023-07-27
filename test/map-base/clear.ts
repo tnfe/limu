@@ -1,4 +1,4 @@
-import { runTestSuit, runMapTestSuit, getMapBase } from '../_util';
+import { getMapBase, runMapTestSuit, runTestSuit } from '../_util';
 
 function changeDraft(mapDraft: Map<any, any>) {
   mapDraft.clear();
@@ -13,14 +13,19 @@ function compare(mapNew, mapBase) {
 
 runMapTestSuit('map is base', 'clear', getMapBase, changeDraft, compare);
 
-runTestSuit('map in base obj', 'clear',
-  () => { // get base state
+runTestSuit(
+  'map in base obj',
+  'clear',
+  () => {
+    // get base state
     return { map: getMapBase() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     changeDraft(draft.map);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final !== base).toBeTruthy();
     compare(final.map, base.map);
   },

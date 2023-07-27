@@ -1,10 +1,10 @@
-import { runObjectTestSuit, noop } from '../_util';
+import { noop, runObjectTestSuit } from '../_util';
 
 function getStateBase() {
   const toReturn = {
-    map: new Map<string, { name: string, info: any }>([
-      ["fancy", { name: "fancy", info: { name: 'ok', addr: 'bj' } }],
-      ["hel", { name: "hel-micro", info: { name: 'cool', addr: 'micro front' } }],
+    map: new Map<string, { name: string; info: any }>([
+      ['fancy', { name: 'fancy', info: { name: 'ok', addr: 'bj' } }],
+      ['hel', { name: 'hel-micro', info: { name: 'cool', addr: 'micro front' } }],
     ]),
     count: 1,
   };
@@ -15,7 +15,7 @@ let i = 1;
 function getI() {
   return i++;
 }
-getI()
+getI();
 
 function changeDraft(objDraft: Record<string, any>) {
   objDraft.count = 3;

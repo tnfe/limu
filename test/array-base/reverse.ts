@@ -16,7 +16,9 @@ function compare(arrNew, arrBase) {
 
 runTestSuit('arr is base', 'reverse', getArrBase, changeDraft, compare);
 
-runTestSuit('arr in base obj', 'reverse',
+runTestSuit(
+  'arr in base obj',
+  'reverse',
   function getArrBase() {
     return { arr: [1, 2, 3, 4] };
   },

@@ -1,11 +1,10 @@
-
 /*---------------------------------------------------------------------------------------------
  *  Licensed under the MIT License.
- * 
+ *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta } from '../inner-types';
-import { MAP, SET, ARRAY, META_KEY } from '../support/consts';
+import { ARRAY, MAP, META_KEY, SET } from '../support/consts';
 import { isObject } from '../support/util';
 import { getDraftMeta } from './meta';
 
@@ -17,7 +16,7 @@ export function isInSameScope(mayDraftNode: any, callerScopeVer: string) {
 }
 
 export function clearScopes(rootMeta: DraftMeta) {
-  rootMeta.scopes.forEach(meta => {
+  rootMeta.scopes.forEach((meta) => {
     const { modified, copy, parentMeta, key, self, revoke, proxyVal, isDel } = meta;
 
     if (!copy) return revoke();

@@ -1,4 +1,4 @@
-import { runObjectTestSuit, noop } from '../_util';
+import { noop, runObjectTestSuit } from '../_util';
 
 function getStateBase() {
   const toReturn = {
@@ -8,7 +8,7 @@ function getStateBase() {
   return toReturn;
 }
 
-type Obj = { set: Set<{ name: string }>, count: number };
+type Obj = { set: Set<{ name: string }>; count: number };
 
 function changeDraft(objDraft: Obj) {
   objDraft.count = 3;

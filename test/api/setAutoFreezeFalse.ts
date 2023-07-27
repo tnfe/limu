@@ -1,13 +1,17 @@
 // @ts-nocheck
-import { Limu, produce, createDraft, finishDraft } from '../../src';
+import { createDraft, finishDraft, produce } from '../../src';
 import * as util from '../_util';
 
 describe('set autoFreeze false', () => {
   test('produce', () => {
     const base = { key: 1 };
-    const final = produce(base, (draft) => {
-      draft.key = 2;
-    }, { autoFreeze: false });
+    const final = produce(
+      base,
+      (draft) => {
+        draft.key = 2;
+      },
+      { autoFreeze: false },
+    );
     expect(base.key === 1).toBeTruthy();
     expect(final.key === 2).toBeTruthy();
 
@@ -18,9 +22,12 @@ describe('set autoFreeze false', () => {
 
   test('produce curry', () => {
     const base = { key: 1 };
-    const cb = produce < typeof base > ((draft) => {
-      draft.key = 2;
-    }, { autoFreeze: false });
+    const cb = produce<typeof base>(
+      (draft) => {
+        draft.key = 2;
+      },
+      { autoFreeze: false },
+    );
     const final = cb(base);
     expect(base.key === 1).toBeTruthy();
     expect(final.key === 2).toBeTruthy();
@@ -29,7 +36,6 @@ describe('set autoFreeze false', () => {
     expect(base.key).toBe(100);
     expect(final.key === 2).toBeTruthy();
   });
-
 
   test('createDraft and finishDraft', () => {
     const base = { key: 1 };
@@ -47,7 +53,6 @@ describe('set autoFreeze false', () => {
     expect(final.key === 2).toBeTruthy();
   });
 
-
   test('createDraft by frozenData', () => {
     const base = { key: 1 };
     const draft = createDraft(base, { autoFreeze: true });
@@ -56,8 +61,7 @@ describe('set autoFreeze false', () => {
     expect(base.key === 1).toBeTruthy();
     const final = finishDraft(draft);
 
-
-    util.assignFrozenDataInJest(()=>{
+    util.assignFrozenDataInJest(() => {
       final.key = 10;
     });
     expect(final.key === 10).toBeFalsy();

@@ -19,14 +19,19 @@ function compare(arrNew, arrBase) {
 
 runTestSuit('arr is base', 'sort', getAnArrCanBeSort, sortDraft, compare);
 
-runTestSuit('arr in base obj', 'sort',
-  () => { // get base state
+runTestSuit(
+  'arr in base obj',
+  'sort',
+  () => {
+    // get base state
     return { arr: getAnArrCanBeSort() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     sortDraft(draft.arr);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final !== base).toBeTruthy();
     compare(final.arr, base.arr);
   },
@@ -44,14 +49,19 @@ function sortOrderedDraft(arrDraft: any[], base: any[]) {
 }
 
 runTestSuit('arr is base', 'ordered sort', getAnOrderedArr, sortOrderedDraft, shouldBeNotEqual);
-runTestSuit('arr in base obj', 'ordered sort',
-  () => { // get base state
+runTestSuit(
+  'arr in base obj',
+  'ordered sort',
+  () => {
+    // get base state
     return { arr: getAnOrderedArr() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     sortOrderedDraft(draft.arr);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final !== base).toBeTruthy();
     shouldBeNotEqual(final.arr, base.arr);
   },
@@ -69,7 +79,9 @@ function sortUnorderedDraft(arrDraft: any[], base: any[]) {
 }
 
 runTestSuit('arr is base', 'unordered sort', getAnUnorderedArr, sortUnorderedDraft, shouldBeNotEqual);
-runTestSuit('arr in base obj', 'unordered sort',
+runTestSuit(
+  'arr in base obj',
+  'unordered sort',
   () => {
     return { arr: getAnOrderedArr() };
   },

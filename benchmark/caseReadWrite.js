@@ -41,7 +41,8 @@ runPerfCase({
     const lastIdx = arr.length - 1;
     if (operateArr) {
       // arr.forEach((item, idx) => { // bad way
-      lib.original(arr).forEach((item, idx) => { // good way
+      lib.original(arr).forEach((item, idx) => {
+        // good way
         if (idx === lastIdx) {
           arr[idx].a = 888;
         }
@@ -87,7 +88,5 @@ runPerfCase({
       const final2 = lib.finishDraft(draft3);
       final2.arr[1].a = 666;
     }
-
   },
 }).catch(console.error);
-

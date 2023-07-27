@@ -1,4 +1,4 @@
-import { runTestSuit, getArrBase, shouldBeEqual, noop } from '../_util';
+import { getArrBase, noop, runTestSuit, shouldBeEqual } from '../_util';
 
 function changeDraft(arrDraft) {
   noop(arrDraft);

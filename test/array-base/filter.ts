@@ -1,7 +1,7 @@
-import { runTestSuit, getArrBase, shouldBeEqual } from '../_util';
+import { getArrBase, runTestSuit, shouldBeEqual } from '../_util';
 
 function changeDraft(arrDraft) {
-  const result = arrDraft.filter(item => item > 1);
+  const result = arrDraft.filter((item) => item > 1);
   expect(result).toMatchObject([2, 3]);
 }
 

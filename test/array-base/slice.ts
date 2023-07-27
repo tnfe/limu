@@ -7,14 +7,19 @@ function justSlice(arrDraft, arrBase) {
 
 runTestSuit('arr is base', 'slice', getArrBase, justSlice, shouldBeEqual);
 
-runTestSuit('arr in base obj', 'slice',
-  () => { // get base state
+runTestSuit(
+  'arr in base obj',
+  'slice',
+  () => {
+    // get base state
     return { arr: getArrBase() };
   },
-  (draft, base) => { // change draft
+  (draft, base) => {
+    // change draft
     justSlice(draft.arr, base.arr);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final === base).toBeTruthy();
     shouldBeEqual(final.arr, base.arr);
   },
@@ -28,14 +33,19 @@ function sliceThenChangeDraft(arrDraft, arrBase) {
 
 runTestSuit('arr is base', 'slice', getArrBase, sliceThenChangeDraft, shouldBeNotEqual);
 
-runTestSuit('arr in base obj', 'slice',
-  () => { // get base state
+runTestSuit(
+  'arr in base obj',
+  'slice',
+  () => {
+    // get base state
     return { arr: getArrBase() };
   },
-  (draft, base) => { // change draft
+  (draft, base) => {
+    // change draft
     sliceThenChangeDraft(draft.arr, base.arr);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final !== base).toBeTruthy();
     shouldBeNotEqual(final.arr, base.arr);
   },

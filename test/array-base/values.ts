@@ -1,4 +1,4 @@
-import { runTestSuit, getArrBase, shouldBeEqual } from '../_util';
+import { getArrBase, runTestSuit, shouldBeEqual } from '../_util';
 
 function changeDraft(arrDraft) {
   // return Array Iterator
@@ -8,14 +8,19 @@ function changeDraft(arrDraft) {
 
 runTestSuit('arr is base', 'values', getArrBase, changeDraft, shouldBeEqual);
 
-runTestSuit('arr in base obj', 'values',
-  () => { // get base state
+runTestSuit(
+  'arr in base obj',
+  'values',
+  () => {
+    // get base state
     return { arr: getArrBase() };
   },
-  (draft) => { // change draft
+  (draft) => {
+    // change draft
     changeDraft(draft.arr);
   },
-  (final, base) => { // assert
+  (final, base) => {
+    // assert
     expect(final === base).toBeTruthy();
     shouldBeEqual(final.arr, base.arr);
   },

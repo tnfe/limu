@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { runObjectTestSuit, isNewArch } from '../_util';
+import { isNewArch, runObjectTestSuit } from '../_util';
 
 function getStateBase() {
   const toReturn = {
@@ -9,7 +9,7 @@ function getStateBase() {
   return toReturn;
 }
 
-type Obj = { set: Set<any>, count: number };
+type Obj = { set: Set<any>; count: number };
 
 function changeDraft(objDraft: Obj) {
   objDraft.count = 3;
