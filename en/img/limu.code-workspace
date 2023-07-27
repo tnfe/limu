@@ -1,11 +1,14 @@
 {
 	"folders": [
-		{
-			"path": "../../.."
-		},
-		{
-			"path": "../../../../limu-gh-pages"
-		}
-	],
+    {
+      "path": "../../.."
+    },
+    {
+      "path": "../../../../limu-gh-pages"
+    },
+    {
+      "path": "../../../../immer"
+    }
+  ],
   "settings": {}
 }
