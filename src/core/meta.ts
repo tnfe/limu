@@ -20,11 +20,11 @@ export function markModified(meta: DraftMeta) {
   doMark(meta);
 }
 
-export function attachMeta(dataNode: any, meta: DraftMeta, fast: boolean) {
+export function attachMeta(dataNode: any, meta: DraftMeta, fast: boolean, extraProps?: any) {
   if (fast) {
     dataNode[META_KEY] = meta; // speed up read performance, especially for array forEach scene
   } else {
-    injectMetaProto(dataNode);
+    injectMetaProto(dataNode, extraProps);
     dataNode.__proto__[META_KEY] = meta;
   }
   return dataNode;

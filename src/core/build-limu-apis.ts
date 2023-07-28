@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta, ICreateDraftOptions, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
+import type { DraftMeta, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
 import { ARRAY, CAREFUL_FNKEYS, CHANGE_FNKEYS, CAREFUL_TYPES, IMMUT_BASE, MAP, META_KEY, SET } from '../support/consts';
 import { conf } from '../support/inner-data';
 import { canBeNum, isFn, isPrimitive, isSymbol } from '../support/util';
@@ -19,11 +19,13 @@ import { extraFinalData, isInSameScope, recordVerScope } from './scope';
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
 const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
 
-export function buildLimuApis(options?: ICreateDraftOptions | IInnerCreateDraftOptions) {
+export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const opts = options || {};
   const onOperate = opts.onOperate;
   const fastModeRange = opts.fastModeRange || conf.fastModeRange;
+  // @ts-ignore
   const immutBase = opts[IMMUT_BASE] ?? false;
+  const extraProps = opts.extraProps || null;
   const readOnly = opts.readOnly ?? false;
   // 调用那一刻起，确定 autoFreeze 值
   // allow user overwrite autoFreeze setting in current call process
@@ -72,6 +74,11 @@ export function buildLimuApis(options?: ICreateDraftOptions | IInnerCreateDraftO
       // parent指向的是代理之前的对象
       get: (parent: any, key: any) => {
         let currentChildVal = parent[key];
+
+        if (key === 'toJSON' && Array.isArray(parent)) {
+          return currentChildVal;
+        }
+
         if (key === '__proto__' || key === META_KEY) {
           return currentChildVal;
         }
@@ -87,11 +94,10 @@ export function buildLimuApis(options?: ICreateDraftOptions | IInnerCreateDraftO
 
         const parentMeta = getDraftMeta(parent) as DraftMeta;
         const parentType = parentMeta?.selfType;
-
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
         // 是为了配合 data-node-processor 里的 ATTENTION_1
-        if (parentMeta && TYPE_BLACK_LIST.includes(parentType) && PROPERTIES_BLACK_LIST.includes(key)) {
+        if (TYPE_BLACK_LIST.includes(parentType) && PROPERTIES_BLACK_LIST.includes(key)) {
           return parentMeta.copy[key];
         }
         // 可能会指向代理对象
@@ -141,13 +147,9 @@ export function buildLimuApis(options?: ICreateDraftOptions | IInnerCreateDraftO
       // parent 指向的是代理之前的对象
       set: (parent: any, key: any, value: any) => {
         let targetValue = value;
-        if (key === META_KEY) {
-          parent[key] = targetValue;
-          return true;
-        }
 
         if (readOnly) {
-          console.warn('modify fail at readOnly mode');
+          console.error('can not mutate state at readOnly mode!');
           return true;
         }
 
@@ -235,6 +237,7 @@ export function buildLimuApis(options?: ICreateDraftOptions | IInnerCreateDraftO
           finishDraft: limuApis.finishDraft,
           immutBase,
           readOnly,
+          extraProps,
         });
         recordVerScope(meta);
 

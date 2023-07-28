@@ -8,7 +8,7 @@ import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
 import { getDraftMeta as getDraftMetaFn, isDraft as isDraftFn } from './core/meta';
 import { current as currentFn, original as originalFn } from './core/user-util';
-import type { ICreateDraftOptions, ObjectLike, Op } from './inner-types';
+import type { ICreateDraftOptions, IInnerCreateDraftOptions, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, LIMU_MAJOR_VER, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
 import { isFn, isPromiseFn, isPromiseResult } from './support/util';
@@ -40,7 +40,7 @@ export interface IProduce {
 export const VER = v;
 
 export function createDraft<T extends ObjectLike = ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
-  const apis = buildLimuApis(options);
+  const apis = buildLimuApis(options as IInnerCreateDraftOptions);
   // @ts-ignore , add [as] just for click to see implement
   return apis.createDraft(base) as LimuApis['createDraft'];
 }
@@ -113,8 +113,13 @@ export function deepCopy<T extends ObjectLike>(obj: T) {
   return deepCopyFn(obj);
 }
 
-export function immut<T extends ObjectLike>(base: T): T {
-  const limuApis = buildLimuApis({ readOnly: true, [IMMUT_BASE]: true });
+/**
+ * 生成一个不可修改的对象im，但原始对象的修改将同步会影响到im
+ * immut 采用了读时浅代理的机制，相比deepFreeze会拥有更好性能，适用于不暴露原始对象出去，只暴露生成的不可变对象出去的场景
+ * @see: https://tnfe.github.io/limu/docs/api/basic/immut
+ */
+export function immut<T extends ObjectLike>(base: T, options?: Omit<ICreateDraftOptions, 'readOnly'>): T {
+  const limuApis = buildLimuApis({ ...(options || {}), readOnly: true, [IMMUT_BASE]: true });
   const immutData = limuApis.createDraft(base);
   return immutData;
 }

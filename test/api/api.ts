@@ -9,8 +9,9 @@ import {
   getMajorVer,
   original,
   produce,
+  immut,
 } from '../../src';
-import { assignFrozenDataInJest, strfy } from '../_util';
+import { assignFrozenDataInJest, strfy, noop } from '../_util';
 
 describe('check apis', () => {
   test('getAutoFreeze', () => {
@@ -98,6 +99,34 @@ describe('check apis', () => {
     }
   });
 
+  test('createDraft: set extraProps', () => {
+    const base = { key: 1 };
+    const draft = createDraft(base, { extraProps: { a: 1 } });
+    draft.key = 2;
+    const final = finishDraft(draft);
+    expect(final.key === 2).toBeTruthy();
+    // @ts-ignore
+    expect(final.a === 1).toBeTruthy();
+  });
+
+  test('createDraft: set readOnly', () => {
+    const base = { key: 1 };
+    const draft = createDraft(base, { readOnly: true });
+    draft.key = 2;
+    const final = finishDraft(draft);
+    expect(final.key === 1).toBeTruthy(); // still 1
+  });
+
+  test('immut', () => {
+    const base = { key: 1 };
+    const data = immut(base);
+    data.key = 2;
+    expect(data.key === 1).toBeTruthy(); // still 1
+
+    base.key = 2;
+    expect(data.key === 2).toBeTruthy(); // change base effect data
+  });
+
   test('getDraftMeta', () => {
     const base = { key: 1 };
     const draft = createDraft(base);
@@ -125,7 +154,17 @@ describe('check apis', () => {
     });
   });
 
-  test('deepFreeze set', () => {
+  test('deepFreeze number arr', () => {
+    const arr: any = [1, 2, 3];
+    deepFreeze(arr);
+    expect(arr.length === 3).toBeTruthy();
+    expect(Object.isFrozen(arr)).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      arr.push(2);
+    });
+  });
+
+  test('deepFreeze: set', () => {
     const set = new Set();
     deepFreeze(set);
     expect(Object.isFrozen(set)).toBeTruthy();
@@ -135,7 +174,25 @@ describe('check apis', () => {
     expect(set.size === 0).toBeTruthy();
   });
 
-  test('deepFreeze map', () => {
+  test('deepFreeze: object item\'s set', () => {
+    const set = new Set([{ a: 1 }, { a: 2 }]);
+    deepFreeze(set);
+    expect(Object.isFrozen(set)).toBeTruthy();
+    // ts-ignore
+    for (const item of set) {
+      assignFrozenDataInJest(() => {
+        item.a = 100;
+      });
+      expect(item.a !== 100).toBeTruthy();
+    }
+
+    assignFrozenDataInJest(() => {
+      set.add({ a: 3 });
+    });
+    expect(set.size === 2).toBeTruthy();
+  });
+
+  test('deepFreeze: map', () => {
     const map = new Map();
     deepFreeze(map);
     expect(Object.isFrozen(map)).toBeTruthy();
@@ -143,6 +200,26 @@ describe('check apis', () => {
       map.set(1, 1);
     });
     expect(map.size === 0).toBeTruthy();
+  });
+
+
+  test('deepFreeze: object item\'s map', () => {
+    const map = new Map([
+      [1, { a: 1 }],
+      [2, { a: 2 }],
+    ]);
+    deepFreeze(map);
+    expect(Object.isFrozen(map)).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      // @ts-ignore
+      map.get(1).a = 100;
+    });
+    // @ts-ignore
+    expect(map.get(1).a === 1).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      map.set(3, { a: 3 });
+    });
+    expect(map.size === 2).toBeTruthy();
   });
 
   test('original current obj', () => {
@@ -237,6 +314,44 @@ describe('check apis', () => {
     expect(tmpCopy.c.c2 === 2000).toBeTruthy();
   });
 
+  test('onOperate: readOnly=true', () => {
+    const base = { a: 1, b: 2, c: { c1: 3, c2: { last: 100 } }, d: [1, 2, 3, 4] };
+    const draft = createDraft(base, {
+      onOperate: (params) => {
+        const { key, op, value, isChange } = params;
+        if (!isChange) return;
+        if (key === 'a') {
+          expect(op === 'get').toBeTruthy();
+          expect(value === 1).toBeTruthy();
+        }
+        if (key === 'b') {
+          expect(op === 'get').toBeTruthy();
+          expect(value === 2).toBeTruthy();
+        }
+        if (key === 'c') {
+          expect(op === 'get').toBeTruthy();
+          expect(value).toMatchObject({ c1: 3, c2: { last: 100 } });
+        }
+        if (key === 'c1') {
+          expect(op === 'get').toBeTruthy();
+          expect(value === 3).toBeTruthy();
+        }
+        if (key === 'c2') {
+          expect(op === 'get').toBeTruthy();
+          expect(value).toMatchObject({ last: 100 });
+        }
+        if (key === 'last') {
+          expect(op === 'get').toBeTruthy();
+          expect(value === 100).toBeTruthy();
+        }
+      },
+    });
+    noop(draft.a);
+    noop(draft.b);
+    noop(draft.c.c1);
+    noop(draft.c.c2.last);
+  });
+
   test('test onOperate', () => {
     const base = { a: 1, b: 2, c: { c1: 3 } };
     const draft = createDraft(base, {
@@ -274,7 +389,6 @@ describe('check apis', () => {
       fastModeRange,
       onOperate: (params) => {
         if (!params.isChange || params.isBuiltInFnKey) return;
-        console.log(params);
         onOperateHit += 1;
         if (params.parentType === 'Array') opArrHit += 1;
       },
@@ -321,7 +435,7 @@ describe('check apis', () => {
     expect(final.d.length === 4).toBeTruthy();
   });
 
-  test('deepCopy root arr', () => {
+  test('deepCopy: root arr', () => {
     const base = [{ a: 1 }, { a: 1 }, { a: 1 }];
     const final = deepCopy(base);
     final[0].a = 100;
@@ -332,5 +446,52 @@ describe('check apis', () => {
     expect(final[0].a === 100).toBeTruthy();
     expect(base.length === 3).toBeTruthy();
     expect(final.length === 4).toBeTruthy();
+  });
+
+  test('deepCopy: root number arr', () => {
+    const base = [1, 2, 3];
+    const final = deepCopy(base);
+    final[0] = 100;
+    final.push(200);
+
+    expect(base !== final).toBeTruthy();
+    expect(base[0] === 1).toBeTruthy();
+    expect(final[0] === 100).toBeTruthy();
+    expect(base.length === 3).toBeTruthy();
+    expect(final.length === 4).toBeTruthy();
+  });
+
+  test('JSON.parse JSON.stringify', () => {
+    const base = [1, 2, 3];
+    const draft = createDraft(base);
+    draft.push(4);
+    const final = finishDraft(draft);
+    const str = JSON.stringify(final);
+
+    expect(str === '[1,2,3,4]').toBeTruthy();
+    expect(JSON.parse(str)).toMatchObject([1, 2, 3, 4]);
+  });
+
+  test('JSON.parse JSON.stringify: at 2nd level', () => {
+    const base = { a: [1, 2, 3] };
+    const draft = createDraft(base);
+    draft.a.push(4);
+    const final = finishDraft(draft);
+    const str = JSON.stringify(final);
+
+    expect(str === '{"a":[1,2,3,4]}').toBeTruthy();
+    expect(JSON.parse(str)).toMatchObject({ a: [1, 2, 3, 4] });
+  });
+
+  test('array key toJSON', () => {
+    const base = { a: [1, 2, 3] };
+    const draft = createDraft(base);
+    // @ts-ignore
+    const ret = draft.a.toJSON;
+    expect(ret).toBeFalsy();
+    draft.a.push(4);
+    const final = finishDraft(draft);
+    const str = JSON.stringify(final);
+    expect(str === '{"a":[1,2,3,4]}').toBeTruthy();
   });
 });

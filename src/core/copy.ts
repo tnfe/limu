@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { FastModeRange, ObjectLike } from '../inner-types';
+import type { FastModeRange, ObjectLike, DataType } from '../inner-types';
 import { ARRAY } from '../support/consts';
 import { isMap, isObject, isPrimitive, isSet } from '../support/util';
 import { attachMeta, getDraftMeta } from './meta';
@@ -60,7 +60,7 @@ export function deepCopy<T extends ObjectLike>(obj: T, metaVer?: string): T {
  * @param val
  * @returns
  */
-export function tryMakeCopy(val: any, options: { parentType; fastModeRange: FastModeRange }) {
+export function tryMakeCopy(val: any, options: { parentType: DataType; fastModeRange: FastModeRange }) {
   const { parentType, fastModeRange } = options;
 
   if (Array.isArray(val)) {
@@ -87,14 +87,12 @@ export function makeCopyWithMeta(
   ori: any,
   meta: any,
   options: {
-    parentType: string;
+    parentType: DataType;
     fastModeRange: FastModeRange;
-    immutBase: boolean;
+    extraProps?: any;
   },
 ) {
-  if (!options.immutBase) {
-    const { copy, fast } = tryMakeCopy(ori, options);
-    return attachMeta(copy, meta, fast);
-  }
-  return attachMeta(ori, meta, false);
+  const { extraProps } = options;
+  const { copy, fast } = tryMakeCopy(ori, options);
+  return attachMeta(copy, meta, fast, extraProps);
 }

@@ -33,12 +33,12 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/tnfe/limu/doc',
+          editUrl: 'https://github.com/tnfe/limu/blob/main/doc',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'http://localhost:3000/limu/blog',
+          editUrl: 'https://github.com/tnfe/limu/blob/main/doc',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

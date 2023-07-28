@@ -1,6 +1,7 @@
 
 // const limu = require('immer'); limu.enableMapSet(); console.log('\nRUN IMMER !!!\n');
-const limu = require('../dist/limu'); console.log('\nRUN LIMU !!!\n');
+// const limu = require('./limus/limu338'); console.log('\nRUN LIMU 338!!!\n');
+const limu = require('../dist/limu'); console.log('\nRUN LIMU 339!!!\n');
 
 // print bad ( new arch )
 

@@ -13,7 +13,7 @@ export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
 export type Op = 'del' | 'set' | 'get';
 export type DataType = 'Map' | 'Set' | 'Array' | 'Object';
 export type FastModeRange = 'array' | 'all' | 'none';
-export interface DraftMeta<T extends ObjectLike = ObjectLike> {
+export interface DraftMeta<T extends AnyObject = AnyObject> {
   rootMeta: DraftMeta;
   parentMeta: null | DraftMeta;
   parent: null | ObjectLike;
@@ -25,7 +25,7 @@ export interface DraftMeta<T extends ObjectLike = ObjectLike> {
   isImmutBase: boolean;
   isPartial: boolean;
   isDel: boolean;
-  // TODO: 探索使用linkCount代替isDel，看是否能解决多应用问题
+  // TODO: 探索使用linkCount代替isDel，看是否能解决多引用问题
   linkCount: number;
   key: string;
   // idx: number, // 数组元素才需要用到
@@ -86,6 +86,7 @@ export interface ICreateDraftOptions {
    */
   fastModeRange?: FastModeRange;
   readOnly?: boolean;
+  extraProps?: AnyObject;
 }
 
 export interface IInnerCreateDraftOptions extends ICreateDraftOptions {

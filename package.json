@@ -1,6 +1,6 @@
 {
   "name": "limu",
-  "version": "3.3.6",
+  "version": "3.3.9",
   "description": "A fast js lib of immutable data, based on shallow copy on read and mark modified on write mechanism",
   "keywords": [
     "immutable",
@@ -41,6 +41,7 @@
     "build": "npm run build:umd & npm run build:umd-min",
     "build:umd": "tsc & rollup -c",
     "build:umd-min": "tsc & MIN=true rollup -c",
+    "cpdoc": "rm -rf ../limu-gh-pages/* && cp -r ./doc/build/* ../limu-gh-pages",
     "cov": "jest --coverage",
     "cov:dir": "jest --coverage --coverageDirectory='coverage'",
     "cov:nocache": "jest --no-cache --coverage",

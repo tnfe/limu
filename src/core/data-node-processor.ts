@@ -93,10 +93,16 @@ export function handleDataNode(parentDataNode: any, copyCtx: any) {
     const oldValueMeta = getUnsafeDraftMeta(oldValue);
     oldValueMeta && (oldValueMeta.isDel = true);
   };
-  // TODO: add test case
   const tryMarkUndel = () => {
     const valueMeta = getUnsafeDraftMeta(mayProxyValue);
-    valueMeta && (valueMeta.isDel = false);
+    if (valueMeta && valueMeta.isDel) {
+      valueMeta.isDel = false;
+      valueMeta.key = key;
+      valueMeta.keyPath = parentMeta.keyPath.concat([key]);
+      valueMeta.level = parentMeta.level + 1;
+      valueMeta.parent = parentMeta.copy;
+      valueMeta.parentMeta = parentMeta;
+    }
   };
 
   if (calledBy === 'deleteProperty') {

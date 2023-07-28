@@ -95,7 +95,7 @@ describe('case-node-change', () => {
     expect(base).toMatchObject({ a: { b: { c: { d: { e: { f: 1 } } } } } });
   });
 
-  test('delete arr', () => {
+  test('delete arr: assign push del push', () => {
     const base = {
       a: {
         b: {
@@ -116,7 +116,49 @@ describe('case-node-change', () => {
     expect(base).toMatchObject({ a: { b: { c: [1, 2, 3] } } });
   });
 
-  test('node-change 4 allowMultiRef', () => {
+  test('delete arr: del push assign', () => {
+    const base = {
+      a: {
+        b: {
+          c: [1, 2, 3],
+        },
+      },
+    };
+    const draft = createDraft(base);
+
+    const cVal = draft.a.b.c;
+    delete draft.a.b.c;
+    cVal.push(4);
+    cVal.push(5);
+    draft.a1 = cVal;
+    const final = finishDraft(draft);
+
+    expect(final).toMatchObject({ a: { b: {} }, a1: [1, 2, 3, 4, 5] });
+    expect(base).toMatchObject({ a: { b: { c: [1, 2, 3] } } });
+  });
+
+  test('delete arr: push del assign', () => {
+    const base = {
+      a: {
+        b: {
+          c: [1, 2, 3],
+        },
+      },
+    };
+    const draft = createDraft(base);
+
+    const cVal = draft.a.b.c;
+    cVal.push(4);
+    cVal.push(5);
+    delete draft.a.b.c;
+    draft.a1 = cVal;
+    const final = finishDraft(draft);
+
+    expect(final).toMatchObject({ a: { b: {} }, a1: [1, 2, 3, 4, 5] });
+    expect(base).toMatchObject({ a: { b: { c: [1, 2, 3] } } });
+  });
+
+  test('node-change: allowMultiRef', () => {
     if (isNewArch()) {
       return;
     }

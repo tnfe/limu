@@ -11,7 +11,7 @@ import { attachMeta, getDraftMeta, markModified, newMeta } from './meta';
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(baseData: any, options: any) {
-  const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase } = options;
+  const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase, extraProps } = options;
   const meta = newMeta(baseData, {
     finishDraft,
     ver,
@@ -23,7 +23,7 @@ export function createScopedMeta(baseData: any, options: any) {
   const copy = makeCopyWithMeta(baseData, meta, {
     parentType,
     fastModeRange,
-    immutBase,
+    extraProps,
   });
   meta.copy = copy;
   if (immutBase) {
@@ -47,18 +47,33 @@ export function shouldGenerateProxyItems(parentType: any, key: any) {
 }
 
 export function getProxyVal(selfVal: any, options: any) {
-  const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType, fastModeRange, immutBase, readOnly } =
-    options;
+  const {
+    key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches,
+    parentType, fastModeRange, immutBase, readOnly, extraProps,
+  } = options;
+
+
+  // keep copy always same with self when readOnly = true
+  if (readOnly && parentMeta) {
+    const { level, copy, self } = parentMeta;
+    if (level === 0) {
+      copy[key] = self[key];
+      return self[key];
+    }
+  }
 
   const mayCreateProxyVal = (selfVal: any, inputKey?: string) => {
+    const key = inputKey || '';
     if (isPrimitive(selfVal) || !selfVal) {
       return selfVal;
     }
 
-    const key = inputKey || '';
-    let valMeta = getDraftMeta(selfVal);
+    if (!parentMeta) {
+      throw new Error('[[ createMeta ]]: oops, meta should not be null');
+    }
 
     if (!isFn(selfVal)) {
+      let valMeta = getDraftMeta(selfVal);
       // 惰性生成代理对象和其元数据
       if (!valMeta) {
         valMeta = createScopedMeta(selfVal, {
@@ -70,6 +85,7 @@ export function getProxyVal(selfVal: any, options: any) {
           fastModeRange,
           immutBase,
           readOnly,
+          extraProps,
         });
         recordVerScope(valMeta);
         // child value 指向 copy
@@ -80,11 +96,6 @@ export function getProxyVal(selfVal: any, options: any) {
 
     if (!shouldGenerateProxyItems(parentType, key)) {
       return selfVal;
-    }
-
-    // valMeta = getDraftMeta(parent) as DraftMeta;
-    if (!parentMeta) {
-      throw new Error('[[ createMeta ]]: oops, meta should not be null');
     }
 
     if (parentMeta.proxyItems) {
@@ -102,7 +113,7 @@ export function getProxyVal(selfVal: any, options: any) {
         inversePatches,
         usePatches,
       });
-      proxyItems = attachMeta(tmp, parentMeta, fastModeRange);
+      proxyItems = attachMeta(tmp, parentMeta, fastModeRange, extraProps);
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
@@ -115,7 +126,7 @@ export function getProxyVal(selfVal: any, options: any) {
         inversePatches,
         usePatches,
       });
-      proxyItems = attachMeta(tmp, parentMeta, fastModeRange);
+      proxyItems = attachMeta(tmp, parentMeta, fastModeRange, extraProps);
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
@@ -142,7 +153,7 @@ export function getUnProxyValue(value: any) {
   return valueMeta.copy;
 }
 
-export function recordPatch(options: { meta: DraftMeta; [key: string]: any }) {
+export function recordPatch(options: { meta: DraftMeta;[key: string]: any }) {
   // TODO: to be implement in the future
   noop(options, oppositeOps);
 }

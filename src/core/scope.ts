@@ -20,7 +20,10 @@ export function clearScopes(rootMeta: DraftMeta) {
     const { modified, copy, parentMeta, key, self, revoke, proxyVal, isDel } = meta;
 
     if (!copy) return revoke();
+    // TODO: 优化此处的delete
+    // @ts-ignore
     delete copy[META_KEY];
+    delete copy.__proto__[META_KEY];
 
     if (!parentMeta) return revoke();
 
@@ -33,18 +36,15 @@ export function clearScopes(rootMeta: DraftMeta) {
       parentCopy.set(key, targetNode);
       return revoke();
     }
-
     if (parentType === SET) {
       parentCopy.delete(proxyVal);
       parentCopy.add(targetNode);
       return revoke();
     }
-
     if (parentType === ARRAY) {
       parentCopy[key] = targetNode;
       return revoke();
     }
-
     if (isDel !== true) {
       parentCopy[key] = targetNode;
       return revoke();

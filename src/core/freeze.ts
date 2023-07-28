@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { ObjectLike } from '../inner-types';
-import { isMap, isPrimitive, isSet, noop } from '../support/util';
+import { isMap, isPrimitive, isSet, noop, isObject } from '../support/util';
 
 export function deepFreeze<T extends ObjectLike>(obj: T) {
   if (isPrimitive(obj)) {
@@ -23,6 +23,10 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
     set.add = () => set;
     set.delete = () => false;
     set.clear = noop;
+    // @ts-ignore
+    for (const item of set.values()) {
+      Object.freeze(item)
+    }
     return Object.freeze(obj);
   }
 
@@ -32,6 +36,10 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
     map.set = () => map;
     map.delete = () => false;
     map.clear = noop;
+    // @ts-ignore
+    for (const item of map.values()) {
+      Object.freeze(item)
+    }
     return Object.freeze(obj);
   }
 
@@ -39,7 +47,7 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
   const propertyNames = Object.getOwnPropertyNames(obj);
   propertyNames.forEach((name) => {
     const value = obj[name];
-    if (value instanceof Object && value !== null) {
+    if (isObject(value)) {
       deepFreeze(value);
     }
   });
