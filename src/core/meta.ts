@@ -73,6 +73,7 @@ export function newMeta(baseData: any, options: any) {
     scopes: [],
     isImmutBase: immutBase,
     isDel: false,
+    isFast: false,
     linkCount: 1,
     finishDraft,
     ver,

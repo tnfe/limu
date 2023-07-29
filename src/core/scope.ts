@@ -17,13 +17,16 @@ export function isInSameScope(mayDraftNode: any, callerScopeVer: string) {
 
 export function clearScopes(rootMeta: DraftMeta) {
   rootMeta.scopes.forEach((meta) => {
-    const { modified, copy, parentMeta, key, self, revoke, proxyVal, isDel } = meta;
+    const { modified, copy, parentMeta, key, self, revoke, proxyVal, isDel, isFast } = meta;
 
     if (!copy) return revoke();
     // TODO: 优化此处的delete
-    // @ts-ignore
-    delete copy[META_KEY];
-    delete copy.__proto__[META_KEY];
+    if (isFast) {
+      // @ts-ignore
+      delete copy[META_KEY];
+    } else {
+      delete copy.__proto__[META_KEY];
+    }
 
     if (!parentMeta) return revoke();
 

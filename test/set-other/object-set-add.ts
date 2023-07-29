@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { isNewArch, runObjectTestSuit } from '../_util';
+import { runObjectTestSuit } from '../_util';
 
 function getStateBase() {
   const toReturn = {
@@ -33,20 +33,28 @@ function compare(final: Obj, base: Obj) {
   expect(final.set !== base.set).toBeTruthy();
   const finalArr = Array.from(final.set);
   const baseArr = Array.from(base.set);
-  expect(finalArr[0] === baseArr[0]).toBeTruthy();
+
+  console.log('baseArr', baseArr);
+  console.log('finalArr', finalArr);
+
+  expect(finalArr.includes(1)).toBeTruthy();
+  expect(finalArr.includes(3)).toBeTruthy();
+  expect(finalArr.includes('k4')).toBeTruthy();
+  expect(finalArr.includes('444')).toBeTruthy();
+  expect(finalArr.length === 5).toBeTruthy();
+  expect(baseArr[3] === undefined).toBeTruthy();
+
+  expect(final.set.has(1)).toBeTruthy();
+  expect(final.set.has(3)).toBeTruthy();
+  expect(final.set.has('k4')).toBeTruthy();
+  expect(final.set.has('444')).toBeTruthy();
+  expect(final.set.size === 5).toBeTruthy();
+
+  // set order is not granted, immer also fail at below sentence
+  // expect(finalArr[0] === baseArr[0]).toBeTruthy();
   // expect(finalArr[1] === baseArr[1]).toBeTruthy();
-  expect(finalArr[2] === baseArr[2]).toBeTruthy();
+  // expect(finalArr[2] === baseArr[2]).toBeTruthy();
   // expect(finalArr[3] === 444).toBeTruthy();
-  // expect(baseArr[3] === undefined).toBeTruthy();
 }
 
-// set order is not granted, immer also fail at this case
-if (!isNewArch()) {
-  //  this test passed at v2 limu ( but its performance is big problem, wait to be improved in the future )
-  runObjectTestSuit('test object-set-add', 'add', getStateBase, changeDraft, compare);
-}
-
-// avoid:  Your test suite must contain at least one test.
-runObjectTestSuit('pass', 'pass', getStateBase, changeDraft, () => {
-  expect(1 === 1).toBeTruthy();
-});
+runObjectTestSuit('test object-set-add', 'add', getStateBase, changeDraft, compare);

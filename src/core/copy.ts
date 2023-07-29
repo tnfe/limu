@@ -94,5 +94,6 @@ export function makeCopyWithMeta(
 ) {
   const { extraProps } = options;
   const { copy, fast } = tryMakeCopy(ori, options);
-  return attachMeta(copy, meta, fast, extraProps);
+  attachMeta(copy, meta, fast, extraProps);
+  return { copy, fast };
 }

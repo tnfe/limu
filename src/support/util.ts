@@ -10,8 +10,8 @@ export const toString = Object.prototype.toString;
 
 
 export function getValStrDesc(val: any) {
-  return Array.isArray(val) ? ARR_DESC : toString.call(val);
-  // return Array.isArray(val) ? ARR_DESC : val.toString();
+  // return Array.isArray(val) ? ARR_DESC : toString.call(val);
+  return toString.call(val);
 }
 
 

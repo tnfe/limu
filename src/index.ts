@@ -22,6 +22,10 @@ export type FinishDraft = <T extends ObjectLike>(draft: T) => T;
 export type ProduceCb<T> = (draft: Draft<T>) => void;
 export type GenNewStateCb<T> = (state: T) => T;
 // export type GenNewPatchesCb<T> = (state: T) => any[];
+
+/**
+ * 同步完成生成草稿、修改草稿、结束草稿3个步骤的函数
+ */
 export interface IProduce {
   <T extends ObjectLike>(baseState: T, recipe: ProduceCb<T>, options?: ICreateDraftOptions): T;
   /**
@@ -39,21 +43,29 @@ export interface IProduce {
 
 export const VER = v;
 
+/**
+ * 创建草稿函数，可对返回的草稿对象直接修改，此修改不会影响原始对象
+ * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
+ */
 export function createDraft<T extends ObjectLike = ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
   const apis = buildLimuApis(options as IInnerCreateDraftOptions);
-  // @ts-ignore , add [as] just for click to see implement
+  // @ts-ignore add [as] just for click to see implement
   return apis.createDraft(base) as LimuApis['createDraft'];
 }
 
+/**
+ * 结束草稿的函数，生成的新对象和原始对象会结构共享
+ * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
+ */
 export function finishDraft<T extends ObjectLike = ObjectLike>(draft: Draft<T>): T {
   const draftMeta = getDraftMetaFn(draft);
   let finishHandler: FinishDraft | null = null;
   if (draftMeta) {
-    // @ts-ignore , add [as] just for click to see implement
+    // @ts-ignore add [as] just for click to see implement
     finishHandler = draftMeta.finishDraft as LimuApis['finishDraft'];
   }
   if (!finishHandler) {
-    throw new Error(`oops, not a Limu draft!`);
+    throw new Error(`not a Limu draft!`);
   }
   return finishHandler(draft);
 }
@@ -124,6 +136,9 @@ export function immut<T extends ObjectLike>(base: T, options?: Omit<ICreateDraft
   return immutData;
 }
 
+/**
+ * 设置全局冻结配置，可在 createDraft, produce 时二次覆盖此全局配置
+ */
 export function setAutoFreeze(autoFreeze: boolean) {
   conf.autoFreeze = autoFreeze;
 }

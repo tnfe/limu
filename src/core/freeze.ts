@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { ObjectLike } from '../inner-types';
-import { isMap, isPrimitive, isSet, noop, isObject } from '../support/util';
+import { isMap, isPrimitive, isSet, noop } from '../support/util';
 
 export function deepFreeze<T extends ObjectLike>(obj: T) {
   if (isPrimitive(obj)) {
@@ -47,9 +47,7 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
   const propertyNames = Object.getOwnPropertyNames(obj);
   propertyNames.forEach((name) => {
     const value = obj[name];
-    if (isObject(value)) {
-      deepFreeze(value);
-    }
+    deepFreeze(value);
   });
 
   return Object.freeze(obj);

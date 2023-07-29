@@ -20,12 +20,13 @@ export function createScopedMeta(baseData: any, options: any) {
     immutBase,
   });
 
-  const copy = makeCopyWithMeta(baseData, meta, {
+  const { copy, fast } = makeCopyWithMeta(baseData, meta, {
     parentType,
     fastModeRange,
     extraProps,
   });
   meta.copy = copy;
+  meta.isFast = fast;
   if (immutBase) {
     const ret = new Proxy(copy, traps);
     meta.proxyVal = ret;
@@ -69,7 +70,7 @@ export function getProxyVal(selfVal: any, options: any) {
     }
 
     if (!parentMeta) {
-      throw new Error('[[ createMeta ]]: oops, meta should not be null');
+      throw new Error('[[ createMeta ]]: meta should not be null');
     }
 
     if (!isFn(selfVal)) {

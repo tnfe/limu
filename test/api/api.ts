@@ -95,7 +95,7 @@ describe('check apis', () => {
     try {
       finishDraft({ a: 1 });
     } catch (e: any) {
-      expect(e.message).toMatch(/(?=oops, not a Limu draft)/);
+      expect(e.message).toMatch(/(?=not a Limu draft)/);
     }
   });
 

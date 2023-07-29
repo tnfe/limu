@@ -7,15 +7,15 @@ function changeDraft(arrDraft) {
 
 runTestSuit('arr is base', 'filter', getArrBase, changeDraft, shouldBeEqual);
 
-// runTestSuit('arr in base obj', 'filter',
-//   () => { // get base state
-//     return { arr: getArrBase() };
-//   },
-//   (draft) => { // change draft
-//     changeDraft(draft.arr);
-//   },
-//   (final, base) => { // assert
-//     expect(final === base).toBeTruthy();
-//     shouldBeEqual(final.arr, base.arr);
-//   },
-// );
+runTestSuit('arr in base obj', 'filter',
+  () => { // get base state
+    return { arr: getArrBase() };
+  },
+  (draft) => { // change draft
+    changeDraft(draft.arr);
+  },
+  (final, base) => { // assert
+    expect(final === base).toBeTruthy();
+    shouldBeEqual(final.arr, base.arr);
+  },
+);

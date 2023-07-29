@@ -162,7 +162,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
             }
           } else {
             // TODO: judge value must be root draft node
-            // assign another version V2 scope draft node value to current scope V1 draft node
+            // assign another scope draft node to current scope
             canFreezeDraft = false;
           }
         }
@@ -248,10 +248,10 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         // it will throw: Cannot perform 'set' on a proxy that has been revoked
         const rootMeta = getDraftMeta(proxyDraft);
         if (!rootMeta) {
-          throw new Error('oops, rootMeta should not be null!');
+          throw new Error('rootMeta should not be null!');
         }
         if (rootMeta.level !== 0) {
-          throw new Error('oops, can not finish sub draft node!');
+          throw new Error('can not finish sub draft node!');
         }
         // immutBase 是一个一直可用的对象
         // 对 immut() 返回的对象调用 finishDraft 则总是返回 immutBase 自身代理

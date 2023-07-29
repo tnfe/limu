@@ -9,7 +9,7 @@
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
   const LIMU_MAJOR_VER = 3;
-  const VER$1 = '3.3.9';
+  const VER$1 = '3.4.1';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -99,8 +99,8 @@
 
   const toString = Object.prototype.toString;
   function getValStrDesc(val) {
-      return Array.isArray(val) ? ARR_DESC : toString.call(val);
-      // return Array.isArray(val) ? ARR_DESC : val.toString();
+      // return Array.isArray(val) ? ARR_DESC : toString.call(val);
+      return toString.call(val);
   }
   function noop(...args) {
       return args;
@@ -223,6 +223,7 @@
           scopes: [],
           isImmutBase: immutBase,
           isDel: false,
+          isFast: false,
           linkCount: 1,
           finishDraft,
           ver,
@@ -346,7 +347,8 @@
   function makeCopyWithMeta(ori, meta, options) {
       const { extraProps } = options;
       const { copy, fast } = tryMakeCopy(ori, options);
-      return attachMeta(copy, meta, fast, extraProps);
+      attachMeta(copy, meta, fast, extraProps);
+      return { copy, fast };
   }
 
   function isInSameScope(mayDraftNode, callerScopeVer) {
@@ -357,13 +359,17 @@
   }
   function clearScopes(rootMeta) {
       rootMeta.scopes.forEach((meta) => {
-          const { modified, copy, parentMeta, key, self, revoke, proxyVal, isDel } = meta;
+          const { modified, copy, parentMeta, key, self, revoke, proxyVal, isDel, isFast } = meta;
           if (!copy)
               return revoke();
           // TODO: 优化此处的delete
-          // @ts-ignore
-          delete copy[META_KEY];
-          delete copy.__proto__[META_KEY];
+          if (isFast) {
+              // @ts-ignore
+              delete copy[META_KEY];
+          }
+          else {
+              delete copy.__proto__[META_KEY];
+          }
           if (!parentMeta)
               return revoke();
           const targetNode = !modified ? self : copy;
@@ -414,12 +420,13 @@
           key,
           immutBase,
       });
-      const copy = makeCopyWithMeta(baseData, meta, {
+      const { copy, fast } = makeCopyWithMeta(baseData, meta, {
           parentType,
           fastModeRange,
           extraProps,
       });
       meta.copy = copy;
+      meta.isFast = fast;
       if (immutBase) {
           const ret = new Proxy(copy, traps);
           meta.proxyVal = ret;
@@ -455,7 +462,7 @@
               return selfVal;
           }
           if (!parentMeta) {
-              throw new Error('[[ createMeta ]]: oops, meta should not be null');
+              throw new Error('[[ createMeta ]]: meta should not be null');
           }
           if (!isFn(selfVal)) {
               let valMeta = getDraftMeta$1(selfVal);
@@ -704,9 +711,7 @@
       const propertyNames = Object.getOwnPropertyNames(obj);
       propertyNames.forEach((name) => {
           const value = obj[name];
-          if (isObject(value)) {
-              deepFreeze$1(value);
-          }
+          deepFreeze$1(value);
       });
       return Object.freeze(obj);
   }
@@ -849,7 +854,7 @@
                       }
                       else {
                           // TODO: judge value must be root draft node
-                          // assign another version V2 scope draft node value to current scope V1 draft node
+                          // assign another scope draft node to current scope
                           canFreezeDraft = false;
                       }
                   }
@@ -927,10 +932,10 @@
                   // it will throw: Cannot perform 'set' on a proxy that has been revoked
                   const rootMeta = getDraftMeta$1(proxyDraft);
                   if (!rootMeta) {
-                      throw new Error('oops, rootMeta should not be null!');
+                      throw new Error('rootMeta should not be null!');
                   }
                   if (rootMeta.level !== 0) {
-                      throw new Error('oops, can not finish sub draft node!');
+                      throw new Error('can not finish sub draft node!');
                   }
                   // immutBase 是一个一直可用的对象
                   // 对 immut() 返回的对象调用 finishDraft 则总是返回 immutBase 自身代理
@@ -983,20 +988,28 @@
   //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
   // }
   const VER = VER$1;
+  /**
+   * 创建草稿函数，可对返回的草稿对象直接修改，此修改不会影响原始对象
+   * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
+   */
   function createDraft(base, options) {
       const apis = buildLimuApis(options);
-      // @ts-ignore , add [as] just for click to see implement
+      // @ts-ignore add [as] just for click to see implement
       return apis.createDraft(base);
   }
+  /**
+   * 结束草稿的函数，生成的新对象和原始对象会结构共享
+   * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
+   */
   function finishDraft(draft) {
       const draftMeta = getDraftMeta$1(draft);
       let finishHandler = null;
       if (draftMeta) {
-          // @ts-ignore , add [as] just for click to see implement
+          // @ts-ignore add [as] just for click to see implement
           finishHandler = draftMeta.finishDraft;
       }
       if (!finishHandler) {
-          throw new Error(`oops, not a Limu draft!`);
+          throw new Error(`not a Limu draft!`);
       }
       return finishHandler(draft);
   }
@@ -1054,6 +1067,9 @@
       const immutData = limuApis.createDraft(base);
       return immutData;
   }
+  /**
+   * 设置全局冻结配置，可在 createDraft, produce 时二次覆盖此全局配置
+   */
   function setAutoFreeze(autoFreeze) {
       conf.autoFreeze = autoFreeze;
   }

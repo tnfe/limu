@@ -23,8 +23,8 @@ export interface DraftMeta<T extends AnyObject = AnyObject> {
   copy: T;
   modified: boolean;
   isImmutBase: boolean;
-  isPartial: boolean;
   isDel: boolean;
+  isFast: boolean;
   // TODO: 探索使用linkCount代替isDel，看是否能解决多引用问题
   linkCount: number;
   key: string;
@@ -75,16 +75,20 @@ export interface ICreateDraftOptions {
    */
   onOperate?: (params: IOperateParams) => void;
   /**
-   * default: 'array', means fastMode effect range
-   * set this param 'all' only if need extremly fast performance
-   * when disable fastMode: LIMU_META stored at obj.copy.__proto__
-   * when enable fastMode: LIMU_META stored at obj.copy with a symbol key
-   *
+   * default: 'array', this param means fastMode effect range,
+   * set this param 'all' only if need extremly fast performance,
+   * when disable fastMode: LIMU_META stored at obj.copy.__proto__,
+   * when enable fastMode: LIMU_META stored at obj.copy with a symbol key,
+   * ```text
    * 'none' means disalbe fastMode for all dataNode
    * 'array' means enable fastMode for array items
    * 'all' means enable fastMode for all dataNode
+   * ```
    */
   fastModeRange?: FastModeRange;
+  /**
+   * create a read only draft
+   */
   readOnly?: boolean;
   extraProps?: AnyObject;
 }
