@@ -6,22 +6,15 @@
 import type { FastModeRange, ObjectLike, DataType } from '../inner-types';
 import { ARRAY } from '../support/consts';
 import { isMap, isObject, isPrimitive, isSet } from '../support/util';
-import { attachMeta, getDraftMeta } from './meta';
+import { attachMeta } from './meta';
 
-export function deepCopy<T extends ObjectLike>(obj: T, metaVer?: string): T {
+export function deepCopy<T extends ObjectLike>(obj: T): T {
   const innerDeep = (obj: any) => {
     if (isPrimitive(obj)) {
       return obj;
     }
 
-    if (metaVer) {
-      const meta = getDraftMeta(obj);
-      const copy = meta?.copy;
-      // 多引用导致的遗漏值，还原回来，此处注意跳过根对象判定
-      if (copy && meta.level > 0) {
-        return copy;
-      }
-    }
+    // TODO: 或许这里通过 metaVer 能够解决多引用问题 ( see 3.4.2 )
 
     let newNode = obj;
     if (Array.isArray(obj)) {

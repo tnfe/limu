@@ -25,7 +25,7 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
     set.clear = noop;
     // @ts-ignore
     for (const item of set.values()) {
-      Object.freeze(item)
+      Object.freeze(item);
     }
     return Object.freeze(obj);
   }
@@ -38,7 +38,7 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
     map.clear = noop;
     // @ts-ignore
     for (const item of map.values()) {
-      Object.freeze(item)
+      Object.freeze(item);
     }
     return Object.freeze(obj);
   }

@@ -8,8 +8,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const LIMU_MAJOR_VER = 3;
-  const VER$1 = '3.4.1';
+  const VER$1 = '3.4.3';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -145,7 +144,6 @@
       return typeof maySymbol === 'symbol';
   }
   const descProto = {
-      [OBJ_DESC]: Object.prototype,
       [ARR_DESC]: Array.prototype,
       [MAP_DESC]: Map.prototype,
       [SET_DESC]: Set.prototype,
@@ -154,12 +152,12 @@
   function injectMetaProto(rawObj, extraProps) {
       const desc = getValStrDesc(rawObj);
       const rootProto = descProto[desc] || Object.prototype;
-      const heluxObj = Object.create(null);
+      const pureObj = Object.create(null);
       if (extraProps) {
-          Object.assign(heluxObj, extraProps);
+          Object.assign(pureObj, extraProps);
       }
-      Object.setPrototypeOf(heluxObj, rootProto);
-      Object.setPrototypeOf(rawObj, heluxObj);
+      Object.setPrototypeOf(pureObj, rootProto);
+      Object.setPrototypeOf(rawObj, pureObj);
       return rawObj;
   }
 
@@ -246,7 +244,7 @@
       if (isPrimitive(mayDraft)) {
           return false;
       }
-      const meta = mayDraft[META_KEY];
+      const meta = getUnsafeDraftMeta(mayDraft);
       if (!meta) {
           return false;
       }
@@ -277,19 +275,12 @@
       return proxyDraft ? proxyDraft[META_KEY] : null;
   }
 
-  function deepCopy$1(obj, metaVer) {
+  function deepCopy$1(obj) {
       const innerDeep = (obj) => {
           if (isPrimitive(obj)) {
               return obj;
           }
-          if (metaVer) {
-              const meta = getDraftMeta$1(obj);
-              const copy = meta === null || meta === void 0 ? void 0 : meta.copy;
-              // 多引用导致的遗漏值，还原回来，此处注意跳过根对象判定
-              if (copy && meta.level > 0) {
-                  return copy;
-              }
-          }
+          // TODO: 或许这里通过 metaVer 能够解决多引用问题 ( see 3.4.2 )
           let newNode = obj;
           if (Array.isArray(obj)) {
               newNode = obj.slice();
@@ -448,13 +439,13 @@
   }
   function getProxyVal(selfVal, options) {
       const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType, fastModeRange, immutBase, readOnly, extraProps, } = options;
+      let curSelfVal = selfVal;
       // keep copy always same with self when readOnly = true
-      if (readOnly && parentMeta) {
-          const { level, copy, self } = parentMeta;
-          if (level === 0) {
-              copy[key] = self[key];
-              return self[key];
-          }
+      if (readOnly && parentMeta && !isFn(selfVal)) {
+          const { copy, self } = parentMeta;
+          const latestVal = self[key];
+          copy[key] = latestVal;
+          curSelfVal = latestVal;
       }
       const mayCreateProxyVal = (selfVal, inputKey) => {
           const key = inputKey || '';
@@ -526,7 +517,7 @@
           parentMeta.proxyItems = proxyItems;
           return selfVal;
       };
-      return mayCreateProxyVal(selfVal, key);
+      return mayCreateProxyVal(curSelfVal, key);
   }
   function getUnProxyValue(value) {
       if (!isObject(value)) {
@@ -590,11 +581,6 @@
   }
   function handleDataNode(parentDataNode, copyCtx) {
       const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta } = copyCtx;
-      // https://javascript.info/json#custom-tojson
-      // 兼容 JSON.stringify 调用
-      if (op === 'toJSON' && !mayProxyValue) {
-          return;
-      }
       /**
        * 防止 value 本身就是一个 Proxy
        * var draft_a1_b = draft.a1.b;
@@ -721,6 +707,10 @@
   // 避免 Cannot set property size of #<Set> which has only a getter
   const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
   const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
+  function warnReadOnly() {
+      console.error('can not mutate state at readOnly mode!');
+      return true;
+  }
   function buildLimuApis(options) {
       var _a, _b, _c, _d;
       const opts = options || {};
@@ -774,6 +764,7 @@
               // parent指向的是代理之前的对象
               get: (parent, key) => {
                   let currentChildVal = parent[key];
+                  // 兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
                   if (key === 'toJSON' && Array.isArray(parent)) {
                       return currentChildVal;
                   }
@@ -841,8 +832,7 @@
               set: (parent, key, value) => {
                   let targetValue = value;
                   if (readOnly) {
-                      console.error('can not mutate state at readOnly mode!');
-                      return true;
+                      return warnReadOnly();
                   }
                   if (isDraft$1(value)) {
                       // see case debug/complex/set-draft-node
@@ -884,6 +874,9 @@
               },
               // delete or Reflect.deleteProperty will trigger this trap
               deleteProperty: (parent, key) => {
+                  if (readOnly) {
+                      return warnReadOnly();
+                  }
                   const parentMeta = getDraftMeta$1(parent);
                   handleDataNode(parent, {
                       parentMeta,
@@ -984,6 +977,17 @@
    *
    *  @Author: fantasticsoul
    *--------------------------------------------------------------------------------------------*/
+  /**
+   * 内部工具函数集合，写为如下格式会降低覆盖率，故导入后再导出
+   * ```txt
+   * import * as innerUtil from './support/util';
+   * const { isFn, isPromiseFn, isPromiseResult } = innerUtil;
+   * export { innerUtil };
+   * ```
+   */
+  const innerUtil = {
+      noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
+  };
   // export interface IProduceWithPatches {
   //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
   // }
@@ -1076,9 +1080,6 @@
   function getAutoFreeze() {
       return conf.autoFreeze;
   }
-  function getMajorVer() {
-      return LIMU_MAJOR_VER;
-  }
   const original = original$1;
   const current = current$1;
 
@@ -1091,8 +1092,8 @@
   exports.finishDraft = finishDraft;
   exports.getAutoFreeze = getAutoFreeze;
   exports.getDraftMeta = getDraftMeta;
-  exports.getMajorVer = getMajorVer;
   exports.immut = immut;
+  exports.innerUtil = innerUtil;
   exports.isDraft = isDraft;
   exports.original = original;
   exports.produce = produce;

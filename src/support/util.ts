@@ -8,12 +8,10 @@ import { ARR_DESC, desc2dataType, FN_DESC, MAP_DESC, OBJ_DESC, SET_DESC } from '
 
 export const toString = Object.prototype.toString;
 
-
 export function getValStrDesc(val: any) {
   // return Array.isArray(val) ? ARR_DESC : toString.call(val);
   return toString.call(val);
 }
-
 
 export function noop(...args: any[]) {
   return args;
@@ -67,7 +65,6 @@ export function isSymbol(maySymbol: any) {
 }
 
 const descProto: Record<string, any> = {
-  [OBJ_DESC]: Object.prototype,
   [ARR_DESC]: Array.prototype,
   [MAP_DESC]: Map.prototype,
   [SET_DESC]: Set.prototype,
@@ -77,11 +74,11 @@ const descProto: Record<string, any> = {
 export function injectMetaProto(rawObj: any, extraProps?: any) {
   const desc = getValStrDesc(rawObj);
   const rootProto = descProto[desc] || Object.prototype;
-  const heluxObj = Object.create(null);
+  const pureObj = Object.create(null);
   if (extraProps) {
-    Object.assign(heluxObj, extraProps);
+    Object.assign(pureObj, extraProps);
   }
-  Object.setPrototypeOf(heluxObj, rootProto);
-  Object.setPrototypeOf(rawObj, heluxObj);
+  Object.setPrototypeOf(pureObj, rootProto);
+  Object.setPrototypeOf(rawObj, pureObj);
   return rawObj;
 }

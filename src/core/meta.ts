@@ -96,7 +96,8 @@ export function isDraft(mayDraft: any) {
   if (isPrimitive(mayDraft)) {
     return false;
   }
-  const meta = mayDraft[META_KEY];
+
+  const meta = getUnsafeDraftMeta(mayDraft);
   if (!meta) {
     return false;
   }

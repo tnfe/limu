@@ -33,11 +33,6 @@ function mayMarkModified(options: { calledBy: string; parentMeta: DraftMeta; op:
 
 export function handleDataNode(parentDataNode: any, copyCtx: any) {
   const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta } = copyCtx;
-  // https://javascript.info/json#custom-tojson
-  // 兼容 JSON.stringify 调用
-  if (op === 'toJSON' && !mayProxyValue) {
-    return;
-  }
 
   /**
    * 防止 value 本身就是一个 Proxy

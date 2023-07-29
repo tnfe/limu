@@ -52,15 +52,14 @@ export function getProxyVal(selfVal: any, options: any) {
     key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches,
     parentType, fastModeRange, immutBase, readOnly, extraProps,
   } = options;
-
+  let curSelfVal = selfVal;
 
   // keep copy always same with self when readOnly = true
-  if (readOnly && parentMeta) {
-    const { level, copy, self } = parentMeta;
-    if (level === 0) {
-      copy[key] = self[key];
-      return self[key];
-    }
+  if (readOnly && parentMeta && !isFn(selfVal)) {
+    const { copy, self } = parentMeta;
+    const latestVal = self[key];
+    copy[key] = latestVal;
+    curSelfVal = latestVal;
   }
 
   const mayCreateProxyVal = (selfVal: any, inputKey?: string) => {
@@ -140,7 +139,7 @@ export function getProxyVal(selfVal: any, options: any) {
     return selfVal;
   };
 
-  return mayCreateProxyVal(selfVal, key);
+  return mayCreateProxyVal(curSelfVal, key);
 }
 
 export function getUnProxyValue(value: any) {

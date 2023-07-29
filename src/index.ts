@@ -9,9 +9,24 @@ import { deepFreeze as deepFreezeFn } from './core/freeze';
 import { getDraftMeta as getDraftMetaFn, isDraft as isDraftFn } from './core/meta';
 import { current as currentFn, original as originalFn } from './core/user-util';
 import type { ICreateDraftOptions, IInnerCreateDraftOptions, ObjectLike, Op } from './inner-types';
-import { IMMUT_BASE, LIMU_MAJOR_VER, VER as v } from './support/consts';
+import { IMMUT_BASE, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
-import { isFn, isPromiseFn, isPromiseResult } from './support/util';
+import {
+  noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
+} from './support/util';
+
+/**
+ * 内部工具函数集合，写为如下格式会降低覆盖率，故导入后再导出
+ * ```txt
+ * import * as innerUtil from './support/util';
+ * const { isFn, isPromiseFn, isPromiseResult } = innerUtil;
+ * export { innerUtil };
+ * ```
+ */
+export const innerUtil = {
+  noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
+};
+
 
 type LimuApis = ReturnType<typeof buildLimuApis>;
 
@@ -145,10 +160,6 @@ export function setAutoFreeze(autoFreeze: boolean) {
 
 export function getAutoFreeze() {
   return conf.autoFreeze;
-}
-
-export function getMajorVer() {
-  return LIMU_MAJOR_VER;
 }
 
 export const original = originalFn;

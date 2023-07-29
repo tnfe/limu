@@ -19,6 +19,11 @@ import { extraFinalData, isInSameScope, recordVerScope } from './scope';
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
 const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
 
+function warnReadOnly() {
+  console.error('can not mutate state at readOnly mode!');
+  return true;
+}
+
 export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const opts = options || {};
   const onOperate = opts.onOperate;
@@ -75,6 +80,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       get: (parent: any, key: any) => {
         let currentChildVal = parent[key];
 
+        // 兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
         if (key === 'toJSON' && Array.isArray(parent)) {
           return currentChildVal;
         }
@@ -149,8 +155,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         let targetValue = value;
 
         if (readOnly) {
-          console.error('can not mutate state at readOnly mode!');
-          return true;
+          return warnReadOnly();
         }
 
         if (isDraft(value)) {
@@ -195,6 +200,10 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       },
       // delete or Reflect.deleteProperty will trigger this trap
       deleteProperty: (parent: any, key: any) => {
+        if (readOnly) {
+          return warnReadOnly();
+        }
+
         const parentMeta = getDraftMeta(parent);
         handleDataNode(parent, {
           parentMeta,

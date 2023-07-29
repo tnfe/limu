@@ -6,10 +6,10 @@ import {
   finishDraft,
   getAutoFreeze,
   getDraftMeta,
-  getMajorVer,
   original,
   produce,
   immut,
+  isDraft,
 } from '../../src';
 import { assignFrozenDataInJest, strfy, noop } from '../_util';
 
@@ -17,11 +17,6 @@ describe('check apis', () => {
   test('getAutoFreeze', () => {
     expect(getAutoFreeze).toBeTruthy();
     expect(typeof getAutoFreeze() === 'boolean').toBeTruthy();
-  });
-
-  test('getMajorVer', () => {
-    expect(getMajorVer).toBeTruthy();
-    expect(typeof getMajorVer() === 'number').toBeTruthy();
   });
 
   test('produce', () => {
@@ -117,6 +112,19 @@ describe('check apis', () => {
     expect(final.key === 1).toBeTruthy(); // still 1
   });
 
+  test('createDraft: read arr index', () => {
+    const base = [1, 2, 3, 4];
+    const draft = createDraft(base);
+    draft.push(5);
+    expect(draft[0] === 1).toBeTruthy();
+    expect(draft['0'] === 1).toBeTruthy();
+    expect(draft[4] === 5).toBeTruthy();
+    expect(draft['4'] === 5).toBeTruthy();
+    const final = finishDraft(draft);
+    expect(base.length === 4).toBeTruthy();
+    expect(final.length === 5).toBeTruthy();
+  });
+
   test('immut', () => {
     const base = { key: 1 };
     const data = immut(base);
@@ -174,9 +182,37 @@ describe('check apis', () => {
     expect(set.size === 0).toBeTruthy();
   });
 
+  test('deepFreeze: number set', () => {
+    const set = new Set([1, 2, 3]);
+    const fSet = deepFreeze(set);
+    expect(Object.isFrozen(set)).toBeTruthy();
+    expect(Object.isFrozen(fSet)).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      set.add(1);
+    });
+    expect(set.size === 3).toBeTruthy();
+  });
+
+  test('deepFreeze: number set at 2nd level', () => {
+    const obj = { set: new Set([1, 2, 3]) };
+    const fObj = deepFreeze(obj);
+    expect(Object.isFrozen(fObj)).toBeTruthy();
+    expect(Object.isFrozen(fObj)).toBeTruthy();
+    assignFrozenDataInJest(() => {
+      obj.set.add(1);
+    });
+    expect(obj.set.size === 3).toBeTruthy();
+    obj.set.delete(1);
+    expect(obj.set.size === 3).toBeTruthy();
+    obj.set.clear();
+    expect(obj.set.size === 3).toBeTruthy();
+  });
+
   test('deepFreeze: object item\'s set', () => {
     const set = new Set([{ a: 1 }, { a: 2 }]);
-    deepFreeze(set);
+    const fSet = deepFreeze(set);
+    expect(Object.isFrozen(set)).toBeTruthy();
+    expect(Object.isFrozen(fSet)).toBeTruthy();
     expect(Object.isFrozen(set)).toBeTruthy();
     // ts-ignore
     for (const item of set) {
@@ -190,6 +226,25 @@ describe('check apis', () => {
       set.add({ a: 3 });
     });
     expect(set.size === 2).toBeTruthy();
+  });
+
+  test('deepFreeze: object item\'s set at 2nd level', () => {
+    const obj = { set: new Set([{ a: 1 }, { a: 2 }]) };
+    const fObj = deepFreeze(obj);
+    expect(Object.isFrozen(fObj)).toBeTruthy();
+    expect(Object.isFrozen(fObj)).toBeTruthy();
+    // ts-ignore
+    for (const item of obj.set) {
+      assignFrozenDataInJest(() => {
+        item.a = 100;
+      });
+      expect(item.a !== 100).toBeTruthy();
+    }
+
+    assignFrozenDataInJest(() => {
+      obj.set.add({ a: 3 });
+    });
+    expect(obj.set.size === 2).toBeTruthy();
   });
 
   test('deepFreeze: map', () => {
@@ -219,6 +274,10 @@ describe('check apis', () => {
     assignFrozenDataInJest(() => {
       map.set(3, { a: 3 });
     });
+    expect(map.size === 2).toBeTruthy();
+    map.delete(1);
+    expect(map.size === 2).toBeTruthy();
+    map.clear();
     expect(map.size === 2).toBeTruthy();
   });
 
@@ -261,6 +320,11 @@ describe('check apis', () => {
     const base = { tip: 'not draft' };
     const orig = original(base);
     expect(base === orig).toBeTruthy();
+  });
+
+  test('current primitive', () => {
+    const curr = current(1);
+    expect(curr === 1).toBeTruthy();
   });
 
   test('current complex obj', () => {
@@ -493,5 +557,16 @@ describe('check apis', () => {
     const final = finishDraft(draft);
     const str = JSON.stringify(final);
     expect(str === '{"a":[1,2,3,4]}').toBeTruthy();
+  });
+
+  test('isDraft', () => {
+    const base = { a: [1, 2, 3] };
+    const draft = createDraft(base);
+    const im = immut(base);
+
+    expect(isDraft(draft)).toBeTruthy();
+    expect(isDraft(im)).toBeFalsy();
+    expect(isDraft(base)).toBeFalsy();
+    expect(isDraft({ tmp: 'tmp data' })).toBeFalsy();
   });
 });

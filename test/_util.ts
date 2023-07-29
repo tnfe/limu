@@ -1,12 +1,11 @@
+// @ts-nocheck
 import type { ObjectLike } from '../src/index';
 import * as limu from '../src/index'; // test limu source code
 // import * as limu from '../benchmark/libs/limu'; // test limu compiled code
 // import { lib as limu } from '../benchmark/libs/mutative'; // test mutative
 // import * as limu from '../benchmark/libs/immer'; // test mutative
 
-// @ts-ignore only works for immer
 if (limu.enableMapSet) {
-  // @ts-ignore
   limu.enableMapSet();
 }
 
@@ -15,7 +14,6 @@ const RUN_PRODUCE = true; // run createDrat/finishDraft、produce both for all t
 
 // for script: npm run test_no
 if (process.env.AUTO_FREEZE === '0') {
-  // @ts-ignore
   limu.setAutoFreeze(false);
 }
 
@@ -37,15 +35,16 @@ if (process.env.AUTO_FREEZE === '0') {
 
 export const createDraft = limu.createDraft;
 export const finishDraft = limu.finishDraft;
-// @ts-ignore
 export const current = limu.current;
 export const produce = limu.produce;
 export const produceWithPatches = noop;
-// @ts-ignore
 export const setAutoFreeze = limu.setAutoFreeze;
-// @ts-ignore
-export const isNewArch = () => (limu.getMajorVer ? limu.getMajorVer() >= 3 : true);
-// @ts-ignore
+
+/**
+ * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
+ * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
+ */
+export const isNewArch = () => (limu.VER ? parseInt(limu.VER.substring(0, 1), 10) >= 3 : true);
 export const getAutoFreeze = limu.getAutoFreeze || (() => true);
 
 // limu.setAutoFreeze(true);
@@ -187,10 +186,8 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
     test(createDraftTip(testCaseDesc), () => {
       const base = getBase();
       const draft = createDraft(base);
-      // @ts-ignore avoid different lib's type warning
       operateDraft(draft, base);
       const final = finishDraft(draft);
-      // @ts-ignore avoid different lib's type warning
       if (executeAssertLogic) executeAssertLogic(final, base);
     });
 
@@ -198,7 +195,6 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
       test(produceTip(testCaseDesc), () => {
         const base = getBase();
         const final = produce(base, (draft) => {
-          // @ts-ignore
           operateDraft(draft, base);
         });
         if (executeAssertLogic) executeAssertLogic(final, base);
@@ -238,7 +234,6 @@ export function runObjectTestSuit(
 }
 
 /**
- *
  * @param testSuitDesc
  * @param testCaseDesc
  * @param getMapBase
