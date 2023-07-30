@@ -22,6 +22,7 @@ global.produce = limu.produce;
 global.immut = limu.immut;
 global.createDraft = limu.createDraft;
 global.finishDraft = limu.finishDraft;
+global.innerUtil = limu.innerUtil;
 
 exports.immut = limu.immut;
 

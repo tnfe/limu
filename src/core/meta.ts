@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta, ObjectLike } from '../inner-types';
+import type { DraftMeta, ObjectLike, AnyObject } from '../inner-types';
 import { META_KEY } from '../support/consts';
 import { verWrap } from '../support/inner-data';
 import { getDataType, injectMetaProto, isPrimitive, noop } from '../support/util';
@@ -32,7 +32,7 @@ export function attachMeta(dataNode: any, meta: DraftMeta, fast: boolean, extraP
 
 export function getKeyPath(draftNode: any, curKey: string) {
   const pathArr: string[] = [curKey];
-  const meta = getDraftMeta(draftNode);
+  const meta = getSafeDraftMeta(draftNode);
   if (meta && meta.level > 0) {
     const { keyPath } = meta;
     return [...keyPath, curKey];
@@ -97,7 +97,7 @@ export function isDraft(mayDraft: any) {
     return false;
   }
 
-  const meta = getUnsafeDraftMeta(mayDraft);
+  const meta = getDraftMeta(mayDraft);
   if (!meta) {
     return false;
   }
@@ -123,12 +123,48 @@ export function getNextMetaLevel(mayContainMetaObj: any) {
   return meta ? meta.level + 1 : 1;
 }
 
-export function getDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> {
+export function getSafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> {
   // @ts-ignore
   return proxyDraft[META_KEY];
 }
 
-export function getUnsafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> | null {
+export function getDraftMeta<T extends any = any>(proxyDraft: T): DraftMeta<any> | null {
   // @ts-ignore
-  return proxyDraft ? proxyDraft[META_KEY] : null;
+  return proxyDraft ? (proxyDraft[META_KEY] || null) : null;
+}
+
+export function isDiff(val1: any, val2: any) {
+  if (isPrimitive(val1) && isPrimitive(val2)) {
+    return val1 !== val2;
+  }
+
+  const meta1 = getDraftMeta(val1);
+  const meta2 = getDraftMeta(val2);
+  if (!meta1 && !meta2) {
+    return val1 !== val2;
+  }
+
+  const { self: self1, modified: modified1 } = meta1 || { self: val1, modified: false };
+  const { self: self2, modified: modified2 } = meta2 || { self: val2, modified: false };
+  if (self1 !== self2) {
+    return true;
+  }
+  return modified1 || modified2;
+}
+
+/**
+ * 浅比较两个对象，除了专用于比较 helux 生成的代理对象，此函数既可以比较普通对象
+ * ```txt
+ * true：两个对象一样
+ * false：两个对象不一样
+ * ```
+ */
+export function shallowCompare(prevObj: AnyObject, nextObj: AnyObject) {
+  const isDff = (a: AnyObject, b: AnyObject) => {
+    for (let i in a) if (!(i in b)) return true;
+    for (let i in b) if (isDiff(a[i], b[i])) return true;
+    return false;
+  };
+  const isEqual = !isDff(prevObj, nextObj);
+  return isEqual;
 }

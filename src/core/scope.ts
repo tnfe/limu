@@ -6,13 +6,13 @@
 import type { DraftMeta } from '../inner-types';
 import { ARRAY, MAP, META_KEY, SET } from '../support/consts';
 import { isObject } from '../support/util';
-import { getDraftMeta } from './meta';
+import { getSafeDraftMeta } from './meta';
 
 export function isInSameScope(mayDraftNode: any, callerScopeVer: string) {
   if (!isObject(mayDraftNode)) {
     return true;
   }
-  return getDraftMeta(mayDraftNode).ver === callerScopeVer;
+  return getSafeDraftMeta(mayDraftNode).ver === callerScopeVer;
 }
 
 export function clearScopes(rootMeta: DraftMeta) {

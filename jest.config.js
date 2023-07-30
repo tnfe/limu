@@ -15,6 +15,7 @@ const jestConfig = {
     // '<rootDir>/test/map-other/case-nested-object.ts',
 
     // '<rootDir>/test/api/api.ts',
+    // '<rootDir>/test/api/innerUtil.ts',
     // '<rootDir>/test/api/setAutoFreeze.ts',
     // '<rootDir>/test/api/setAutoFreezeFalse.ts',
     // '<rootDir>/test/immer-cases/2.{ts,js}',

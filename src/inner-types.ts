@@ -3,10 +3,10 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-type AnyObject = {
+export type AnyObject = {
   [key: string]: any;
 };
-type AnyArray = Array<any>;
+export type AnyArray = Array<any>;
 
 export type Key = string | symbol;
 export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;

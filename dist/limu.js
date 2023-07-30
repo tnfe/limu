@@ -8,7 +8,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const VER$1 = '3.4.3';
+  const VER$1 = '3.5.0';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -183,7 +183,7 @@
   }
   function getKeyPath(draftNode, curKey) {
       const pathArr = [curKey];
-      const meta = getDraftMeta$1(draftNode);
+      const meta = getSafeDraftMeta(draftNode);
       if (meta && meta.level > 0) {
           const { keyPath } = meta;
           return [...keyPath, curKey];
@@ -240,11 +240,11 @@
    * @param mayDraft
    * @returns
    */
-  function isDraft$1(mayDraft) {
+  function isDraft(mayDraft) {
       if (isPrimitive(mayDraft)) {
           return false;
       }
-      const meta = getUnsafeDraftMeta(mayDraft);
+      const meta = getDraftMeta(mayDraft);
       if (!meta) {
           return false;
       }
@@ -263,16 +263,52 @@
       return metaVer;
   }
   function getNextMetaLevel(mayContainMetaObj) {
-      const meta = getDraftMeta$1(mayContainMetaObj);
+      const meta = getDraftMeta(mayContainMetaObj);
       return meta ? meta.level + 1 : 1;
   }
-  function getDraftMeta$1(proxyDraft) {
+  function getSafeDraftMeta(proxyDraft) {
       // @ts-ignore
       return proxyDraft[META_KEY];
   }
-  function getUnsafeDraftMeta(proxyDraft) {
+  function getDraftMeta(proxyDraft) {
       // @ts-ignore
-      return proxyDraft ? proxyDraft[META_KEY] : null;
+      return proxyDraft ? (proxyDraft[META_KEY] || null) : null;
+  }
+  function isDiff(val1, val2) {
+      if (isPrimitive(val1) && isPrimitive(val2)) {
+          return val1 !== val2;
+      }
+      const meta1 = getDraftMeta(val1);
+      const meta2 = getDraftMeta(val2);
+      if (!meta1 && !meta2) {
+          return val1 !== val2;
+      }
+      const { self: self1, modified: modified1 } = meta1 || { self: val1, modified: false };
+      const { self: self2, modified: modified2 } = meta2 || { self: val2, modified: false };
+      if (self1 !== self2) {
+          return true;
+      }
+      return modified1 || modified2;
+  }
+  /**
+   * 浅比较两个对象，除了专用于比较 helux 生成的代理对象，此函数既可以比较普通对象
+   * ```txt
+   * true：两个对象一样
+   * false：两个对象不一样
+   * ```
+   */
+  function shallowCompare(prevObj, nextObj) {
+      const isDff = (a, b) => {
+          for (let i in a)
+              if (!(i in b))
+                  return true;
+          for (let i in b)
+              if (isDiff(a[i], b[i]))
+                  return true;
+          return false;
+      };
+      const isEqual = !isDff(prevObj, nextObj);
+      return isEqual;
   }
 
   function deepCopy$1(obj) {
@@ -346,7 +382,7 @@
       if (!isObject(mayDraftNode)) {
           return true;
       }
-      return getDraftMeta$1(mayDraftNode).ver === callerScopeVer;
+      return getSafeDraftMeta(mayDraftNode).ver === callerScopeVer;
   }
   function clearScopes(rootMeta) {
       rootMeta.scopes.forEach((meta) => {
@@ -456,7 +492,7 @@
               throw new Error('[[ createMeta ]]: meta should not be null');
           }
           if (!isFn(selfVal)) {
-              let valMeta = getDraftMeta$1(selfVal);
+              let valMeta = getSafeDraftMeta(selfVal);
               // 惰性生成代理对象和其元数据
               if (!valMeta) {
                   valMeta = createScopedMeta(selfVal, {
@@ -523,7 +559,7 @@
       if (!isObject(value)) {
           return value;
       }
-      const valueMeta = getDraftMeta$1(value);
+      const valueMeta = getSafeDraftMeta(value);
       if (!valueMeta)
           return value;
       return valueMeta.copy;
@@ -627,11 +663,11 @@
       }
       const oldValue = parentCopy[key];
       const tryMarkDel = () => {
-          const oldValueMeta = getUnsafeDraftMeta(oldValue);
+          const oldValueMeta = getDraftMeta(oldValue);
           oldValueMeta && (oldValueMeta.isDel = true);
       };
       const tryMarkUndel = () => {
-          const valueMeta = getUnsafeDraftMeta(mayProxyValue);
+          const valueMeta = getDraftMeta(mayProxyValue);
           if (valueMeta && valueMeta.isDel) {
               valueMeta.isDel = false;
               valueMeta.key = key;
@@ -642,7 +678,7 @@
           }
       };
       if (calledBy === 'deleteProperty') {
-          const valueMeta = getUnsafeDraftMeta(mayProxyValue);
+          const valueMeta = getDraftMeta(mayProxyValue);
           // for test/complex/data-node-change case3
           if (valueMeta) {
               valueMeta.isDel = true;
@@ -779,7 +815,7 @@
                       }
                       return currentChildVal;
                   }
-                  const parentMeta = getDraftMeta$1(parent);
+                  const parentMeta = getSafeDraftMeta(parent);
                   const parentType = parentMeta === null || parentMeta === void 0 ? void 0 : parentMeta.selfType;
                   // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
                   // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
@@ -834,7 +870,7 @@
                   if (readOnly) {
                       return warnReadOnly();
                   }
-                  if (isDraft$1(value)) {
+                  if (isDraft(value)) {
                       // see case debug/complex/set-draft-node
                       if (isInSameScope(value, metaVer)) {
                           targetValue = getUnProxyValue(value);
@@ -849,7 +885,7 @@
                       }
                   }
                   // speed up array operation
-                  const parentMeta = getDraftMeta$1(parent);
+                  const parentMeta = getSafeDraftMeta(parent);
                   // implement this in the future
                   // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
                   if (parentMeta && parentMeta.selfType === ARRAY) {
@@ -877,7 +913,7 @@
                   if (readOnly) {
                       return warnReadOnly();
                   }
-                  const parentMeta = getDraftMeta$1(parent);
+                  const parentMeta = getSafeDraftMeta(parent);
                   handleDataNode(parent, {
                       parentMeta,
                       op: 'del',
@@ -900,7 +936,7 @@
                       throw new Error('base state can not be primitive');
                   }
                   let oriBase = mayDraft;
-                  const draftMeta = getDraftMeta$1(mayDraft);
+                  const draftMeta = getSafeDraftMeta(mayDraft);
                   if (draftMeta) {
                       // 总是返回同一个 immutBase 代理对象
                       if (immutBase && draftMeta.isImmutBase) {
@@ -923,7 +959,7 @@
               finishDraft: (proxyDraft) => {
                   // attention: if pass a revoked proxyDraft
                   // it will throw: Cannot perform 'set' on a proxy that has been revoked
-                  const rootMeta = getDraftMeta$1(proxyDraft);
+                  const rootMeta = getSafeDraftMeta(proxyDraft);
                   if (!rootMeta) {
                       throw new Error('rootMeta should not be null!');
                   }
@@ -953,19 +989,20 @@
       return limuApis;
   }
 
+  /*---------------------------------------------------------------------------------------------
+   *  Licensed under the MIT License.
+   *
+   *  @Author: fantasticsoul
+   *--------------------------------------------------------------------------------------------*/
   function original$1(mayDraftNode) {
-      if (isPrimitive(mayDraftNode)) {
-          return mayDraftNode;
-      }
-      const meta = getDraftMeta$1(mayDraftNode);
-      const self = (meta === null || meta === void 0 ? void 0 : meta.self) || mayDraftNode;
+      const meta = getDraftMeta(mayDraftNode);
+      // use ternary conditional operator instead of meta?.self
+      // avoid generating redundant compiled code
+      const self = meta ? meta.self : mayDraftNode;
       return self;
   }
   function current$1(mayDraftNode) {
-      if (isPrimitive(mayDraftNode)) {
-          return mayDraftNode;
-      }
-      const meta = getDraftMeta$1(mayDraftNode);
+      const meta = getDraftMeta(mayDraftNode);
       if (!meta) {
           return mayDraftNode;
       }
@@ -987,6 +1024,7 @@
    */
   const innerUtil = {
       noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
+      isDraft, isDiff, shallowCompare, getDraftMeta,
   };
   // export interface IProduceWithPatches {
   //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
@@ -1006,7 +1044,7 @@
    * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
    */
   function finishDraft(draft) {
-      const draftMeta = getDraftMeta$1(draft);
+      const draftMeta = getDraftMeta(draft);
       let finishHandler = null;
       if (draftMeta) {
           // @ts-ignore add [as] just for click to see implement
@@ -1052,8 +1090,6 @@
   //   const copyOpts: ICreateDraftOptions = { ... (options || {}), usePatches: true };
   //   return produceFn(baseState, cb, copyOpts);
   // };
-  const getDraftMeta = getDraftMeta$1;
-  const isDraft = isDraft$1;
   const produce = produceFn;
   // to be implemented in the future
   // export const produceWithPatches = producePatchesFn as unknown as IProduceWithPatches;
@@ -1091,10 +1127,8 @@
   exports["default"] = produce;
   exports.finishDraft = finishDraft;
   exports.getAutoFreeze = getAutoFreeze;
-  exports.getDraftMeta = getDraftMeta;
   exports.immut = immut;
   exports.innerUtil = innerUtil;
-  exports.isDraft = isDraft;
   exports.original = original;
   exports.produce = produce;
   exports.setAutoFreeze = setAutoFreeze;

@@ -6,7 +6,7 @@
 import { buildLimuApis } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
-import { getDraftMeta as getDraftMetaFn, isDraft as isDraftFn } from './core/meta';
+import { getDraftMeta, isDraft, isDiff, shallowCompare } from './core/meta';
 import { current as currentFn, original as originalFn } from './core/user-util';
 import type { ICreateDraftOptions, IInnerCreateDraftOptions, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, VER as v } from './support/consts';
@@ -25,8 +25,8 @@ import {
  */
 export const innerUtil = {
   noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
+  isDraft, isDiff, shallowCompare, getDraftMeta,
 };
-
 
 type LimuApis = ReturnType<typeof buildLimuApis>;
 
@@ -73,7 +73,7 @@ export function createDraft<T extends ObjectLike = ObjectLike>(base: T, options?
  * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
  */
 export function finishDraft<T extends ObjectLike = ObjectLike>(draft: Draft<T>): T {
-  const draftMeta = getDraftMetaFn(draft);
+  const draftMeta = getDraftMeta(draft);
   let finishHandler: FinishDraft | null = null;
   if (draftMeta) {
     // @ts-ignore add [as] just for click to see implement
@@ -124,10 +124,6 @@ function produceFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
 //   const copyOpts: ICreateDraftOptions = { ... (options || {}), usePatches: true };
 //   return produceFn(baseState, cb, copyOpts);
 // };
-
-export const getDraftMeta = getDraftMetaFn;
-
-export const isDraft = isDraftFn;
 
 export const produce = produceFn as unknown as IProduce;
 

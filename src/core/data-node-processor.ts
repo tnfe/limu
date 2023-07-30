@@ -15,7 +15,7 @@ import {
 } from '../support/consts';
 import { isFn } from '../support/util';
 import { getUnProxyValue } from './helper';
-import { getUnsafeDraftMeta, markModified } from './meta';
+import { getDraftMeta, markModified } from './meta';
 
 function mayMarkModified(options: { calledBy: string; parentMeta: DraftMeta; op: string; parentType: string; key: string | number }) {
   const { calledBy, parentMeta, op, parentType } = options;
@@ -85,11 +85,11 @@ export function handleDataNode(parentDataNode: any, copyCtx: any) {
 
   const oldValue = parentCopy[key];
   const tryMarkDel = () => {
-    const oldValueMeta = getUnsafeDraftMeta(oldValue);
+    const oldValueMeta = getDraftMeta(oldValue);
     oldValueMeta && (oldValueMeta.isDel = true);
   };
   const tryMarkUndel = () => {
-    const valueMeta = getUnsafeDraftMeta(mayProxyValue);
+    const valueMeta = getDraftMeta(mayProxyValue);
     if (valueMeta && valueMeta.isDel) {
       valueMeta.isDel = false;
       valueMeta.key = key;
@@ -101,7 +101,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: any) {
   };
 
   if (calledBy === 'deleteProperty') {
-    const valueMeta = getUnsafeDraftMeta(mayProxyValue);
+    const valueMeta = getDraftMeta(mayProxyValue);
     // for test/complex/data-node-change case3
     if (valueMeta) {
       valueMeta.isDel = true;

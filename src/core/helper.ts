@@ -7,7 +7,7 @@ import { DraftMeta } from '../inner-types';
 import { ARRAY, MAP, oppositeOps, PROXYITEM_FNKEYS, SET } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { makeCopyWithMeta } from './copy';
-import { attachMeta, getDraftMeta, markModified, newMeta } from './meta';
+import { attachMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(baseData: any, options: any) {
@@ -73,7 +73,7 @@ export function getProxyVal(selfVal: any, options: any) {
     }
 
     if (!isFn(selfVal)) {
-      let valMeta = getDraftMeta(selfVal);
+      let valMeta = getSafeDraftMeta(selfVal);
       // 惰性生成代理对象和其元数据
       if (!valMeta) {
         valMeta = createScopedMeta(selfVal, {
@@ -147,7 +147,7 @@ export function getUnProxyValue(value: any) {
     return value;
   }
 
-  const valueMeta = getDraftMeta(value);
+  const valueMeta = getSafeDraftMeta(value);
   if (!valueMeta) return value;
 
   return valueMeta.copy;

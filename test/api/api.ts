@@ -5,11 +5,9 @@ import {
   deepFreeze,
   finishDraft,
   getAutoFreeze,
-  getDraftMeta,
   original,
   produce,
   immut,
-  isDraft,
 } from '../../src';
 import { assignFrozenDataInJest, strfy, noop } from '../_util';
 
@@ -133,14 +131,6 @@ describe('check apis', () => {
 
     base.key = 2;
     expect(data.key === 2).toBeTruthy(); // change base effect data
-  });
-
-  test('getDraftMeta', () => {
-    const base = { key: 1 };
-    const draft = createDraft(base);
-    expect(getDraftMeta(draft)).toBeTruthy();
-    const final = finishDraft(draft);
-    expect(final).toBeTruthy();
   });
 
   test('deepFreeze obj', () => {
@@ -557,16 +547,5 @@ describe('check apis', () => {
     const final = finishDraft(draft);
     const str = JSON.stringify(final);
     expect(str === '{"a":[1,2,3,4]}').toBeTruthy();
-  });
-
-  test('isDraft', () => {
-    const base = { a: [1, 2, 3] };
-    const draft = createDraft(base);
-    const im = immut(base);
-
-    expect(isDraft(draft)).toBeTruthy();
-    expect(isDraft(im)).toBeFalsy();
-    expect(isDraft(base)).toBeFalsy();
-    expect(isDraft({ tmp: 'tmp data' })).toBeFalsy();
   });
 });

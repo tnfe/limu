@@ -10,7 +10,7 @@ import { canBeNum, isFn, isPrimitive, isSymbol } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { deepFreeze } from './freeze';
 import { createScopedMeta, getProxyVal, getUnProxyValue } from './helper';
-import { genMetaVer, getDraftMeta, isDraft } from './meta';
+import { genMetaVer, getSafeDraftMeta, isDraft } from './meta';
 import { extraFinalData, isInSameScope, recordVerScope } from './scope';
 
 // 可直接返回的属性
@@ -98,7 +98,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           return currentChildVal;
         }
 
-        const parentMeta = getDraftMeta(parent) as DraftMeta;
+        const parentMeta = getSafeDraftMeta(parent) as DraftMeta;
         const parentType = parentMeta?.selfType;
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
@@ -173,7 +173,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         }
 
         // speed up array operation
-        const parentMeta = getDraftMeta(parent);
+        const parentMeta = getSafeDraftMeta(parent);
         // implement this in the future
         // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
         if (parentMeta && parentMeta.selfType === ARRAY) {
@@ -204,7 +204,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           return warnReadOnly();
         }
 
-        const parentMeta = getDraftMeta(parent);
+        const parentMeta = getSafeDraftMeta(parent);
         handleDataNode(parent, {
           parentMeta,
           op: 'del',
@@ -230,7 +230,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         }
         let oriBase = mayDraft;
 
-        const draftMeta = getDraftMeta(mayDraft);
+        const draftMeta = getSafeDraftMeta(mayDraft);
         if (draftMeta) {
           // 总是返回同一个 immutBase 代理对象
           if (immutBase && draftMeta.isImmutBase) {
@@ -255,7 +255,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       finishDraft: (proxyDraft: any) => {
         // attention: if pass a revoked proxyDraft
         // it will throw: Cannot perform 'set' on a proxy that has been revoked
-        const rootMeta = getDraftMeta(proxyDraft);
+        const rootMeta = getSafeDraftMeta(proxyDraft);
         if (!rootMeta) {
           throw new Error('rootMeta should not be null!');
         }
