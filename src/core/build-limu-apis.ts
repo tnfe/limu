@@ -32,6 +32,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const immutBase = opts[IMMUT_BASE] ?? false;
   const extraProps = opts.extraProps || null;
   const readOnly = opts.readOnly ?? false;
+  const compareVer = opts.compareVer ?? false;
   // 调用那一刻起，确定 autoFreeze 值
   // allow user overwrite autoFreeze setting in current call process
   const autoFreeze = opts.autoFreeze ?? conf.autoFreeze;
@@ -247,6 +248,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           immutBase,
           readOnly,
           extraProps,
+          compareVer,
         });
         recordVerScope(meta);
 

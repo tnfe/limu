@@ -8,7 +8,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const VER$1 = '3.5.0';
+  const VER$1 = '3.5.1';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -191,7 +191,7 @@
       return pathArr;
   }
   function newMeta(baseData, options) {
-      const { finishDraft, ver, parentMeta = null, key, immutBase } = options;
+      const { finishDraft, ver, parentMeta = null, key, immutBase, compareVer = false } = options;
       const dataType = getDataType(baseData);
       let keyPath = [];
       let level = 0;
@@ -225,6 +225,7 @@
           linkCount: 1,
           finishDraft,
           ver,
+          compareVer,
           revoke: noop,
       };
       if (level === 0) {
@@ -275,17 +276,17 @@
       return proxyDraft ? (proxyDraft[META_KEY] || null) : null;
   }
   function isDiff(val1, val2) {
-      if (isPrimitive(val1) && isPrimitive(val2)) {
-          return val1 !== val2;
-      }
       const meta1 = getDraftMeta(val1);
       const meta2 = getDraftMeta(val2);
       if (!meta1 && !meta2) {
           return val1 !== val2;
       }
-      const { self: self1, modified: modified1 } = meta1 || { self: val1, modified: false };
-      const { self: self2, modified: modified2 } = meta2 || { self: val2, modified: false };
+      const { self: self1, modified: modified1, compareVer: cv1, ver: ver1, level: level1, } = meta1 || { self: val1, modified: false, compareVer: false, ver: '0', level: 0 };
+      const { self: self2, modified: modified2, compareVer: cv2, ver: ver2, level: level2, } = meta2 || { self: val2, modified: false, compareVer: false, ver: '0', level: 0 };
       if (self1 !== self2) {
+          return true;
+      }
+      if ((cv1 || cv2) && (level1 === 0 || level2 === 0) && ver1 !== ver2) {
           return true;
       }
       return modified1 || modified2;
@@ -439,13 +440,14 @@
   }
 
   function createScopedMeta(baseData, options) {
-      const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase, extraProps } = options;
+      const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase, extraProps, compareVer, } = options;
       const meta = newMeta(baseData, {
           finishDraft,
           ver,
           parentMeta,
           key,
           immutBase,
+          compareVer,
       });
       const { copy, fast } = makeCopyWithMeta(baseData, meta, {
           parentType,
@@ -474,7 +476,7 @@
       return fnKeys.includes(key);
   }
   function getProxyVal(selfVal, options) {
-      const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType, fastModeRange, immutBase, readOnly, extraProps, } = options;
+      const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType, fastModeRange, immutBase, readOnly, extraProps, compareVer, } = options;
       let curSelfVal = selfVal;
       // keep copy always same with self when readOnly = true
       if (readOnly && parentMeta && !isFn(selfVal)) {
@@ -505,6 +507,7 @@
                       immutBase,
                       readOnly,
                       extraProps,
+                      compareVer,
                   });
                   recordVerScope(valMeta);
                   // child value 指向 copy
@@ -748,7 +751,7 @@
       return true;
   }
   function buildLimuApis(options) {
-      var _a, _b, _c, _d;
+      var _a, _b, _c, _d, _e;
       const opts = options || {};
       const onOperate = opts.onOperate;
       const fastModeRange = opts.fastModeRange || conf.fastModeRange;
@@ -756,11 +759,12 @@
       const immutBase = (_a = opts[IMMUT_BASE]) !== null && _a !== void 0 ? _a : false;
       const extraProps = opts.extraProps || null;
       const readOnly = (_b = opts.readOnly) !== null && _b !== void 0 ? _b : false;
+      const compareVer = (_c = opts.compareVer) !== null && _c !== void 0 ? _c : false;
       // 调用那一刻起，确定 autoFreeze 值
       // allow user overwrite autoFreeze setting in current call process
-      const autoFreeze = (_c = opts.autoFreeze) !== null && _c !== void 0 ? _c : conf.autoFreeze;
+      const autoFreeze = (_d = opts.autoFreeze) !== null && _d !== void 0 ? _d : conf.autoFreeze;
       // 暂未实现 to be implemented in the future
-      const usePatches = (_d = opts.usePatches) !== null && _d !== void 0 ? _d : conf.usePatches;
+      const usePatches = (_e = opts.usePatches) !== null && _e !== void 0 ? _e : conf.usePatches;
       const execOnOperate = (op, key, parentMeta) => {
           if (!parentMeta || !onOperate)
               return;
@@ -952,6 +956,7 @@
                       immutBase,
                       readOnly,
                       extraProps,
+                      compareVer,
                   });
                   recordVerScope(meta);
                   return meta.proxyVal;

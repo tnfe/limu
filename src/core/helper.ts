@@ -11,13 +11,17 @@ import { attachMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(baseData: any, options: any) {
-  const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase, extraProps } = options;
+  const {
+    finishDraft = noop, ver, traps, parentType, parentMeta, key,
+    fastModeRange, immutBase, extraProps, compareVer,
+  } = options;
   const meta = newMeta(baseData, {
     finishDraft,
     ver,
     parentMeta,
     key,
     immutBase,
+    compareVer,
   });
 
   const { copy, fast } = makeCopyWithMeta(baseData, meta, {
@@ -50,7 +54,7 @@ export function shouldGenerateProxyItems(parentType: any, key: any) {
 export function getProxyVal(selfVal: any, options: any) {
   const {
     key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches,
-    parentType, fastModeRange, immutBase, readOnly, extraProps,
+    parentType, fastModeRange, immutBase, readOnly, extraProps, compareVer,
   } = options;
   let curSelfVal = selfVal;
 
@@ -86,6 +90,7 @@ export function getProxyVal(selfVal: any, options: any) {
           immutBase,
           readOnly,
           extraProps,
+          compareVer,
         });
         recordVerScope(valMeta);
         // child value 指向 copy

@@ -13,6 +13,7 @@ export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
 export type Op = 'del' | 'set' | 'get';
 export type DataType = 'Map' | 'Set' | 'Array' | 'Object';
 export type FastModeRange = 'array' | 'all' | 'none';
+
 export interface DraftMeta<T extends AnyObject = AnyObject> {
   rootMeta: DraftMeta;
   parentMeta: null | DraftMeta;
@@ -35,7 +36,12 @@ export interface DraftMeta<T extends AnyObject = AnyObject> {
   proxyVal: T;
   proxyItems: null | Map<any, any> | Set<any>;
   finishDraft: (proxyDraft: ObjectLike) => ObjectLike;
+  /** scope version */
   ver: string;
+  /**
+   * set the comparision rull of root proxy state
+   */
+  compareVer: boolean;
   revoke: any;
 }
 
@@ -90,6 +96,20 @@ export interface ICreateDraftOptions {
    * create a read only draft
    */
   readOnly?: boolean;
+  /**
+   * default: false, set the comparision rull of root proxy state,
+   * the below code explains the function of this parameter
+   * ```ts
+   * const base = {...};
+   * // when compareVer = false, below result will be true
+   * isDiff(immut(base), immut(base));
+   *
+   * // when compareVer = true, below result will be false
+   * isDiff(immut(base), immut(base));
+   * ```
+   * also applicable to `createDraft(base, {readOnly:true})`
+   */
+  compareVer?: boolean;
   extraProps?: AnyObject;
 }
 

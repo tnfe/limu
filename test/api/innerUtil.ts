@@ -76,6 +76,14 @@ describe('check apis', () => {
     expect(isDiff(im.b, next.b)).toBeFalsy();
   });
 
+
+  test('isDiff: compareVer', () => {
+    const { isDiff } = innerUtil;
+    const base = { a: [1, 2, 3], b: { b1: 1, b2: 2 } };
+    expect(isDiff(immut(base), immut(base))).toBeFalsy();
+    expect(isDiff(immut(base, { compareVer: true }), immut(base, { compareVer: true }))).toBeTruthy();
+  });
+
   test('shallowCompare', () => {
     const { shallowCompare } = innerUtil;
 

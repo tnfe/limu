@@ -41,7 +41,7 @@ export function getKeyPath(draftNode: any, curKey: string) {
 }
 
 export function newMeta(baseData: any, options: any) {
-  const { finishDraft, ver, parentMeta = null, key, immutBase } = options;
+  const { finishDraft, ver, parentMeta = null, key, immutBase, compareVer = false } = options;
   const dataType = getDataType(baseData);
 
   let keyPath: string[] = [];
@@ -77,6 +77,7 @@ export function newMeta(baseData: any, options: any) {
     linkCount: 1,
     finishDraft,
     ver,
+    compareVer,
     revoke: noop,
   };
   if (level === 0) {
@@ -134,21 +135,25 @@ export function getDraftMeta<T extends any = any>(proxyDraft: T): DraftMeta<any>
 }
 
 export function isDiff(val1: any, val2: any) {
-  if (isPrimitive(val1) && isPrimitive(val2)) {
-    return val1 !== val2;
-  }
-
   const meta1 = getDraftMeta(val1);
   const meta2 = getDraftMeta(val2);
   if (!meta1 && !meta2) {
     return val1 !== val2;
   }
 
-  const { self: self1, modified: modified1 } = meta1 || { self: val1, modified: false };
-  const { self: self2, modified: modified2 } = meta2 || { self: val2, modified: false };
+  const {
+    self: self1, modified: modified1, compareVer: cv1, ver: ver1, level: level1,
+  } = meta1 || { self: val1, modified: false, compareVer: false, ver: '0', level: 0 };
+  const {
+    self: self2, modified: modified2, compareVer: cv2, ver: ver2, level: level2,
+  } = meta2 || { self: val2, modified: false, compareVer: false, ver: '0', level: 0 };
   if (self1 !== self2) {
     return true;
   }
+  if ((cv1 || cv2) && (level1 === 0 || level2 === 0) && ver1 !== ver2) {
+    return true;
+  }
+
   return modified1 || modified2;
 }
 
