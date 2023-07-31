@@ -17,6 +17,21 @@ npm i
 node opBigData.js
 ```
 
+测试结果（机器配置 MacBook Pro 2021 M1）
+```txt
+ assign big list to base
+immer (proxy) - without autofreeze * 100: 1274ms
+limu (proxy) - without autofreeze * 100: 170ms
+immer (proxy) - with autofreeze * 100: 944ms
+limu (proxy) - with autofreeze * 100: 412ms
+
+ assign big list to draft
+immer (proxy) - without autofreeze * 100: 30ms
+limu (proxy) - without autofreeze * 100: 58ms
+immer (proxy) - with autofreeze * 100: 350ms
+limu (proxy) - with autofreeze * 100: 198ms
+```
+
 ### 测试深层次对象读写
 
 可通过注入`ST`值调整不同的测试策略，例如 `ST=1 node caseOnlyRead.js`，不注入时默认为 `4`
