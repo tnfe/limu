@@ -8,7 +8,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const VER$1 = '3.5.3';
+  const VER$1 = '3.5.4';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -81,11 +81,6 @@
       [ARRAY]: ['forEach', 'map'],
   };
 
-  /*---------------------------------------------------------------------------------------------
-   *  Licensed under the MIT License.
-   *
-   *  @Author: fantasticsoul
-   *--------------------------------------------------------------------------------------------*/
   const verWrap = { value: 0, usablePrefix: 1 };
   const conf = {
       autoFreeze: false,
@@ -93,7 +88,7 @@
        * to be implemented in the future
        */
       usePatches: false,
-      fastModeRange: 'array',
+      fastModeRange: 'none',
   };
 
   const toString = Object.prototype.toString;
