@@ -15,12 +15,13 @@ const jestConfig = {
     // '<rootDir>/test/map-other/case-nested-object.ts',
 
     // '<rootDir>/test/api/api.ts',
-    // '<rootDir>/test/api/innerUtil.ts',
+    // '<rootDir>/test/api/limuUtils.ts',
     // '<rootDir>/test/api/setAutoFreeze.ts',
     // '<rootDir>/test/api/setAutoFreezeFalse.ts',
     // '<rootDir>/test/immer-cases/2.{ts,js}',
 
     // '<rootDir>/test/array-base/push.ts',
+    // '<rootDir>/test/array-base/slice.ts',
     // '<rootDir>/test/array-other/object-item.ts',
     // '<rootDir>/test/array-other/object-list.ts',
     // '<rootDir>/test/array-other/print.ts',

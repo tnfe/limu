@@ -78,8 +78,44 @@ console.log('base.anonymous', base.get('anonymous')); // still existed
 console.log('final.anonymous', final.get('anonymous')); // undefined
 `;
 
-export default {
-  produce,
-  createDraft,
-  onOperate,
-};
+export const benchmark = `
+// 右键打开浏览器控制台，直接粘贴以下代码即查看运行结果
+// 更多性能测试见 https://github.com/tnfe/limu/tree/main/benchmark
+
+function oneCase(produce) {
+  const demo = { info: Array.from(Array(10000).keys()) };
+  produce(demo, (draft) => {
+    draft.info[2000] = 0;
+  });
+}
+
+function runBenchmark(produce, label) {
+  const start = Date.now();
+  const limit = 100;
+  for (let i = 0; i < limit; i++) {
+    oneCase(produce);
+  }
+  console.log(\`\${label} avg spend \${(Date.now() - start) / limit} ms\`);
+}
+
+function run() {
+  immer.setAutoFreeze(false);
+  runBenchmark(immer.produce, 'immer with autoFreeze=false,');
+  immer.setAutoFreeze(true);
+  runBenchmark(immer.produce,'immer with autoFreeze=true,');
+
+  limu.setAutoFreeze(false);
+  runBenchmark(limu.produce, 'limu with autoFreeze=false,');
+  limu.setAutoFreeze(true);
+  runBenchmark(limu.produce, 'limu with autoFreeze=true,');
+}
+
+run();
+`;
+
+export default [
+  {key:'produce', content: produce},
+  {key:'createDraft', content: createDraft},
+  {key:'onOperate', content: onOperate},
+  {key:'benchmark', content: benchmark},
+]

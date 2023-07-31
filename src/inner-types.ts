@@ -3,8 +3,8 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-export type AnyObject = {
-  [key: string]: any;
+export type AnyObject<T extends any = any> = {
+  [key: string]: T;
 };
 export type AnyArray = Array<any>;
 
@@ -13,7 +13,6 @@ export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
 export type Op = 'del' | 'set' | 'get';
 export type DataType = 'Map' | 'Set' | 'Array' | 'Object';
 export type FastModeRange = 'array' | 'all' | 'none';
-
 export interface DraftMeta<T extends AnyObject = AnyObject> {
   rootMeta: DraftMeta;
   parentMeta: null | DraftMeta;
@@ -26,6 +25,7 @@ export interface DraftMeta<T extends AnyObject = AnyObject> {
   isImmutBase: boolean;
   isDel: boolean;
   isFast: boolean;
+  newNodeStats: AnyObject<boolean>;
   // TODO: 探索使用linkCount代替isDel，看是否能解决多引用问题
   linkCount: number;
   key: string;

@@ -8,7 +8,7 @@ const limuFast = {
   createDraft(base, options) {
     return lib.createDraft(base, { fastModeRange: 'all', ...(options || {}) });
   },
-  produce() {
+  produce(base, draftCb, options) {
     return lib.produce(base, draftCb, {
       fastModeRange: 'all',
       ...(options || {}),
@@ -21,7 +21,7 @@ const limuSlow = {
   createDraft(base, options) {
     return lib.createDraft(base, { fastModeRange: 'none', ...(options || {}) });
   },
-  produce() {
+  produce(base, draftCb, options) {
     return lib.produce(base, draftCb, {
       fastModeRange: 'none',
       ...(options || {}),
@@ -35,7 +35,7 @@ const limu = {
     return lib.createDraft(base, options);
     // return lib.immut(base);
   },
-  produce() {
+  produce(base, draftCb, options) {
     return lib.produce(base, draftCb, options);
   },
 };

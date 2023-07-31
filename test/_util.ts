@@ -33,6 +33,7 @@ if (process.env.AUTO_FREEZE === '0') {
 // import * as limu from 'immer';
 // limu.enableMapSet();
 
+export const isDraft = limu.isDraft;
 export const createDraft = limu.createDraft;
 export const finishDraft = limu.finishDraft;
 export const current = limu.current;
@@ -324,4 +325,23 @@ export function assignFrozenDataInJest(cb: any) {
 
 export function clone(obj: any) {
   return JSON.parse(JSON.stringify(obj));
+}
+
+
+export function createTestSuit(descStr) {
+  const tests = [];
+  const result = {
+    addTest(testCaseStr, cb) {
+      tests.push({ label: testCaseStr, cb });
+      return result;
+    },
+    run() {
+      describe(descStr, () => {
+        tests.forEach(item => {
+          test(item.label, item.cb);
+        });
+      });
+    },
+  };
+  return result;
 }

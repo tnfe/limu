@@ -6,7 +6,7 @@
 import { buildLimuApis } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
-import { getDraftMeta, isDraft, isDiff, shallowCompare } from './core/meta';
+import { getDraftMeta, isDraft as isDraftFn, isDiff as isDiffFn, shallowCompare as shallowCompareFn } from './core/meta';
 import { current as currentFn, original as originalFn } from './core/user-util';
 import type { ICreateDraftOptions, IInnerCreateDraftOptions, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, VER as v } from './support/consts';
@@ -15,15 +15,36 @@ import {
   noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
 } from './support/util';
 
+// 避免降到测试覆盖率
+// export { getDraftMeta, isDraft, isDiff, shallowCompare }
+
+// isDraft isDiff shallowCompare 高频使用的从顶层暴露，其他随 limuUtils 里暴露
+
+/**
+ * 判断是否是草稿
+ * @see https://tnfe.github.io/limu/docs/api/basic/limu-utils#isdraft
+ */
+export const isDraft = isDraftFn;
+/**
+ * 判断两个值是否相同
+ * @see https://tnfe.github.io/limu/docs/api/basic/limu-utils#isdiff
+ */
+export const isDiff = isDiffFn;
+/**
+ * 浅比较两个对象是否相同
+ * @see https://tnfe.github.io/limu/docs/api/basic/limu-utils#shallowcompare
+ */
+export const shallowCompare = shallowCompareFn;
+
 /**
  * 内部工具函数集合，写为如下格式会降低覆盖率，故导入后再导出
  * ```txt
- * import * as innerUtil from './support/util';
- * const { isFn, isPromiseFn, isPromiseResult } = innerUtil;
- * export { innerUtil };
+ * import * as limuUtils; from './support/util';
+ * const { isFn, isPromiseFn, isPromiseResult } = limuUtils;;
+ * export { limuUtils; };
  * ```
  */
-export const innerUtil = {
+export const limuUtils = {
   noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
   isDraft, isDiff, shallowCompare, getDraftMeta,
 };

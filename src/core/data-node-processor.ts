@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta } from '../inner-types';
+import type { DraftMeta, AnyObject } from '../inner-types';
 import {
   ARRAY,
   CAREFUL_FNKEYS,
@@ -13,7 +13,7 @@ import {
   SHOULD_REASSIGN_MAP_METHODS,
   SHOULD_REASSIGN_SET_METHODS,
 } from '../support/consts';
-import { isFn } from '../support/util';
+import { isFn, isPrimitive } from '../support/util';
 import { getUnProxyValue } from './helper';
 import { getDraftMeta, markModified } from './meta';
 
@@ -31,7 +31,7 @@ function mayMarkModified(options: { calledBy: string; parentMeta: DraftMeta; op:
   }
 }
 
-export function handleDataNode(parentDataNode: any, copyCtx: any) {
+export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: DraftMeta } & AnyObject) {
   const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta } = copyCtx;
 
   /**
@@ -59,7 +59,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: any) {
   // 是 Map, Set, Array 类型的方法操作或者值获取
   const fnKeys = CAREFUL_FNKEYS[parentType] || [];
   // 是函数调用
-  if (fnKeys.includes(op) && isFn(mayProxyValue)) {
+  if (isFn(mayProxyValue) && fnKeys.includes(op)) {
     // slice 操作无需使用 copy，返回自身即可
     if ('slice' === op) {
       return self.slice;
@@ -113,7 +113,11 @@ export function handleDataNode(parentDataNode: any, copyCtx: any) {
     return;
   }
 
+  if (!parentCopy[key] && !isPrimitive(value)) {
+    parentMeta.newNodeStats[key] = true;
+  }
   parentCopy[key] = value;
+
   // 谨防是 a.b = { ... } ---> a.b = 1 的变异赋值方式
   tryMarkDel();
   tryMarkUndel();

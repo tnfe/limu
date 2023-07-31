@@ -41,7 +41,7 @@ export function getKeyPath(draftNode: any, curKey: string) {
 }
 
 export function newMeta(baseData: any, options: any) {
-  const { finishDraft, ver, parentMeta = null, key, immutBase, compareVer = false } = options;
+  const { finishDraft, ver, parentMeta = null, key, immutBase, compareVer } = options;
   const dataType = getDataType(baseData);
 
   let keyPath: string[] = [];
@@ -74,6 +74,7 @@ export function newMeta(baseData: any, options: any) {
     isImmutBase: immutBase,
     isDel: false,
     isFast: false,
+    newNodeStats: {},
     linkCount: 1,
     finishDraft,
     ver,
@@ -138,7 +139,7 @@ export function isDiff(val1: any, val2: any) {
   const meta1 = getDraftMeta(val1);
   const meta2 = getDraftMeta(val2);
   if (!meta1 && !meta2) {
-    return val1 !== val2;
+    return !Object.is(val1, val2);
   }
 
   const {
@@ -147,7 +148,7 @@ export function isDiff(val1: any, val2: any) {
   const {
     self: self2, modified: modified2, compareVer: cv2, ver: ver2, level: level2,
   } = meta2 || { self: val2, modified: false, compareVer: false, ver: '0', level: 0 };
-  if (self1 !== self2) {
+  if (self1 !== self2) { // self 是内部维护的值，可不用 Object.is 判断
     return true;
   }
   if ((cv1 || cv2) && (level1 === 0 || level2 === 0) && ver1 !== ver2) {
@@ -164,12 +165,13 @@ export function isDiff(val1: any, val2: any) {
  * false：两个对象不一样
  * ```
  */
-export function shallowCompare(prevObj: AnyObject, nextObj: AnyObject) {
-  const isDff = (a: AnyObject, b: AnyObject) => {
+export function shallowCompare(prevObj: AnyObject, nextObj: AnyObject, compareLimuProxyRaw = true) {
+  const diffFn = compareLimuProxyRaw ? isDiff : Object.is;
+  const isObjDiff = (a: AnyObject, b: AnyObject) => {
     for (let i in a) if (!(i in b)) return true;
-    for (let i in b) if (isDiff(a[i], b[i])) return true;
+    for (let i in b) if (diffFn(a[i], b[i])) return true;
     return false;
   };
-  const isEqual = !isDff(prevObj, nextObj);
+  const isEqual = !isObjDiff(prevObj, nextObj);
   return isEqual;
 }

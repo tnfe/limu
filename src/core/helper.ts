@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import { DraftMeta } from '../inner-types';
+import { DraftMeta, AnyObject } from '../inner-types';
 import { ARRAY, MAP, oppositeOps, PROXYITEM_FNKEYS, SET } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { makeCopyWithMeta } from './copy';
@@ -13,7 +13,7 @@ import { recordVerScope } from './scope';
 export function createScopedMeta(baseData: any, options: any) {
   const {
     finishDraft = noop, ver, traps, parentType, parentMeta, key,
-    fastModeRange, immutBase, extraProps, compareVer,
+    fastModeRange, immutBase, extraProps, compareVer = false,
   } = options;
   const meta = newMeta(baseData, {
     finishDraft,
@@ -51,36 +51,41 @@ export function shouldGenerateProxyItems(parentType: any, key: any) {
   return fnKeys.includes(key);
 }
 
-export function getProxyVal(selfVal: any, options: any) {
+export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & AnyObject) {
   const {
     key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches,
     parentType, fastModeRange, immutBase, readOnly, extraProps, compareVer,
   } = options;
-  let curSelfVal = selfVal;
+  let curVal = val;
 
   // keep copy always same with self when readOnly = true
-  if (readOnly && parentMeta && !isFn(selfVal)) {
+  if (readOnly && parentMeta && !isFn(val)) {
     const { copy, self } = parentMeta;
     const latestVal = self[key];
     copy[key] = latestVal;
-    curSelfVal = latestVal;
+    curVal = latestVal;
   }
 
-  const mayCreateProxyVal = (selfVal: any, inputKey?: string) => {
+  const mayCreateProxyVal = (val: any, inputKey?: string) => {
     const key = inputKey || '';
-    if (isPrimitive(selfVal) || !selfVal) {
-      return selfVal;
+    if (isPrimitive(val) || !val) {
+      return val;
     }
 
     if (!parentMeta) {
       throw new Error('[[ createMeta ]]: meta should not be null');
     }
 
-    if (!isFn(selfVal)) {
-      let valMeta = getSafeDraftMeta(selfVal);
+    if (!isFn(val)) {
+      // 是一个全新的节点，不必生成代理，以便提高性能
+      if (parentMeta.newNodeStats[key]) {
+        return val;
+      }
+
+      let valMeta = getSafeDraftMeta(val);
       // 惰性生成代理对象和其元数据
       if (!valMeta) {
-        valMeta = createScopedMeta(selfVal, {
+        valMeta = createScopedMeta(val, {
           key,
           parentMeta,
           parentType,
@@ -100,11 +105,11 @@ export function getProxyVal(selfVal: any, options: any) {
     }
 
     if (!shouldGenerateProxyItems(parentType, key)) {
-      return selfVal;
+      return val;
     }
 
     if (parentMeta.proxyItems) {
-      return selfVal;
+      return val;
     }
 
     // 提前完成遍历，为所有 item 生成代理
@@ -141,10 +146,10 @@ export function getProxyVal(selfVal: any, options: any) {
     }
     parentMeta.proxyItems = proxyItems;
 
-    return selfVal;
+    return val;
   };
 
-  return mayCreateProxyVal(curSelfVal, key);
+  return mayCreateProxyVal(curVal, key);
 }
 
 export function getUnProxyValue(value: any) {

@@ -34,9 +34,6 @@ function compare(final: Obj, base: Obj) {
   const finalArr = Array.from(final.set);
   const baseArr = Array.from(base.set);
 
-  console.log('baseArr', baseArr);
-  console.log('finalArr', finalArr);
-
   expect(finalArr.includes(1)).toBeTruthy();
   expect(finalArr.includes(3)).toBeTruthy();
   expect(finalArr.includes('k4')).toBeTruthy();

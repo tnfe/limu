@@ -8,7 +8,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const VER$1 = '3.5.1';
+  const VER$1 = '3.5.3';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -191,7 +191,7 @@
       return pathArr;
   }
   function newMeta(baseData, options) {
-      const { finishDraft, ver, parentMeta = null, key, immutBase, compareVer = false } = options;
+      const { finishDraft, ver, parentMeta = null, key, immutBase, compareVer } = options;
       const dataType = getDataType(baseData);
       let keyPath = [];
       let level = 0;
@@ -222,6 +222,7 @@
           isImmutBase: immutBase,
           isDel: false,
           isFast: false,
+          newNodeStats: {},
           linkCount: 1,
           finishDraft,
           ver,
@@ -241,7 +242,7 @@
    * @param mayDraft
    * @returns
    */
-  function isDraft(mayDraft) {
+  function isDraft$1(mayDraft) {
       if (isPrimitive(mayDraft)) {
           return false;
       }
@@ -275,15 +276,15 @@
       // @ts-ignore
       return proxyDraft ? (proxyDraft[META_KEY] || null) : null;
   }
-  function isDiff(val1, val2) {
+  function isDiff$1(val1, val2) {
       const meta1 = getDraftMeta(val1);
       const meta2 = getDraftMeta(val2);
       if (!meta1 && !meta2) {
-          return val1 !== val2;
+          return !Object.is(val1, val2);
       }
       const { self: self1, modified: modified1, compareVer: cv1, ver: ver1, level: level1, } = meta1 || { self: val1, modified: false, compareVer: false, ver: '0', level: 0 };
       const { self: self2, modified: modified2, compareVer: cv2, ver: ver2, level: level2, } = meta2 || { self: val2, modified: false, compareVer: false, ver: '0', level: 0 };
-      if (self1 !== self2) {
+      if (self1 !== self2) { // self 是内部维护的值，可不用 Object.is 判断
           return true;
       }
       if ((cv1 || cv2) && (level1 === 0 || level2 === 0) && ver1 !== ver2) {
@@ -298,17 +299,18 @@
    * false：两个对象不一样
    * ```
    */
-  function shallowCompare(prevObj, nextObj) {
-      const isDff = (a, b) => {
+  function shallowCompare$1(prevObj, nextObj, compareLimuProxyRaw = true) {
+      const diffFn = compareLimuProxyRaw ? isDiff$1 : Object.is;
+      const isObjDiff = (a, b) => {
           for (let i in a)
               if (!(i in b))
                   return true;
           for (let i in b)
-              if (isDiff(a[i], b[i]))
+              if (diffFn(a[i], b[i]))
                   return true;
           return false;
       };
-      const isEqual = !isDff(prevObj, nextObj);
+      const isEqual = !isObjDiff(prevObj, nextObj);
       return isEqual;
   }
 
@@ -440,7 +442,7 @@
   }
 
   function createScopedMeta(baseData, options) {
-      const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase, extraProps, compareVer, } = options;
+      const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase, extraProps, compareVer = false, } = options;
       const meta = newMeta(baseData, {
           finishDraft,
           ver,
@@ -475,29 +477,33 @@
       const fnKeys = PROXYITEM_FNKEYS[parentType] || [];
       return fnKeys.includes(key);
   }
-  function getProxyVal(selfVal, options) {
+  function getMayProxiedVal(val, options) {
       const { key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches, parentType, fastModeRange, immutBase, readOnly, extraProps, compareVer, } = options;
-      let curSelfVal = selfVal;
+      let curVal = val;
       // keep copy always same with self when readOnly = true
-      if (readOnly && parentMeta && !isFn(selfVal)) {
+      if (readOnly && parentMeta && !isFn(val)) {
           const { copy, self } = parentMeta;
           const latestVal = self[key];
           copy[key] = latestVal;
-          curSelfVal = latestVal;
+          curVal = latestVal;
       }
-      const mayCreateProxyVal = (selfVal, inputKey) => {
+      const mayCreateProxyVal = (val, inputKey) => {
           const key = inputKey || '';
-          if (isPrimitive(selfVal) || !selfVal) {
-              return selfVal;
+          if (isPrimitive(val) || !val) {
+              return val;
           }
           if (!parentMeta) {
               throw new Error('[[ createMeta ]]: meta should not be null');
           }
-          if (!isFn(selfVal)) {
-              let valMeta = getSafeDraftMeta(selfVal);
+          if (!isFn(val)) {
+              // 是一个全新的节点，不必生成代理，以便提高性能
+              if (parentMeta.newNodeStats[key]) {
+                  return val;
+              }
+              let valMeta = getSafeDraftMeta(val);
               // 惰性生成代理对象和其元数据
               if (!valMeta) {
-                  valMeta = createScopedMeta(selfVal, {
+                  valMeta = createScopedMeta(val, {
                       key,
                       parentMeta,
                       parentType,
@@ -516,10 +522,10 @@
               return valMeta.proxyVal;
           }
           if (!shouldGenerateProxyItems(parentType, key)) {
-              return selfVal;
+              return val;
           }
           if (parentMeta.proxyItems) {
-              return selfVal;
+              return val;
           }
           // 提前完成遍历，为所有 item 生成代理
           let proxyItems = [];
@@ -554,9 +560,9 @@
               proxyItems = parentMeta.proxyVal;
           }
           parentMeta.proxyItems = proxyItems;
-          return selfVal;
+          return val;
       };
-      return mayCreateProxyVal(curSelfVal, key);
+      return mayCreateProxyVal(curVal, key);
   }
   function getUnProxyValue(value) {
       if (!isObject(value)) {
@@ -642,7 +648,7 @@
       // 是 Map, Set, Array 类型的方法操作或者值获取
       const fnKeys = CAREFUL_FNKEYS[parentType] || [];
       // 是函数调用
-      if (fnKeys.includes(op) && isFn(mayProxyValue)) {
+      if (isFn(mayProxyValue) && fnKeys.includes(op)) {
           // slice 操作无需使用 copy，返回自身即可
           if ('slice' === op) {
               return self.slice;
@@ -692,6 +698,9 @@
           }
           delete parentCopy[key];
           return;
+      }
+      if (!parentCopy[key] && !isPrimitive(value)) {
+          parentMeta.newNodeStats[key] = true;
       }
       parentCopy[key] = value;
       // 谨防是 a.b = { ... } ---> a.b = 1 的变异赋值方式
@@ -828,7 +837,7 @@
                       return parentMeta.copy[key];
                   }
                   // 可能会指向代理对象
-                  currentChildVal = getProxyVal(currentChildVal, {
+                  currentChildVal = getMayProxiedVal(currentChildVal, {
                       key,
                       parentMeta,
                       parentType,
@@ -874,7 +883,7 @@
                   if (readOnly) {
                       return warnReadOnly();
                   }
-                  if (isDraft(value)) {
+                  if (isDraft$1(value)) {
                       // see case debug/complex/set-draft-node
                       if (isInSameScope(value, metaVer)) {
                           targetValue = getUnProxyValue(value);
@@ -1019,15 +1028,33 @@
    *
    *  @Author: fantasticsoul
    *--------------------------------------------------------------------------------------------*/
+  // 避免降到测试覆盖率
+  // export { getDraftMeta, isDraft, isDiff, shallowCompare }
+  // isDraft isDiff shallowCompare 高频使用的从顶层暴露，其他随 limuUtils 里暴露
+  /**
+   * 判断是否是草稿
+   * @see https://tnfe.github.io/limu/docs/api/basic/limu-utils#isdraft
+   */
+  const isDraft = isDraft$1;
+  /**
+   * 判断两个值是否相同
+   * @see https://tnfe.github.io/limu/docs/api/basic/limu-utils#isdiff
+   */
+  const isDiff = isDiff$1;
+  /**
+   * 浅比较两个对象是否相同
+   * @see https://tnfe.github.io/limu/docs/api/basic/limu-utils#shallowcompare
+   */
+  const shallowCompare = shallowCompare$1;
   /**
    * 内部工具函数集合，写为如下格式会降低覆盖率，故导入后再导出
    * ```txt
-   * import * as innerUtil from './support/util';
-   * const { isFn, isPromiseFn, isPromiseResult } = innerUtil;
-   * export { innerUtil };
+   * import * as limuUtils; from './support/util';
+   * const { isFn, isPromiseFn, isPromiseResult } = limuUtils;;
+   * export { limuUtils; };
    * ```
    */
-  const innerUtil = {
+  const limuUtils = {
       noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
       isDraft, isDiff, shallowCompare, getDraftMeta,
   };
@@ -1133,10 +1160,13 @@
   exports.finishDraft = finishDraft;
   exports.getAutoFreeze = getAutoFreeze;
   exports.immut = immut;
-  exports.innerUtil = innerUtil;
+  exports.isDiff = isDiff;
+  exports.isDraft = isDraft;
+  exports.limuUtils = limuUtils;
   exports.original = original;
   exports.produce = produce;
   exports.setAutoFreeze = setAutoFreeze;
+  exports.shallowCompare = shallowCompare;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 

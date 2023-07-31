@@ -8,9 +8,17 @@ import clsx from 'clsx';
 import React from 'react';
 import styles from './index.module.css';
 // import MdViewer from '@site/src/components/MonacoEditor';
-import * as demoCode from '@site/src/components/demoCode';
+import demoCode from '@site/src/components/demoCode';
 
 bindLimuToGlobal();
+
+const keys = [];
+const contentMap = {};
+demoCode.forEach(item => {
+  keys.push(item.key);
+  contentMap[item.key] = item.content;
+});
+
 
 // prism-react-renderer
 // @uiw/react-markdown-preview
@@ -37,24 +45,18 @@ function DemoArea() {
     setDemoType(e.target.value);
   };
   const checkedMap = {};
-  ['produce', 'createDraft', 'onOperate'].forEach((item) => {
-    checkedMap[item] = item === demoType;
-  });
+  keys.forEach((item) => checkedMap[item] = item === demoType);
 
   return (
     <div style={{ textAlign: 'center' }}>
       <div style={{ width: '780px', margin: '0 auto' }}>
-        <RadioBtn checked={checkedMap['produce']} value="produce" onClick={clickRadio}>
-          produce{'  '}
-        </RadioBtn>
-        <RadioBtn checked={checkedMap['createDraft']} value="createDraft" onClick={clickRadio}>
-          createDraft/finishDraft{'  '}
-        </RadioBtn>
-        <RadioBtn checked={checkedMap['onOperate']} value="onOperate" onClick={clickRadio}>
-          onOperate{'  '}
-        </RadioBtn>
+        {keys.map(key => (
+          <RadioBtn key={key} checked={checkedMap[key]} value={key} onClick={clickRadio}>
+            {key}{'  '}
+          </RadioBtn>
+        ))}
       </div>
-      <MdViewer value={demoCode[demoType]} />
+      <MdViewer value={contentMap[demoType]} />
     </div>
   );
 }

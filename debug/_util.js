@@ -22,7 +22,8 @@ global.produce = limu.produce;
 global.immut = limu.immut;
 global.createDraft = limu.createDraft;
 global.finishDraft = limu.finishDraft;
-global.innerUtil = limu.innerUtil;
+global.limuUtils = limu.limuUtils;
+global.isDraft = limu.isDraft;
 
 exports.immut = limu.immut;
 
@@ -72,7 +73,6 @@ exports.getArrBase = function setRunProduce(val) {
   return [1, 2, 3];
 }
 
-
 exports.getMapBase = function getMapBase() {
   return new Map([
     ['k1', 1],
@@ -81,7 +81,6 @@ exports.getMapBase = function getMapBase() {
   ]);
 }
 
-
 exports.getMapObjBase = function getMapObjBase() {
   return new Map([
     ['k1', { name: 'k1' }],
@@ -89,7 +88,6 @@ exports.getMapObjBase = function getMapObjBase() {
     ['k3', { name: 'k3' }],
   ]);
 }
-
 
 exports.shouldBeEqual = function shouldBeEqual(stateNew, stateBase) {
   expect(stateNew === stateBase).toBeTruthy();
@@ -194,7 +192,6 @@ global.except = function (ac) {
   };
 }
 
-
 global.expect = function (ac) {
   return {
     toBe(ex) {
@@ -234,4 +231,32 @@ global.expect = function (ac) {
       }
     },
   };
+}
+
+global.runTestSuit = function (
+  testSuitDesc,
+  testCaseDesc,
+  getBase,
+  operateDraft,
+  executeAssertLogic,
+) {
+  describe(testSuitDesc, () => {
+    test(createDraftTip(testCaseDesc), () => {
+      const base = getBase();
+      const draft = createDraft(base);
+      operateDraft(draft, base);
+      const final = finishDraft(draft);
+      if (executeAssertLogic) executeAssertLogic(final, base);
+    });
+
+    if (RUN_PRODUCE) {
+      test(produceTip(testCaseDesc), () => {
+        const base = getBase();
+        const final = produce(base, (draft) => {
+          operateDraft(draft, base);
+        });
+        if (executeAssertLogic) executeAssertLogic(final, base);
+      });
+    }
+  });
 }

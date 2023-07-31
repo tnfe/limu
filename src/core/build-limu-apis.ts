@@ -9,7 +9,7 @@ import { conf } from '../support/inner-data';
 import { canBeNum, isFn, isPrimitive, isSymbol } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { deepFreeze } from './freeze';
-import { createScopedMeta, getProxyVal, getUnProxyValue } from './helper';
+import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
 import { genMetaVer, getSafeDraftMeta, isDraft } from './meta';
 import { extraFinalData, isInSameScope, recordVerScope } from './scope';
 
@@ -108,7 +108,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           return parentMeta.copy[key];
         }
         // 可能会指向代理对象
-        currentChildVal = getProxyVal(currentChildVal, {
+        currentChildVal = getMayProxiedVal(currentChildVal, {
           key,
           parentMeta,
           parentType,

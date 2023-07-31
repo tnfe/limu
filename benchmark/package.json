@@ -7,10 +7,6 @@
   "author": "",
   "main": "limu-vs-immer.js",
   "scripts": {
-    "k1": "ST=1 node ./limu-vs-immer-skip-init.js",
-    "k2": "ST=2 node ./limu-vs-immer-skip-init.js",
-    "k3": "ST=3 node ./limu-vs-immer-skip-init.js",
-    "k4": "ST=4 node ./limu-vs-immer-skip-init.js",
     "s1": "ST=1 node ./limu-vs-immer.js",
     "s2": "ST=2 node ./limu-vs-immer.js",
     "s3": "ST=3 node ./limu-vs-immer.js",
@@ -19,7 +15,7 @@
   },
   "dependencies": {
     "immer": "^9.0.15",
-    "limu": "^3.2.2",
+    "limu": "^3.5.2",
     "mutative": "^0.5.0"
   }
 }
