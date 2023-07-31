@@ -1,5 +1,4 @@
 const immer = require('./libs/immer');
-const mutative = require('./libs/mutative');
 const { limu, limuFast, limuSlow } = require('./libs/limu');
 const pstr = require('./libs/pstr');
 const native = require('./libs/native');
@@ -10,7 +9,6 @@ const immutLibs = {
   limu,
   limuFast,
   limuSlow,
-  mutative,
   pstr,
   native, // just to see native js operation perf
 };
@@ -54,7 +52,6 @@ function getBaseDataMap(arrLen) {
   if (!baseDataMap) {
     baseDataMap = {
       immer: getBase(arrLen),
-      mutative: getBase(arrLen),
       limu: getBase(arrLen),
       limuFast: getBase(arrLen),
       limuSlow: getBase(arrLen),
@@ -117,10 +114,9 @@ exports.runPerfCase = async function (options) {
   util.showMem('Before measure', true);
 
   measureBenchmark('immer', options);
-  // measureBenchmark('limuFast', options); // works for: ST=3 node caseOnlyRead.js ( bad way loop )
+  measureBenchmark('limuFast', options); // works for: ST=3 node caseOnlyRead.js ( bad way loop )
   measureBenchmark('limu', options);
   // measureBenchmark('limuSlow', options); // works for: ST=3 node caseOnlyRead.js ( bad way loop )
-  measureBenchmark('mutative', options);
   measureBenchmark('pstr', options);
   measureBenchmark('native', options);
 
