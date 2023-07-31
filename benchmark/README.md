@@ -1,15 +1,23 @@
 ## 测试流程
 
 ## 测试流程
-
+准备工作
 ```bash
 git clone https://github.com/tnfe/limu
 cd limu
 npm i
 cd benchmark
 npm i
-node caseOnlyRead.js // 触发测试执行，控制台回显结果
 ```
+然后参考以下步骤执行测试
+
+### 测试大数组读写
+遍历一个大数组执行读写逻辑，此用来改编自[immer性能测试用例](https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs)
+```bash
+node opBigData.js
+```
+
+### 测试深层次对象读写
 
 可通过注入`ST`值调整不同的测试策略，例如 `ST=1 node caseOnlyRead.js`，不注入时默认为 `4`
 
@@ -29,7 +37,6 @@ node caseOnlyRead.js // 触发测试执行，控制台回显结果
 ```
 loop: 200, immer avg spend 14.6 ms
 loop: 200, limu avg spend 12.68 ms
-loop: 200, mutative avg spend 9.215 ms
 loop: 200, pstr avg spend 4 ms
 loop: 200, native avg spend 0.37 ms
 ```
@@ -39,7 +46,6 @@ loop: 200, native avg spend 0.37 ms
 ```
 loop: 200, immer avg spend 16.63 ms
 loop: 200, limu avg spend 15.02 ms
-loop: 200, mutative avg spend 11.685 ms
 loop: 200, pstr avg spend 5.89 ms
 loop: 200, native avg spend 1.345 ms
 ```
@@ -49,7 +55,6 @@ loop: 200, native avg spend 1.345 ms
 ```
 loop: 200, immer avg spend 13.525 ms
 loop: 200, limu avg spend 11.54 ms
-loop: 200, mutative avg spend 9.53 ms
 loop: 200, pstr avg spend 3.79 ms
 loop: 200, native avg spend 0.505 ms
 ```
@@ -59,7 +64,6 @@ loop: 200, native avg spend 0.505 ms
 ```
 loop: 200, immer avg spend 12.965 ms
 loop: 200, limu avg spend 11.2 ms
-loop: 200, mutative avg spend 8.98 ms
 loop: 200, pstr avg spend 4.045 ms
 loop: 200, native avg spend 1.065 ms
 ```
@@ -71,7 +75,6 @@ loop: 200, native avg spend 1.065 ms
 ```
 loop: 200, immer avg spend 4.045 ms
 loop: 200, limu avg spend 4.47 ms
-loop: 200, mutative avg spend 2.11 ms
 loop: 200, pstr avg spend 8.835 ms
 loop: 200, native avg spend 0.225 ms
 ```
@@ -81,7 +84,6 @@ loop: 200, native avg spend 0.225 ms
 ```
 loop: 200, immer avg spend 8.44 ms
 loop: 200, limu avg spend 5.855 ms
-loop: 200, mutative avg spend 5.525 ms
 loop: 200, pstr avg spend 10.18 ms
 loop: 200, native avg spend 0.895 ms
 ```
@@ -91,7 +93,6 @@ loop: 200, native avg spend 0.895 ms
 ```
 loop: 200, immer avg spend 10.025 ms
 loop: 200, limu avg spend 0.89 ms
-loop: 200, mutative avg spend 0.705 ms
 loop: 200, pstr avg spend 8.155 ms
 loop: 200, native avg spend 0.155 ms
 ```
@@ -101,7 +102,6 @@ loop: 200, native avg spend 0.155 ms
 ```
 loop: 200, immer avg spend 11.025 ms
 loop: 200, limu avg spend 1.61 ms
-loop: 200, mutative avg spend 1.345 ms
 loop: 200, pstr avg spend 9.225 ms
 loop: 200, native avg spend 0.915 ms
 ```

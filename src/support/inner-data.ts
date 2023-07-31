@@ -19,5 +19,5 @@ export const conf: IConf = {
    * to be implemented in the future
    */
   usePatches: false,
-  fastModeRange: 'none',
+  fastModeRange: 'array',
 };

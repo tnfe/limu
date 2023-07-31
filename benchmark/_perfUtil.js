@@ -114,9 +114,9 @@ exports.runPerfCase = async function (options) {
   util.showMem('Before measure', true);
 
   measureBenchmark('immer', options);
-  measureBenchmark('limuFast', options); // works for: ST=3 node caseOnlyRead.js ( bad way loop )
-  measureBenchmark('limu', options);
-  // measureBenchmark('limuSlow', options); // works for: ST=3 node caseOnlyRead.js ( bad way loop )
+  // speedup at: node caseOnlyRead.js
+  // measureBenchmark('limuFast', options);
+  measureBenchmark('limu', options);// now fastRangeMode is array
   measureBenchmark('pstr', options);
   measureBenchmark('native', options);
 
