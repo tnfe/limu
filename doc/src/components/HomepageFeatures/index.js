@@ -14,6 +14,10 @@ const FeatureList = [
     description: (
       <div style={{ textAlign: 'left' }}>
         immer的冻结行为造成了大量性能损耗，且此配置关闭后性能提升有限，limu采用读时浅复制写时标记修改的策略压榨出了更强劲的性能（无论冻结与否）
+        <img
+          style={{ marginTop: '20px' }}
+          src="https://user-images.githubusercontent.com/7334950/257363042-522b49bc-d4b5-4491-a7af-d1e3f65769e8.png"
+        />
       </div>
     ),
   },
@@ -25,6 +29,10 @@ const FeatureList = [
     description: (
       <div style={{ textAlign: 'left' }}>
         因层层代理导致调试模式下查看immer的草稿数据像进入黑盒世界，还需借助昂贵的current接口导出草稿的副本才能查看草稿数据全貌
+        <img
+          style={{ marginTop: '20px', boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.4)' }}
+          src="https://github.com/tnfe/limu/assets/7334950/13fa0776-a025-42d1-83b1-71184eb617d7"
+        />
       </div>
     ),
   },
@@ -36,6 +44,10 @@ const FeatureList = [
     description: (
       <div style={{ textAlign: 'left' }}>
         limu设计为面向现代浏览器的不可变数据js库，只运行于支持proxy特性的js环境，相比immer 6.3kb大小容量接近减少1/3
+        <img
+          style={{ marginTop: '20px', boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.4)' }}
+          src="https://user-images.githubusercontent.com/7334950/257385342-6e4aa35a-ac1b-4373-a1d2-122fc637245c.png"
+        />
       </div>
     ),
   },

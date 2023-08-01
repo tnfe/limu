@@ -327,8 +327,8 @@ function buildBase(arrLen = 10000) {
 
 const staticBase = buildBase();
 
-exports.getBase = function (arrLen = 10000, static = false) {
-  const base = static ? staticBase : buildBase(arrLen);
+exports.getBase = function (arrLen = 10000, isStatic = false) {
+  const base = isStatic ? staticBase : buildBase(arrLen);
   return base;
 };
 
@@ -336,6 +336,15 @@ exports.sleep = function (ms = 5000) {
   return new Promise((r) => setTimeout(r, ms));
 };
 
-exports.die = function (label) {
+exports.die = function (label, lib) {
+  if (lib && lib.__NATIVE_JS__ === true) {
+    return;
+  }
   throw new Error(label);
 };
+
+exports.getBtyeLen = function (data) {
+  const jsonStr = JSON.stringify(data);
+  const byteSize = new TextEncoder().encode(jsonStr).length;
+  return byteSize;
+}

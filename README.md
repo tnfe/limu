@@ -17,6 +17,32 @@ It is fast, It is nearly more than **2 or 20** times faster than `immer` in diff
 
 > Pay attention, limu can only run on JavaScript runtime that supports proxy
 
+## Performance ⚡️
+
+No frozen by default, limu is 3 to 5 times or more faster than Immer in most scenarios
+
+[test 1](https://github.com/tnfe/limu/blob/main/benchmark/opBigData.js) (inspired by this [immer case](https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs) )
+![](https://user-images.githubusercontent.com/7334950/257369962-c0577e96-cb2c-48cb-8f65-c11979bfd506.png)
+
+[test 2](https://github.com/tnfe/limu/blob/main/benchmark/caseReadWrite.js)
+![test 2](https://user-images.githubusercontent.com/7334950/257380995-1bfc3652-1730-4ecd-ba1b-adaddd3db98d.png)
+
+
+The performance testing process is as follows
+
+```bash
+git clone https://github.com/tnfe/limu
+cd limu
+npm i
+cd benchmark
+npm i
+node opBigData.js // trigger test execution, the console echoes the result
+# or
+node caseOnlyRead.js
+```
+
+You are very welcome to submit your test to the [benchmark directory](https://github.com/tnfe/limu/tree/main/benchmark) or [test directory](https://github.com/tnfe/limu/tree/main/test)
+
 ## Quick Start
 
 install
@@ -77,121 +103,17 @@ console.log(nextState.b === baseState.b); // false
 console.log(nextState.c === baseState.c); // true
 ```
 
-![performance](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu-benchmark.jpg)
+## Experience limu on the console
 
-## Performance ⚡️
-
-It is nearly more than 2 or 20 times faster than `immer` in different situations.
-
-The performance testing process is as follows
-
-```bash
-git clone https://github.com/tnfe/limu
-cd limu
-npm i
-cd benchmark
-npm i
-node caseOnlyRead.js // trigger test execution, the console echoes the result
-```
-
-Different test strategies can be adjusted by injecting `ST` value, for example `ST=1 node caseOnlyRead.js`, the default is `4` when not injected
-
-- ST=1, means reuse base, start freezing
-- ST=2, means not to reuse base, start freezing
-- ST=3, means reuse base, close freeze
-- ST=4, means not to reuse base, turn off freeze
-
-Prepared 2 test cases, read-only scenario `caseOnlyRead`, and read-write scenario `caseReadWrite`
-
-The test results are as follows
-
-### read only
-
-1 `ST=1 node caseOnlyRead.js`
-
-```
-loop: 200, immer avg spend 14.6 ms
-loop: 200, limu avg spend 12.68 ms
-loop: 200, mutative avg spend 9.215 ms
-loop: 200, pstr avg spend 4 ms
-loop: 200, native avg spend 0.37 ms
-```
-
-2 `ST=2 node caseOnlyRead.js`
-
-```
-loop: 200, immer avg spend 16.63 ms
-loop: 200, limu avg spend 15.02 ms
-loop: 200, mutative avg spend 11.685 ms
-loop: 200, pstr avg spend 5.89 ms
-loop: 200, native avg spend 1.345 ms
-```
-
-3 `ST=3 node caseOnlyRead.js`
-
-```
-loop: 200, immer avg spend 13.525 ms
-loop: 200, limu avg spend 11.54 ms
-loop: 200, mutative avg spend 9.53 ms
-loop: 200, pstr avg spend 3.79 ms
-loop: 200, native avg spend 0.505 ms
-```
-
-4 `ST=4 node caseOnlyRead.js`
-
-```
-loop: 200, immer avg spend 12.965 ms
-loop: 200, limu avg spend 11.2 ms
-loop: 200, mutative avg spend 8.98 ms
-loop: 200, pstr avg spend 4.045 ms
-loop: 200, native avg spend 1.065 ms
-```
-
-### read and write
-
-1 `ST=1 node caseReadWrite.js`
-
-```
-loop: 200, immer avg spend 4.045 ms
-loop: 200, limu avg spend 4.47 ms
-loop: 200, mutative avg spend 2.11 ms
-loop: 200, pstr avg spend 8.835 ms
-loop: 200, native avg spend 0.225 ms
-```
-
-2 `ST=2 node caseReadWrite.js`
-
-```
-loop: 200, immer avg spend 8.44 ms
-loop: 200, limu avg spend 5.855 ms
-loop: 200, mutative avg spend 5.525 ms
-loop: 200, pstr avg spend 10.18 ms
-loop: 200, native avg spend 0.895 ms
-```
-
-3 `ST=3 node caseReadWrite.js`
-
-```
-loop: 200, immer avg spend 10.025 ms
-loop: 200, limu avg spend 0.89 ms
-loop: 200, mutative avg spend 0.705 ms
-loop: 200, pstr avg spend 8.155 ms
-loop: 200, native avg spend 0.155 ms
-```
-
-4 `ST=4 node caseReadWrite.js`
-
-```
-loop: 200, immer avg spend 11.025 ms
-loop: 200, limu avg spend 1.61 ms
-loop: 200, mutative avg spend 1.345 ms
-loop: 200, pstr avg spend 9.225 ms
-loop: 200, native avg spend 0.915 ms
-```
+![logo](https://raw.githubusercontent.com/fantasticsoul/assets/master/limu/limu-benchmark.jpg)
 
 As limu is an immutable js library based on shallow copy on read and mark modified on write. Based on this mechanism, so it is more friendly to debugging. You can copy the following code to the console experience
 
-For example, first visit [unpkg](https://unpkg.com/), right-click to open the console, and then paste the following code to load js
+there are 2 ways to quickly experience limu and compare limu with immer.
+
+- 1, open [limu doc site](https://tnfe.github.io/limu/) and right-click to open the console.
+
+- 2, visit [unpkg](https://unpkg.com/), right-click to open the console, and then paste the following code to load js
 
 ```ts
 function loadJs(url) {
@@ -200,14 +122,40 @@ function loadJs(url) {
   document.body.appendChild(dom);
 }
 
-loadJs('https://unpkg.com/limu@3.2.2/dist/limu.min.js');
-// loadJs('https://unpkg.com/immer@9.0.21/dist/immer.umd.production.min.js');
+loadJs('https://unpkg.com/limu@3.5.5/dist/limu.min.js'); // load limu umd bundle
+loadJs('https://unpkg.com/immer@9.0.21/dist/immer.umd.production.min.js'); // load immer umd bundle
 ```
 
-Then run the test code
+Then you can paste below codes to run
 
+- case 1
 ```ts
-lib = window.LimuApi;
+function oneCase(produce) {
+  const demo = { info: Array.from(Array(10000).keys()) };
+  produce(demo, (draft) => {
+    draft.info[2000] = 0;
+  });
+}
+
+function runBenchmark(produce, label) {
+  const start = Date.now();
+  const limit = 100;
+  for (let i = 0; i < limit; i++) {
+    oneCase(produce);
+  }
+  console.log(`${label} avg spend ${(Date.now() - start) / limit} ms`);
+}
+
+function run() {
+  immer.setAutoFreeze(false);
+  runBenchmark(immer.produce, 'immer,');
+  runBenchmark(limu.produce, 'limu,');
+}
+```
+
+- case 2
+```ts
+lib = window.limu; // or lib = window.immer
 const base = {
   a: 1,
   b: { b1: 1, b2: 2, b3: { b31: 1 } },
@@ -217,6 +165,7 @@ const base = {
 const draft = lib.createDraft(base);
 draft.a = 200;
 draft.b.b1 = 100;
+console.log(draft);
 draft.c.push(4);
 const final = lib.finishDraft(draft);
 console.log(base === final); // false
@@ -235,9 +184,6 @@ And the immer or mutative expansion is like this <img width="618" alt="image" sr
 
 My conclusion is that the pursuit of extreme performance `mutative` is indeed better, and the pursuit of debugging-friendly `limu` is better. In any case, in the case of freezing, both of them are several times higher than `immer`, and respect `mutative`'s immutable Exploration ∠(° ゝ °) ❤️
 
-### Submit your test
-
-You are very welcome to submit your test to the benchmark directory
 
 ## License
 

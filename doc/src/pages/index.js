@@ -56,6 +56,10 @@ function DemoArea() {
           </RadioBtn>
         ))}
       </div>
+      <div style={{ width: '780px', height: '12px' }} />
+      <div className={styles.tip} style={{ color: 'rgb(240, 66, 49)' }}>
+        全局已绑定limu对象(包含方法)和immer对象，可右键打开浏览器控制台并粘贴以下代码体验差异（顶部的 import 导入无需粘贴）
+      </div>
       <MdViewer value={contentMap[demoType]} />
     </div>
   );
@@ -71,7 +75,7 @@ function HomepageHeader() {
         </h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
-          <Link className="button button--secondary button--lg" to="/docs/api/basic">
+          <Link className="button button--secondary button--lg" to="/docs/api">
             快速开始 - 1 min ⏱️
           </Link>
           <div style={{ display: 'inline-block', width: '28px' }}></div>

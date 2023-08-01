@@ -5,12 +5,12 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "main": "limu-vs-immer.js",
+  "main": "caseReadWrite.js",
   "scripts": {
-    "s1": "ST=1 node ./limu-vs-immer.js",
-    "s2": "ST=2 node ./limu-vs-immer.js",
-    "s3": "ST=3 node ./limu-vs-immer.js",
-    "s4": "ST=4 node ./limu-vs-immer.js",
+    "s1": "ST=1 node ./caseReadWrite.js",
+    "s2": "ST=2 node ./caseReadWrite.js",
+    "s3": "ST=3 node ./caseReadWrite.js",
+    "s4": "ST=4 node ./caseReadWrite.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

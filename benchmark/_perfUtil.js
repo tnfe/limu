@@ -15,30 +15,29 @@ const immutLibs = {
 const LOOP_LIMIT = 500;
 const ARR_LEN = 10000;
 const strategyConsts = {
-  BASE_T_AUTO_T: '1', // reuseBase: true   autoFreeze: true
-  BASE_F_AUTO_T: '2', // reuseBase: false  autoFreeze: true
-  BASE_T_AUTO_F: '3', // reuseBase: true   autoFreeze: false
-  BASE_F_AUTO_F: '4', // reuseBase: false  autoFreeze: false
+  ST1: '1', // autoFreeze: false opArr: false
+  ST2: '2', // autoFreeze: false opArr: true
+  ST3: '3', // autoFreeze: true  opArr: false
+  ST4: '4', // autoFreeze: true  opArr: true
 };
 
 // ************************************************************************
-const curStrategy = process.env.ST || strategyConsts.BASE_F_AUTO_F;
+const curStrategy = process.env.ST || strategyConsts.ST1;
 // change params 'hasArr'、'lessDeepOp' to test limu and immer performance in different situations
-// then run npm cmd: `npm run s1`、`npm run s2`、`npm run s3`、`npm run s4` to see perf result
-const OP_ARR = true; // operate arr or not
+// then run npm cmd: `npm run s1`、`npm run s2` to see perf result
 const MORE_DEEP_OP = true; // has more deep operation or not
 // ************************************************************************
 // hasArr = true; lessDeepOp = false; limu close to native
 
 const sc = strategyConsts;
 const stategies = {
-  [sc.BASE_T_AUTO_T]: [true, true],
-  [sc.BASE_F_AUTO_T]: [false, true],
-  [sc.BASE_T_AUTO_F]: [true, false],
-  [sc.BASE_F_AUTO_F]: [false, false],
+  [sc.ST1]: [false, false],
+  [sc.ST2]: [false, true],
+  [sc.ST3]: [true, false],
+  [sc.ST4]: [true, true],
 };
-const REUSE_BASE = stategies[curStrategy][0];
-const AUTO_FREEZE = stategies[curStrategy][1];
+const AUTO_FREEZE = stategies[curStrategy][0];
+const OP_ARR = stategies[curStrategy][1]; // operate arr or not
 
 immer.setAutoFreeze(AUTO_FREEZE);
 limu.setAutoFreeze(AUTO_FREEZE);
@@ -47,30 +46,11 @@ function getBase(arrLen = ARR_LEN) {
   return util.getBase(arrLen, false);
 }
 
-let baseDataMap = null;
-function getBaseDataMap(arrLen) {
-  if (!baseDataMap) {
-    baseDataMap = {
-      immer: getBase(arrLen),
-      limu: getBase(arrLen),
-      limuFast: getBase(arrLen),
-      limuSlow: getBase(arrLen),
-      pstr: getBase(arrLen),
-      native: getBase(arrLen),
-    };
-  }
-  return baseDataMap;
-}
-
 function oneBenchmark(libName, options) {
-  const { reuseBase = REUSE_BASE, userBenchmark, arrLen } = options;
-  const start = Date.now();
+  const { userBenchmark, arrLen } = options;
   let lib = immutLibs[libName];
-  if (libName === 'mutative') {
-    lib = AUTO_FREEZE ? lib.libAuto : lib.lib;
-  }
-
-  const base = reuseBase ? getBaseDataMap(arrLen)[libName] : getBase(arrLen);
+  const base = getBase(arrLen);
+  const start = Date.now();
   userBenchmark({
     libName,
     lib,
@@ -109,14 +89,14 @@ function measureBenchmark(libName, options) {
  * @param {(params: {lib: typeof limu, base:any, operateArr:boolean, moreDeepOp:boolean })=>void} options.userBenchmark - 是否复用base
  */
 exports.runPerfCase = async function (options) {
-  const { reuseBase = REUSE_BASE, arrLen = ARR_LEN } = options;
-  console.log(`reuseBase ${reuseBase}, autoFreeze ${AUTO_FREEZE}, hasArr ${OP_ARR}, moreDeepOp ${MORE_DEEP_OP}, arrLen ${arrLen}`);
+  const { arrLen = ARR_LEN } = options;
+  console.log(`autoFreeze ${AUTO_FREEZE}, opArr ${OP_ARR}, moreDeepOp ${MORE_DEEP_OP}, arrLen ${arrLen}`);
   util.showMem('Before measure', true);
 
   measureBenchmark('immer', options);
   // speedup at: node caseOnlyRead.js
-  // measureBenchmark('limuFast', options);
-  measureBenchmark('limu', options);// now fastRangeMode is array
+  measureBenchmark('limuFast', options);
+  measureBenchmark('limu', options);// now fastRangeMode is array by default
   measureBenchmark('pstr', options);
   measureBenchmark('native', options);
 

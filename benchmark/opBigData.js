@@ -2,6 +2,7 @@
  * inspired by https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs
  */
 const { measure } = require('./_immerUtil');
+const { getBtyeLen } = require('./_util');
 const immer = require('immer');
 // const limu = require('limu');
 const { limu } = require('./libs/limu');
@@ -9,7 +10,9 @@ const { getData } = require('./dataSource');
 
 const { produce, setAutoFreeze, setUseProxies, enableAllPlugins, original, isDraft } = immer;
 enableAllPlugins()
-getData() // preheat
+
+const dataSet = getData();
+console.log(`dataSet byteSize: ${getBtyeLen(dataSet)}`,);
 
 function runBenchmark(initializeData = true) {
   if (initializeData) {
