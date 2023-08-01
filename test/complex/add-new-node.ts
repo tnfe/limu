@@ -20,4 +20,3 @@ describe('add-new-node', () => {
     expect(base.b === null).toBeTruthy();
   });
 });
-

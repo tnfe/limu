@@ -1,4 +1,3 @@
-
 import { createDraft, finishDraft } from '../_util';
 
 describe('param readOnly', () => {

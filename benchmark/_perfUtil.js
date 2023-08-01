@@ -96,7 +96,7 @@ exports.runPerfCase = async function (options) {
   measureBenchmark('immer', options);
   // speedup at: node caseOnlyRead.js
   measureBenchmark('limuFast', options);
-  measureBenchmark('limu', options);// now fastRangeMode is array by default
+  measureBenchmark('limu', options); // now fastRangeMode is array by default
   measureBenchmark('pstr', options);
   measureBenchmark('native', options);
 

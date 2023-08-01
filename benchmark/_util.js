@@ -347,4 +347,4 @@ exports.getBtyeLen = function (data) {
   const jsonStr = JSON.stringify(data);
   const byteSize = new TextEncoder().encode(jsonStr).length;
   return byteSize;
-}
+};

@@ -1,4 +1,4 @@
-import { createDraft, finishDraft, getArrBase, runTestSuit, shouldBeEqual, shouldBeNotEqual, createTestSuit } from '../_util';
+import { createDraft, createTestSuit, finishDraft, getArrBase, runTestSuit, shouldBeEqual, shouldBeNotEqual } from '../_util';
 
 function justSlice(arrDraft, arrBase) {
   const arrDraftNew = arrDraft.slice();
@@ -107,48 +107,49 @@ runTestSuit(
   },
 );
 
-
 const suit = createTestSuit('slice');
 
-suit.addTest('see slice revoke', () => {
-  const base = {
-    a: {
-      b: {
-        c: [{ n: 1 }, { n: 2 }, { n: 3 }],
+suit
+  .addTest('see slice revoke', () => {
+    const base = {
+      a: {
+        b: {
+          c: [{ n: 1 }, { n: 2 }, { n: 3 }],
+        },
       },
-    },
-  };
-  const draft = createDraft(base);
-  draft.a.b.c.push({ n: 4 });
-  expect(base.a.b.c.length === 3).toBeTruthy();
-  expect(draft.a.b.c.length === 4).toBeTruthy();
-  const cListCopy = draft.a.b.c.slice();
-  cListCopy.push({ n: 5 });
+    };
+    const draft = createDraft(base);
+    draft.a.b.c.push({ n: 4 });
+    expect(base.a.b.c.length === 3).toBeTruthy();
+    expect(draft.a.b.c.length === 4).toBeTruthy();
+    const cListCopy = draft.a.b.c.slice();
+    cListCopy.push({ n: 5 });
 
-  expect(base.a.b.c.length === 3).toBeTruthy();
-  expect(draft.a.b.c.length === 4).toBeTruthy();
-  expect(cListCopy.length === 5).toBeTruthy();
+    expect(base.a.b.c.length === 3).toBeTruthy();
+    expect(draft.a.b.c.length === 4).toBeTruthy();
+    expect(cListCopy.length === 5).toBeTruthy();
 
-  draft.a.b.c[2].n = 300;
-  expect(draft.a.b.c[2].n === 300).toBeTruthy();
-  expect(cListCopy[2].n === 300).toBeTruthy();
+    draft.a.b.c[2].n = 300;
+    expect(draft.a.b.c[2].n === 300).toBeTruthy();
+    expect(cListCopy[2].n === 300).toBeTruthy();
 
-  cListCopy[4].n = 500;
-  expect(draft.a.b.c[4] === undefined).toBeTruthy();
-  expect(cListCopy[4].n === 500).toBeTruthy();
+    cListCopy[4].n = 500;
+    expect(draft.a.b.c[4] === undefined).toBeTruthy();
+    expect(cListCopy[4].n === 500).toBeTruthy();
 
-  cListCopy[0].n = 100;
-  expect(base.a.b.c[0].n === 1).toBeTruthy();
-  expect(draft.a.b.c[0].n === 100).toBeTruthy();
-  expect(cListCopy[0].n === 100).toBeTruthy();
-
-  const next = finishDraft(draft);
-  expect(next === base).toBeFalsy();
-
-  try {
+    cListCopy[0].n = 100;
+    expect(base.a.b.c[0].n === 1).toBeTruthy();
+    expect(draft.a.b.c[0].n === 100).toBeTruthy();
     expect(cListCopy[0].n === 100).toBeTruthy();
-  } catch (err: any) {
-    console.log(err);
-    // expect(err.message.includes('Cannot perform \'get\' on a proxy that has been revoked')).toBeTruthy();
-  }
-}).run();
+
+    const next = finishDraft(draft);
+    expect(next === base).toBeFalsy();
+
+    try {
+      expect(cListCopy[0].n === 100).toBeTruthy();
+    } catch (err: any) {
+      console.log(err);
+      // expect(err.message.includes('Cannot perform \'get\' on a proxy that has been revoked')).toBeTruthy();
+    }
+  })
+  .run();

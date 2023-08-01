@@ -23,8 +23,11 @@ runPerfCase({
     if (operateArr) {
       draft.arr[draft.arr.length - 1].a = 888;
       // draft.arr.forEach((item, idx) => { // bad way
-      lib.original(draft.arr).forEach((item, idx) => { // good way
-        if (idx === 100) { draft.arr[1].a = 888; }
+      lib.original(draft.arr).forEach((item, idx) => {
+        // good way
+        if (idx === 100) {
+          draft.arr[1].a = 888;
+        }
       });
     }
 

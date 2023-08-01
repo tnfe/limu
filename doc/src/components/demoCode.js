@@ -78,7 +78,6 @@ console.log(im.d.d1); // 100，im和base始终保持数据同步
 
 `;
 
-
 export const onOperate = `
 import * as limu from 'limu';
 
@@ -141,4 +140,4 @@ export default [
   { key: 'immut', content: immut },
   { key: 'onOperate', content: onOperate },
   { key: 'benchmark', content: benchmark },
-]
+];

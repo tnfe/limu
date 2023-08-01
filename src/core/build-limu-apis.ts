@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
-import { ARRAY, CAREFUL_FNKEYS, CHANGE_FNKEYS, CAREFUL_TYPES, IMMUT_BASE, MAP, META_KEY, SET } from '../support/consts';
+import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_KEY, SET } from '../support/consts';
 import { conf } from '../support/inner-data';
 import { canBeNum, isFn, isPrimitive, isSymbol } from '../support/util';
 import { handleDataNode } from './data-node-processor';

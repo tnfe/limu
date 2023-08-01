@@ -14,11 +14,10 @@ bindLimuToGlobal();
 
 const keys = [];
 const contentMap = {};
-demoCode.forEach(item => {
+demoCode.forEach((item) => {
   keys.push(item.key);
   contentMap[item.key] = item.content;
 });
-
 
 // prism-react-renderer
 // @uiw/react-markdown-preview
@@ -45,14 +44,15 @@ function DemoArea() {
     setDemoType(e.target.value);
   };
   const checkedMap = {};
-  keys.forEach((item) => checkedMap[item] = item === demoType);
+  keys.forEach((item) => (checkedMap[item] = item === demoType));
 
   return (
     <div style={{ textAlign: 'center' }}>
       <div style={{ width: '780px', margin: '0 auto' }}>
-        {keys.map(key => (
+        {keys.map((key) => (
           <RadioBtn key={key} checked={checkedMap[key]} value={key} onClick={clickRadio}>
-            {key}{'  '}
+            {key}
+            {'  '}
           </RadioBtn>
         ))}
       </div>

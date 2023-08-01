@@ -1,15 +1,5 @@
-import {
-  createDraft,
-  current,
-  deepCopy,
-  deepFreeze,
-  finishDraft,
-  getAutoFreeze,
-  original,
-  produce,
-  immut,
-} from '../../src';
-import { assignFrozenDataInJest, strfy, noop } from '../_util';
+import { createDraft, current, deepCopy, deepFreeze, finishDraft, getAutoFreeze, immut, original, produce } from '../../src';
+import { assignFrozenDataInJest, noop, strfy } from '../_util';
 
 describe('check apis', () => {
   test('getAutoFreeze', () => {
@@ -61,7 +51,7 @@ describe('check apis', () => {
     }
 
     try {
-      const curryCb = produce(async () => { });
+      const curryCb = produce(async () => {});
       curryCb({ tip: 'react base state' });
     } catch (e: any) {
       expect(e.message).toMatch(/(?=produce callback can not be a promise function or result)/);
@@ -198,7 +188,7 @@ describe('check apis', () => {
     expect(obj.set.size === 3).toBeTruthy();
   });
 
-  test('deepFreeze: object item\'s set', () => {
+  test("deepFreeze: object item's set", () => {
     const set = new Set([{ a: 1 }, { a: 2 }]);
     const fSet = deepFreeze(set);
     expect(Object.isFrozen(set)).toBeTruthy();
@@ -218,7 +208,7 @@ describe('check apis', () => {
     expect(set.size === 2).toBeTruthy();
   });
 
-  test('deepFreeze: object item\'s set at 2nd level', () => {
+  test("deepFreeze: object item's set at 2nd level", () => {
     const obj = { set: new Set([{ a: 1 }, { a: 2 }]) };
     const fObj = deepFreeze(obj);
     expect(Object.isFrozen(fObj)).toBeTruthy();
@@ -247,8 +237,7 @@ describe('check apis', () => {
     expect(map.size === 0).toBeTruthy();
   });
 
-
-  test('deepFreeze: object item\'s map', () => {
+  test("deepFreeze: object item's map", () => {
     const map = new Map([
       [1, { a: 1 }],
       [2, { a: 2 }],

@@ -9,10 +9,10 @@ const { limu } = require('./libs/limu');
 const { getData } = require('./dataSource');
 
 const { produce, setAutoFreeze, setUseProxies, enableAllPlugins, original, isDraft } = immer;
-enableAllPlugins()
+enableAllPlugins();
 
 const dataSet = getData();
-console.log(`dataSet byteSize: ${getBtyeLen(dataSet)}`,);
+console.log(`dataSet byteSize: ${getBtyeLen(dataSet)}`);
 
 function runBenchmark(initializeData = true) {
   if (initializeData) {
@@ -23,15 +23,15 @@ function runBenchmark(initializeData = true) {
 
   const baseState = {
     data: initializeData ? getData() : null,
-    list: [{ id: 'test' }]
-  }
-  const MAX = 100
+    list: [{ id: 'test' }],
+  };
+  const MAX = 100;
 
-  const getRecipe = (lib, isDraft) => draft => {
+  const getRecipe = (lib, isDraft) => (draft) => {
     if (!initializeData) {
       draft.data = getData();
     }
-    draft.data.forEach(item => item.guid = 'test');
+    draft.data.forEach((item) => (item.guid = 'test'));
   };
   const immerRecipe = getRecipe(immer, immer.isDraft);
   const limuRecipe = getRecipe(limu, limu.limuUtils.isDraft);
@@ -63,37 +63,37 @@ function runBenchmark(initializeData = true) {
     }
   };
 
-  measure("immer (proxy) - without autofreeze * " + MAX, () => {
-    setUseProxies(true)
-    setAutoFreeze(false)
+  measure('immer (proxy) - without autofreeze * ' + MAX, () => {
+    setUseProxies(true);
+    setAutoFreeze(false);
     for (let i = 0; i < MAX; i++) {
       const next = produce(baseState, immerRecipe);
       checkUnfrozen(next);
     }
-  })
+  });
 
-  measure("limu (proxy) - without autofreeze * " + MAX, () => {
+  measure('limu (proxy) - without autofreeze * ' + MAX, () => {
     for (let i = 0; i < MAX; i++) {
       const next = limu.produce(baseState, limuRecipe, { fastModeRange: 'all' });
       checkUnfrozen(next);
     }
-  })
+  });
 
-  measure("immer (proxy) - with autofreeze * " + MAX, () => {
-    setUseProxies(true)
-    setAutoFreeze(true)
+  measure('immer (proxy) - with autofreeze * ' + MAX, () => {
+    setUseProxies(true);
+    setAutoFreeze(true);
     for (let i = 0; i < MAX; i++) {
       const next = produce(baseState, immerRecipe);
       checkFrozen(next);
     }
-  })
+  });
 
-  measure("limu (proxy) - with autofreeze * " + MAX, () => {
+  measure('limu (proxy) - with autofreeze * ' + MAX, () => {
     for (let i = 0; i < MAX; i++) {
-      const next = limu.produce(baseState, limuRecipe, { fastModeRange: 'all', autoFreeze: true })
+      const next = limu.produce(baseState, limuRecipe, { fastModeRange: 'all', autoFreeze: true });
       checkFrozen(next);
     }
-  })
+  });
 }
 
 runBenchmark(true); // init big list at base

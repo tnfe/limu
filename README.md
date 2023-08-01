@@ -21,12 +21,9 @@ It is fast, It is nearly more than **2 or 20** times faster than `immer` in diff
 
 No frozen by default, limu is 3 to 5 times or more faster than Immer in most scenarios
 
-[test 1](https://github.com/tnfe/limu/blob/main/benchmark/opBigData.js) (inspired by this [immer case](https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs) )
-![](https://user-images.githubusercontent.com/7334950/257369962-c0577e96-cb2c-48cb-8f65-c11979bfd506.png)
+[test 1](https://github.com/tnfe/limu/blob/main/benchmark/opBigData.js) (inspired by this [immer case](https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs) ) ![](https://user-images.githubusercontent.com/7334950/257369962-c0577e96-cb2c-48cb-8f65-c11979bfd506.png)
 
-[test 2](https://github.com/tnfe/limu/blob/main/benchmark/caseReadWrite.js)
-![test 2](https://user-images.githubusercontent.com/7334950/257380995-1bfc3652-1730-4ecd-ba1b-adaddd3db98d.png)
-
+[test 2](https://github.com/tnfe/limu/blob/main/benchmark/caseReadWrite.js) ![test 2](https://user-images.githubusercontent.com/7334950/257380995-1bfc3652-1730-4ecd-ba1b-adaddd3db98d.png)
 
 The performance testing process is as follows
 
@@ -129,6 +126,7 @@ loadJs('https://unpkg.com/immer@9.0.21/dist/immer.umd.production.min.js'); // lo
 Then you can paste below codes to run
 
 - case 1
+
 ```ts
 function oneCase(produce) {
   const demo = { info: Array.from(Array(10000).keys()) };
@@ -154,6 +152,7 @@ function run() {
 ```
 
 - case 2
+
 ```ts
 lib = window.limu; // or lib = window.immer
 const base = {
@@ -183,7 +182,6 @@ Higher observability will greatly improve the development and debugging experien
 And the immer or mutative expansion is like this <img width="618" alt="image" src="https://github.com/unadlib/mutative/assets/7334950/44500c66-d691-4d29-b856-fa490d2bdf8f">
 
 My conclusion is that the pursuit of extreme performance `mutative` is indeed better, and the pursuit of debugging-friendly `limu` is better. In any case, in the case of freezing, both of them are several times higher than `immer`, and respect `mutative`'s immutable Exploration ∠(° ゝ °) ❤️
-
 
 ## License
 

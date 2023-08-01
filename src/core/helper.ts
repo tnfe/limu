@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import { DraftMeta, AnyObject } from '../inner-types';
+import { AnyObject, DraftMeta } from '../inner-types';
 import { ARRAY, MAP, oppositeOps, PROXYITEM_FNKEYS, SET } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { makeCopyWithMeta } from './copy';
@@ -11,10 +11,7 @@ import { attachMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(baseData: any, options: any) {
-  const {
-    finishDraft = noop, ver, traps, parentType, parentMeta, key,
-    fastModeRange, immutBase, extraProps, compareVer = false,
-  } = options;
+  const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase, extraProps, compareVer = false } = options;
   const meta = newMeta(baseData, {
     finishDraft,
     ver,
@@ -53,8 +50,20 @@ export function shouldGenerateProxyItems(parentType: any, key: any) {
 
 export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & AnyObject) {
   const {
-    key, parentMeta, ver, traps, parent, patches, inversePatches, usePatches,
-    parentType, fastModeRange, immutBase, readOnly, extraProps, compareVer,
+    key,
+    parentMeta,
+    ver,
+    traps,
+    parent,
+    patches,
+    inversePatches,
+    usePatches,
+    parentType,
+    fastModeRange,
+    immutBase,
+    readOnly,
+    extraProps,
+    compareVer,
   } = options;
   let curVal = val;
 
@@ -163,7 +172,7 @@ export function getUnProxyValue(value: any) {
   return valueMeta.copy;
 }
 
-export function recordPatch(options: { meta: DraftMeta;[key: string]: any }) {
+export function recordPatch(options: { meta: DraftMeta; [key: string]: any }) {
   // TODO: to be implement in the future
   noop(options, oppositeOps);
 }

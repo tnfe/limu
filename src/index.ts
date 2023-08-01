@@ -6,14 +6,12 @@
 import { buildLimuApis } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
-import { getDraftMeta, isDraft as isDraftFn, isDiff as isDiffFn, shallowCompare as shallowCompareFn } from './core/meta';
+import { getDraftMeta, isDiff as isDiffFn, isDraft as isDraftFn, shallowCompare as shallowCompareFn } from './core/meta';
 import { current as currentFn, original as originalFn } from './core/user-util';
 import type { ICreateDraftOptions, IInnerCreateDraftOptions, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
-import {
-  noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
-} from './support/util';
+import { canBeNum, isFn, isMap, isObject, isPrimitive, isPromiseFn, isPromiseResult, isSet, isSymbol, noop } from './support/util';
 
 // 避免降到测试覆盖率
 // export { getDraftMeta, isDraft, isDiff, shallowCompare }
@@ -45,8 +43,20 @@ export const shallowCompare = shallowCompareFn;
  * ```
  */
 export const limuUtils = {
-  noop, isObject, isMap, isSet, isFn, isPrimitive, isPromiseFn, isPromiseResult, isSymbol, canBeNum,
-  isDraft, isDiff, shallowCompare, getDraftMeta,
+  noop,
+  isObject,
+  isMap,
+  isSet,
+  isFn,
+  isPrimitive,
+  isPromiseFn,
+  isPromiseResult,
+  isSymbol,
+  canBeNum,
+  isDraft,
+  isDiff,
+  shallowCompare,
+  getDraftMeta,
 };
 
 type LimuApis = ReturnType<typeof buildLimuApis>;

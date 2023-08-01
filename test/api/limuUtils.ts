@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { limuUtils, immut, createDraft, finishDraft } from '../../src';
+import { createDraft, finishDraft, immut, limuUtils } from '../../src';
 
-const normalShallowCompare = (a,b)=>limuUtils.shallowCompare(a, b, false);
+const normalShallowCompare = (a, b) => limuUtils.shallowCompare(a, b, false);
 
 describe('check apis', () => {
   test('limuUtils', () => {
@@ -92,7 +92,6 @@ describe('check apis', () => {
     expect(isDiff(base.b, next.b)).toBeFalsy();
     expect(isDiff(im.b, next.b)).toBeFalsy();
   });
-
 
   test('isDiff: compareVer', () => {
     const { isDiff } = limuUtils;

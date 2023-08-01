@@ -327,7 +327,6 @@ export function clone(obj: any) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-
 export function createTestSuit(descStr) {
   const tests = [];
   const result = {
@@ -337,7 +336,7 @@ export function createTestSuit(descStr) {
     },
     run() {
       describe(descStr, () => {
-        tests.forEach(item => {
+        tests.forEach((item) => {
           test(item.label, item.cb);
         });
       });

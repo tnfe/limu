@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta, AnyObject } from '../inner-types';
+import type { AnyObject, DraftMeta } from '../inner-types';
 import {
   ARRAY,
   CAREFUL_FNKEYS,

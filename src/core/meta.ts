@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta, ObjectLike, AnyObject } from '../inner-types';
+import type { AnyObject, DraftMeta, ObjectLike } from '../inner-types';
 import { META_KEY } from '../support/consts';
 import { verWrap } from '../support/inner-data';
 import { getDataType, injectMetaProto, isPrimitive, noop } from '../support/util';
@@ -132,7 +132,7 @@ export function getSafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: 
 
 export function getDraftMeta<T extends any = any>(proxyDraft: T): DraftMeta<any> | null {
   // @ts-ignore
-  return proxyDraft ? (proxyDraft[META_KEY] || null) : null;
+  return proxyDraft ? proxyDraft[META_KEY] || null : null;
 }
 
 export function isDiff(val1: any, val2: any) {
@@ -143,12 +143,21 @@ export function isDiff(val1: any, val2: any) {
   }
 
   const {
-    self: self1, modified: modified1, compareVer: cv1, ver: ver1, level: level1,
+    self: self1,
+    modified: modified1,
+    compareVer: cv1,
+    ver: ver1,
+    level: level1,
   } = meta1 || { self: val1, modified: false, compareVer: false, ver: '0', level: 0 };
   const {
-    self: self2, modified: modified2, compareVer: cv2, ver: ver2, level: level2,
+    self: self2,
+    modified: modified2,
+    compareVer: cv2,
+    ver: ver2,
+    level: level2,
   } = meta2 || { self: val2, modified: false, compareVer: false, ver: '0', level: 0 };
-  if (self1 !== self2) { // self 是内部维护的值，可不用 Object.is 判断
+  if (self1 !== self2) {
+    // self 是内部维护的值，可不用 Object.is 判断
     return true;
   }
   if ((cv1 || cv2) && (level1 === 0 || level2 === 0) && ver1 !== ver2) {

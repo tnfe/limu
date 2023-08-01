@@ -6,7 +6,7 @@ sidebar_position: 0
 
 :::tip
 
-😄 略以下阅读，跳转至👉🏼 ** [常用api](/docs/api/basic) **
+😄 略以下阅读，跳转至 👉🏼 ** [常用 api](/docs/api/basic) **
 
 :::
 
@@ -41,12 +41,11 @@ node opBigData.js // 触发测试执行，控制台回显结果
 node caseReadWrite.js
 ```
 
-我们准备两个用例，一个改编自immer官方的性能测试[案例](https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs)
+我们准备两个用例，一个改编自 immer 官方的性能测试[案例](https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs)
 
-执行 `node opBigData.js` 得到如下结果
-![](https://user-images.githubusercontent.com/7334950/257369962-c0577e96-cb2c-48cb-8f65-c11979bfd506.png)
+执行 `node opBigData.js` 得到如下结果 ![](https://user-images.githubusercontent.com/7334950/257369962-c0577e96-cb2c-48cb-8f65-c11979bfd506.png)
 
-一个是我们自己准备的深层次json读写案例，结果如下
+一个是我们自己准备的深层次 json 读写案例，结果如下
 
 ![test 2](https://user-images.githubusercontent.com/7334950/257380995-1bfc3652-1730-4ecd-ba1b-adaddd3db98d.png)
 

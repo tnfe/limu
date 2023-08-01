@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { FastModeRange, ObjectLike, DataType } from '../inner-types';
+import type { DataType, FastModeRange, ObjectLike } from '../inner-types';
 import { ARRAY } from '../support/consts';
 import { isMap, isObject, isPrimitive, isSet } from '../support/util';
 import { attachMeta } from './meta';

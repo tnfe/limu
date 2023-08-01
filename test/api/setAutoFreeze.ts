@@ -30,7 +30,9 @@ describe('set autoFreeze', () => {
     base.key = 100; // base is unfrozen
     expect(base.key).toBe(100);
 
-    readOnlyErr(() => { final.key = 100 });// final is frozen
+    readOnlyErr(() => {
+      final.key = 100;
+    }); // final is frozen
     expect(final.key === 2).toBeTruthy();
   });
 
@@ -50,12 +52,19 @@ describe('set autoFreeze', () => {
     base.a = 100; // base is unfrozen
     expect(base.a).toBe(100);
 
-    readOnlyErr(() => { final.a.b.c = 200 });// final is frozen
+    readOnlyErr(() => {
+      final.a.b.c = 200;
+    }); // final is frozen
     expect(final.a.b.c === 2).toBeTruthy();
   });
 
   test('produce object list at 2 level', () => {
-    const base = { data: [{ id: 1, name: '1' }, { id: 2, name: '2' }] };
+    const base = {
+      data: [
+        { id: 1, name: '1' },
+        { id: 2, name: '2' },
+      ],
+    };
     const final = produce(
       base,
       (draft) => {
@@ -68,8 +77,12 @@ describe('set autoFreeze', () => {
     expect(final.data[0].name === '111').toBeTruthy();
     expect(final.data.length === 3).toBeTruthy();
 
-    readOnlyErr(() => { final.data[0].name === '222' });// final is frozen
-    readOnlyErr(() => { final.data[2].name === '333' });// final is frozen
+    readOnlyErr(() => {
+      final.data[0].name === '222';
+    }); // final is frozen
+    readOnlyErr(() => {
+      final.data[2].name === '333';
+    }); // final is frozen
   });
 
   test('produce curry', () => {
