@@ -87,6 +87,7 @@ export interface IProduce {
 //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
 // }
 
+/** limu 的版本号 */
 export const VER = v;
 
 /**
@@ -161,8 +162,14 @@ export const produce = produceFn as unknown as IProduce;
 // to be implemented in the future
 // export const produceWithPatches = producePatchesFn as unknown as IProduceWithPatches;
 
+/**
+ * 深冻结传入的值，返回的是冻结后的新值，如传入原始值则不做任何操作，原样返回
+ */
 export const deepFreeze = deepFreezeFn;
 
+/**
+ * 对传入值做深克隆，返回的是克隆后的新值，如传入原始值则不做任何操作，原样返回
+ */
 export function deepCopy<T extends ObjectLike>(obj: T) {
   return deepCopyFn(obj);
 }
@@ -185,12 +192,22 @@ export function setAutoFreeze(autoFreeze: boolean) {
   conf.autoFreeze = autoFreeze;
 }
 
+/**
+ * 获取全局设置的 autoFreeze 值
+ */
 export function getAutoFreeze() {
   return conf.autoFreeze;
 }
 
+/**
+ * 查看草稿对应的原始值
+ */
 export const original = originalFn;
 
+/**
+ * 导出草稿的副本数据（ 即深克隆当前草稿 ）
+ */
 export const current = currentFn;
 
-export default produce;
+// disable [export default], let esModuleInterop=true, allowSyntheticDefaultImports=true works in tsconfig.json
+// export default produce;

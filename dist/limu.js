@@ -11,7 +11,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const VER$1 = '3.5.5';
+  const VER$1 = '3.5.6';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -1090,6 +1090,7 @@
   // export interface IProduceWithPatches {
   //   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
   // }
+  /** limu 的版本号 */
   const VER = VER$1;
   /**
    * 创建草稿函数，可对返回的草稿对象直接修改，此修改不会影响原始对象
@@ -1154,7 +1155,13 @@
   const produce = produceFn;
   // to be implemented in the future
   // export const produceWithPatches = producePatchesFn as unknown as IProduceWithPatches;
+  /**
+   * 深冻结传入的值，返回的是冻结后的新值，如传入原始值则不做任何操作，原样返回
+   */
   const deepFreeze = deepFreeze$1;
+  /**
+   * 对传入值做深克隆，返回的是克隆后的新值，如传入原始值则不做任何操作，原样返回
+   */
   function deepCopy(obj) {
     return deepCopy$1(obj);
   }
@@ -1174,18 +1181,28 @@
   function setAutoFreeze(autoFreeze) {
     conf.autoFreeze = autoFreeze;
   }
+  /**
+   * 获取全局设置的 autoFreeze 值
+   */
   function getAutoFreeze() {
     return conf.autoFreeze;
   }
+  /**
+   * 查看草稿对应的原始值
+   */
   const original = original$1;
+  /**
+   * 导出草稿的副本数据（ 即深克隆当前草稿 ）
+   */
   const current = current$1;
+  // disable [export default], let esModuleInterop=true, allowSyntheticDefaultImports=true works in tsconfig.json
+  // export default produce;
 
   exports.VER = VER;
   exports.createDraft = createDraft;
   exports.current = current;
   exports.deepCopy = deepCopy;
   exports.deepFreeze = deepFreeze;
-  exports['default'] = produce;
   exports.finishDraft = finishDraft;
   exports.getAutoFreeze = getAutoFreeze;
   exports.immut = immut;

@@ -8,12 +8,6 @@ import '@site/src/utils/bindLimu';
 
 不影响基础数据，同步生成下一份数据的接口
 
-`limu`默认导出 produce
-
-```ts
-import produce from 'limu';
-```
-
 也可以使用具名导出
 
 ```ts
