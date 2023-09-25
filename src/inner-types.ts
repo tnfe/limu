@@ -22,9 +22,12 @@ export interface DraftMeta<T extends AnyObject = AnyObject> {
   self: T;
   copy: T;
   modified: boolean;
+  /** 记录数组顺序是否发生变化，辅助数组结构的数据在 clearScopes 阶段决策如何重赋值 */
+  isArrOrderChanged: boolean;
   isImmutBase: boolean;
   isDel: boolean;
   isFast: boolean;
+  /** 记录某些key对应值是否是一个全新节点 */
   newNodeStats: AnyObject<boolean>;
   // TODO: 探索使用linkCount代替isDel，看是否能解决多引用问题
   linkCount: number;

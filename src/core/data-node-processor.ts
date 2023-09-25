@@ -7,6 +7,7 @@ import type { AnyObject, DraftMeta } from '../inner-types';
 import {
   ARRAY,
   CAREFUL_FNKEYS,
+  CHANGE_ARR_ORDER_METHODS,
   MAP,
   SET,
   SHOULD_REASSIGN_ARR_METHODS,
@@ -63,6 +64,9 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
     // slice 操作无需使用 copy，返回自身即可
     if ('slice' === op) {
       return self.slice;
+    }
+    if (CHANGE_ARR_ORDER_METHODS.includes(op)) {
+      parentMeta.isArrOrderChanged = true;
     }
     if (parentCopy) {
       // 因为 Map 和 Set 里的对象不能直接操作修改，是通过 set 调用来修改的

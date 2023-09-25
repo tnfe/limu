@@ -176,6 +176,7 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
   getBase: () => T,
   operateDraft: (draft: T, base: T) => void,
   executeAssertLogic?: (final: T, base: T) => void,
+  options?: any,
 ) {
   // @ts-ignore sort test case only works for limu cause its shallow copy on read mechanism
   if (testCaseDesc.includes('ordered sort') && !limu.Limu) {
@@ -186,7 +187,7 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
   describe(testSuitDesc, () => {
     test(createDraftTip(testCaseDesc), () => {
       const base = getBase();
-      const draft = createDraft(base);
+      const draft = createDraft(base, options);
       operateDraft(draft, base);
       const final = finishDraft(draft);
       if (executeAssertLogic) executeAssertLogic(final, base);
@@ -195,9 +196,13 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
     if (RUN_PRODUCE) {
       test(produceTip(testCaseDesc), () => {
         const base = getBase();
-        const final = produce(base, (draft) => {
-          operateDraft(draft, base);
-        });
+        const final = produce(
+          base,
+          (draft) => {
+            operateDraft(draft, base);
+          },
+          options,
+        );
         if (executeAssertLogic) executeAssertLogic(final, base);
       });
     }

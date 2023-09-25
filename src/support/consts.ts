@@ -11,7 +11,7 @@ import type { DataType } from '../inner-types';
  */
 export const LIMU_MAJOR_VER = 3;
 
-export const VER = '3.5.7';
+export const VER = '3.5.8';
 
 // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
 export const META_KEY = Symbol('M');
@@ -56,6 +56,8 @@ export const SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'u
 export const SHOULD_REASSIGN_MAP_METHODS = ['set', 'clear', 'delete'];
 
 export const SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
+
+export const CHANGE_ARR_ORDER_METHODS = ['splice', 'sort', 'unshift', 'shift'];
 
 export const arrFnKeys = [
   'concat',

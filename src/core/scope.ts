@@ -8,6 +8,21 @@ import { ARRAY, MAP, META_KEY, SET } from '../support/consts';
 import { isObject } from '../support/util';
 import { getSafeDraftMeta } from './meta';
 
+function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targetNode: any; key: any }) {
+  const { copy, isArrOrderChanged } = listMeta;
+  const { targetNode, key } = ctx;
+  // 数组顺序已变化
+  if (isArrOrderChanged) {
+    const key = copy.findIndex((item: any) => item === itemMeta.copy);
+    if (key >= 0) {
+      copy[key] = targetNode;
+    }
+    return;
+  }
+
+  copy[key] = targetNode;
+}
+
 export function isInSameScope(mayDraftNode: any, callerScopeVer: string) {
   if (!isObject(mayDraftNode)) {
     return true;
@@ -45,7 +60,7 @@ export function clearScopes(rootMeta: DraftMeta) {
       return revoke();
     }
     if (parentType === ARRAY) {
-      parentCopy[key] = targetNode;
+      ressignArrayItem(parentMeta, meta, { targetNode, key });
       return revoke();
     }
     if (isDel !== true) {

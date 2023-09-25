@@ -74,6 +74,7 @@ export function newMeta(baseData: any, options: any) {
     isImmutBase: immutBase,
     isDel: false,
     isFast: false,
+    isArrOrderChanged: false,
     newNodeStats: {},
     linkCount: 1,
     finishDraft,
@@ -168,7 +169,7 @@ export function isDiff(val1: any, val2: any) {
 }
 
 /**
- * 浅比较两个对象，除了专用于比较 helux 生成的代理对象，此函数既可以比较普通对象
+ * 浅比较两个对象，除了专用于比较 helux 生成的代理对象，此函数还可以比较普通对象
  * ```txt
  * true：两个对象一样
  * false：两个对象不一样

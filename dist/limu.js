@@ -11,7 +11,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const VER$1 = '3.5.7';
+  const VER$1 = '3.5.8';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -34,6 +34,7 @@
   const SHOULD_REASSIGN_ARR_METHODS = ['push', 'pop', 'shift', 'splice', 'unshift', 'reverse', 'copyWithin', 'delete', 'fill'];
   const SHOULD_REASSIGN_MAP_METHODS = ['set', 'clear', 'delete'];
   const SHOULD_REASSIGN_SET_METHODS = ['add', 'clear', 'delete'];
+  const CHANGE_ARR_ORDER_METHODS = ['splice', 'sort', 'unshift', 'shift'];
   const arrFnKeys = [
     'concat',
     'copyWithin',
@@ -217,6 +218,7 @@
       isImmutBase: immutBase,
       isDel: false,
       isFast: false,
+      isArrOrderChanged: false,
       newNodeStats: {},
       linkCount: 1,
       finishDraft,
@@ -299,7 +301,7 @@
     return modified1 || modified2;
   }
   /**
-   * 浅比较两个对象，除了专用于比较 helux 生成的代理对象，此函数既可以比较普通对象
+   * 浅比较两个对象，除了专用于比较 helux 生成的代理对象，此函数还可以比较普通对象
    * ```txt
    * true：两个对象一样
    * false：两个对象不一样
@@ -383,6 +385,19 @@
     return { copy, fast };
   }
 
+  function ressignArrayItem(listMeta, itemMeta, ctx) {
+    const { copy, isArrOrderChanged } = listMeta;
+    const { targetNode, key } = ctx;
+    // 数组顺序已变化
+    if (isArrOrderChanged) {
+      const key = copy.findIndex((item) => item === itemMeta.copy);
+      if (key >= 0) {
+        copy[key] = targetNode;
+      }
+      return;
+    }
+    copy[key] = targetNode;
+  }
   function isInSameScope(mayDraftNode, callerScopeVer) {
     if (!isObject(mayDraftNode)) {
       return true;
@@ -415,7 +430,7 @@
         return revoke();
       }
       if (parentType === ARRAY) {
-        parentCopy[key] = targetNode;
+        ressignArrayItem(parentMeta, meta, { targetNode, key });
         return revoke();
       }
       if (isDel !== true) {
@@ -672,6 +687,9 @@
       // slice 操作无需使用 copy，返回自身即可
       if ('slice' === op) {
         return self.slice;
+      }
+      if (CHANGE_ARR_ORDER_METHODS.includes(op)) {
+        parentMeta.isArrOrderChanged = true;
       }
       if (parentCopy) {
         // 因为 Map 和 Set 里的对象不能直接操作修改，是通过 set 调用来修改的
