@@ -12,7 +12,7 @@ It is fast, It is nearly more than **2 or 20** times faster than `immer` in diff
 
 - Debugging friendly, view draft directly anytime without `current`.
 - Smaller package, only 4.3kb gzip.
-- No freeze by default, At least 10 times faster than immer at this situation.
+- No freeze by default, faster than `immer` in different situations.
 - Natural Support for map and Set.
 
 > Pay attention, limu can only run on JavaScript runtime that supports proxy
