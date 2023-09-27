@@ -11,7 +11,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const VER$1 = '3.5.8';
+  const VER$1 = '3.6.0';
   // 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
   const META_KEY = Symbol('M');
   const IMMUT_BASE = Symbol('IMMUT_BASE');
@@ -792,10 +792,6 @@
   // 避免 Cannot set property size of #<Set> which has only a getter
   const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
   const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
-  function warnReadOnly() {
-    console.error('can not mutate state at readOnly mode!');
-    return true;
-  }
   function buildLimuApis(options) {
     var _a, _b, _c, _d, _e;
     const opts = options || {};
@@ -805,22 +801,40 @@
     const immutBase = (_a = opts[IMMUT_BASE]) !== null && _a !== void 0 ? _a : false;
     const extraProps = opts.extraProps || null;
     const readOnly = (_b = opts.readOnly) !== null && _b !== void 0 ? _b : false;
+    const disableWarn = opts.disableWarn;
     const compareVer = (_c = opts.compareVer) !== null && _c !== void 0 ? _c : false;
     // 调用那一刻起，确定 autoFreeze 值
     // allow user overwrite autoFreeze setting in current call process
     const autoFreeze = (_d = opts.autoFreeze) !== null && _d !== void 0 ? _d : conf.autoFreeze;
     // 暂未实现 to be implemented in the future
     const usePatches = (_e = opts.usePatches) !== null && _e !== void 0 ? _e : conf.usePatches;
-    const execOnOperate = (op, key, parentMeta) => {
+    const warnReadOnly = () => {
+      if (!disableWarn) {
+        console.warn('can not mutate state at readOnly mode!');
+      }
+      return true;
+    };
+    const execOnOperate = (op, key, options) => {
+      const { parentMeta } = options;
       if (!parentMeta || !onOperate) return;
       const { selfType, keyPath, self, copy } = parentMeta;
-      const fnKeys = CAREFUL_FNKEYS[selfType] || [];
-      let isChange = op !== 'get';
+      let value = null;
+      let isChange = false;
       let isBuiltInFnKey = false;
-      if (fnKeys.includes(key)) {
-        isBuiltInFnKey = true;
-        const changeFnKeys = CHANGE_FNKEYS[selfType] || [];
-        isChange = changeFnKeys.includes(key);
+      // 优先采用显式传递的 isChange
+      if (options.isChange !== undefined) {
+        // 内部调用时 isChange 和 value 总是一起设定
+        isChange = options.isChange;
+        value = options.value;
+      } else {
+        const fnKeys = CAREFUL_FNKEYS[selfType] || [];
+        isChange = op !== 'get';
+        if (fnKeys.includes(key)) {
+          isBuiltInFnKey = true;
+          const changeFnKeys = CHANGE_FNKEYS[selfType] || [];
+          isChange = changeFnKeys.includes(key);
+        }
+        value = copy[key] || self[key];
       }
       onOperate({
         parentType: selfType,
@@ -830,7 +844,7 @@
         key,
         keyPath,
         fullKeyPath: keyPath.concat(key),
-        value: copy[key] || self[key],
+        value,
       });
     };
     const limuApis = (() => {
@@ -890,7 +904,7 @@
           // 用下标取数组时，可直接返回
           // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
           if (parentType === ARRAY && canBeNum(key)) {
-            execOnOperate('get', key, parentMeta);
+            execOnOperate('get', key, { parentMeta });
             return currentChildVal;
           }
           // @ts-ignore
@@ -907,18 +921,16 @@
               parentType,
               parentMeta,
             });
-            execOnOperate('get', key, parentMeta);
+            execOnOperate('get', key, { parentMeta });
             return currentChildVal;
           }
-          execOnOperate('get', key, parentMeta);
+          execOnOperate('get', key, { parentMeta });
           return currentChildVal;
         },
         // parent 指向的是代理之前的对象
         set: (parent, key, value) => {
           let targetValue = value;
-          if (readOnly) {
-            return warnReadOnly();
-          }
+          const parentMeta = getSafeDraftMeta(parent);
           if (isDraft$1(value)) {
             // see case debug/complex/set-draft-node
             if (isInSameScope(value, metaVer)) {
@@ -932,15 +944,18 @@
               canFreezeDraft = false;
             }
           }
+          if (readOnly) {
+            execOnOperate('set', key, { parentMeta, isChange: false, value: targetValue });
+            return warnReadOnly();
+          }
           // speed up array operation
-          const parentMeta = getSafeDraftMeta(parent);
           // implement this in the future
           // recordPatch({ meta, patches, inversePatches, usePatches, op: key, value });
           if (parentMeta && parentMeta.selfType === ARRAY) {
             // @ts-ignore
             if (parentMeta.copy && parentMeta.__callSet && canBeNum(key)) {
               parentMeta.copy[key] = targetValue;
-              execOnOperate('set', key, parentMeta);
+              execOnOperate('set', key, { parentMeta });
               return true;
             }
             // @ts-ignore, mark is set called on parent node
@@ -953,15 +968,16 @@
             metaVer,
             calledBy: 'set',
           });
-          execOnOperate('set', key, parentMeta);
+          execOnOperate('set', key, { parentMeta });
           return true;
         },
         // delete or Reflect.deleteProperty will trigger this trap
         deleteProperty: (parent, key) => {
+          const parentMeta = getSafeDraftMeta(parent);
           if (readOnly) {
+            execOnOperate('del', key, { parentMeta, isChange: false });
             return warnReadOnly();
           }
-          const parentMeta = getSafeDraftMeta(parent);
           handleDataNode(parent, {
             parentMeta,
             op: 'del',
@@ -970,7 +986,7 @@
             metaVer,
             calledBy: 'deleteProperty',
           });
-          execOnOperate('del', key, parentMeta);
+          execOnOperate('del', key, { parentMeta });
           return true;
         },
         // trap function call

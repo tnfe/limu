@@ -114,6 +114,10 @@ export interface ICreateDraftOptions {
    */
   compareVer?: boolean;
   extraProps?: AnyObject;
+  /**
+   * defaut: false, there will be no warn tip in the console for changing immut object while set disableWarn true
+   */
+  disableWarn?: boolean;
 }
 
 export interface IInnerCreateDraftOptions extends ICreateDraftOptions {

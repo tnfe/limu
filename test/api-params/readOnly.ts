@@ -9,7 +9,9 @@ describe('param readOnly', () => {
     const draft = createDraft(base, {
       readOnly: true,
       onOperate(opParams) {
-        getHit += 1; // only get under readOnly=true mode
+        if (opParams.op === 'get') {
+          getHit += 1;
+        }
         if (opParams.op === 'del') {
           delHit += 1;
         }
@@ -36,7 +38,7 @@ describe('param readOnly', () => {
     expect(base.a === undefined).toBeTruthy();
 
     expect(getHit === 12).toBeTruthy();
-    expect(delHit === 0).toBeTruthy();
+    expect(delHit === 1).toBeTruthy();
 
     const next = finishDraft(draft);
     expect(next === base).toBeTruthy();
