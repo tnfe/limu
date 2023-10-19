@@ -3,10 +3,58 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DataType } from '../inner-types';
+import type { DataType, ObjectLike } from '../inner-types';
 import { ARR_DESC, desc2dataType, FN_DESC, MAP_DESC, OBJ_DESC, SET_DESC } from './consts';
 
 export const toString = Object.prototype.toString;
+
+const canUseReflect = !!Reflect;
+const hasProp = Object.prototype.hasOwnProperty;
+
+export function has(obj: any, key: any) {
+  if (canUseReflect) {
+    return Reflect.has(obj, key);
+  }
+  return hasProp.call(obj, key);
+}
+
+export function deepDrill<T extends ObjectLike>(obj: T, parentObj: any, key: any, subObjCb: (obj: any, parentObj: any, key: any) => void) {
+  const innerDeep = (obj: any, parentObj: any, key: any) => {
+    if (isPrimitive(obj)) {
+      return;
+    }
+    subObjCb(obj, parentObj, key);
+
+    // const drillThenCb = (obj: any, parentObj: any, key: any) => {
+    //   innerDeep(obj, parentObj, key);
+    //   subObjCb(obj, parentObj, key);
+    // };
+
+    if (Array.isArray(obj)) {
+      obj.forEach((item: any, idx: number) => {
+        innerDeep(item, obj, idx);
+      });
+    }
+    // TODO 处理 set
+    // if (isSet(obj)) {
+    //   obj.forEach((item: any) => {
+    //     subObjCb(item, obj, idx);
+    //   });
+    // }
+    if (isMap(obj)) {
+      obj.forEach((value: any, key: any) => {
+        innerDeep(value, obj, key);
+      });
+    }
+    if (isObject(obj)) {
+      Object.keys(obj).forEach((key) => {
+        innerDeep(obj[key], obj, key);
+      });
+    }
+  };
+
+  innerDeep(obj, parentObj, key);
+}
 
 export function getValStrDesc(val: any) {
   // return Array.isArray(val) ? ARR_DESC : toString.call(val);
@@ -71,13 +119,10 @@ const descProto: Record<string, any> = {
   [FN_DESC]: Function.prototype,
 };
 
-export function injectMetaProto(rawObj: any, extraProps?: any) {
+export function injectMetaProto(rawObj: any) {
   const desc = getValStrDesc(rawObj);
   const rootProto = descProto[desc] || Object.prototype;
   const pureObj = Object.create(null);
-  if (extraProps) {
-    Object.assign(pureObj, extraProps);
-  }
   Object.setPrototypeOf(pureObj, rootProto);
   Object.setPrototypeOf(rawObj, pureObj);
   return rawObj;

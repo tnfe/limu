@@ -3,10 +3,12 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { AnyObject, DraftMeta, ObjectLike } from '../inner-types';
-import { META_KEY } from '../support/consts';
+import type { AnyObject, DraftMeta, IApiCtx, ObjectLike, RootCtx } from '../inner-types';
+import { META_KEY, META_VER } from '../support/consts';
 import { verWrap } from '../support/inner-data';
-import { getDataType, injectMetaProto, isPrimitive, noop } from '../support/util';
+import { getDataType, injectMetaProto, noop } from '../support/util';
+
+export const ROOT_CTX: RootCtx = new Map();
 
 export function markModified(meta: DraftMeta) {
   meta.rootMeta.modified = true;
@@ -20,19 +22,24 @@ export function markModified(meta: DraftMeta) {
   doMark(meta);
 }
 
-export function attachMeta(dataNode: any, meta: DraftMeta, fast: boolean, extraProps?: any) {
-  if (fast) {
-    dataNode[META_KEY] = meta; // speed up read performance, especially for array forEach scene
-  } else {
-    injectMetaProto(dataNode, extraProps);
-    dataNode.__proto__[META_KEY] = meta;
+export function attachMeta(dataNode: any, meta: DraftMeta, options: { fast: boolean; apiCtx: IApiCtx }) {
+  if (options.apiCtx.debug) {
+    const { fast } = options;
+    // speed up read performance when debug is true, especially for array forEach scene
+    if (fast) {
+      dataNode[META_KEY] = meta;
+    } else {
+      injectMetaProto(dataNode);
+      dataNode.__proto__[META_KEY] = meta;
+    }
   }
+
   return dataNode;
 }
 
-export function getKeyPath(draftNode: any, curKey: string) {
+export function getKeyPath(draftNode: any, curKey: string, apiCtx: IApiCtx) {
   const pathArr: string[] = [curKey];
-  const meta = getSafeDraftMeta(draftNode);
+  const meta = getSafeDraftMeta(draftNode, apiCtx);
   if (meta && meta.level > 0) {
     const { keyPath } = meta;
     return [...keyPath, curKey];
@@ -41,7 +48,7 @@ export function getKeyPath(draftNode: any, curKey: string) {
 }
 
 export function newMeta(baseData: any, options: any) {
-  const { finishDraft, ver, parentMeta = null, key, immutBase, compareVer } = options;
+  const { ver, parentMeta = null, key, immutBase, compareVer, apiCtx } = options;
   const dataType = getDataType(baseData);
 
   let keyPath: string[] = [];
@@ -49,8 +56,8 @@ export function newMeta(baseData: any, options: any) {
   let copy = null;
   if (parentMeta) {
     copy = parentMeta.copy;
-    level = getNextMetaLevel(copy);
-    keyPath = getKeyPath(copy, key);
+    level = getNextMetaLevel(copy, apiCtx);
+    keyPath = getKeyPath(copy, key, apiCtx);
   }
 
   const meta: DraftMeta = {
@@ -76,8 +83,9 @@ export function newMeta(baseData: any, options: any) {
     isFast: false,
     isArrOrderChanged: false,
     newNodeStats: {},
+    newNodeMap: new Map(),
+    newNodes: [],
     linkCount: 1,
-    finishDraft,
     ver,
     compareVer,
     revoke: noop,
@@ -87,20 +95,15 @@ export function newMeta(baseData: any, options: any) {
   } else {
     meta.rootMeta = parentMeta.rootMeta;
   }
+
   return meta;
 }
 
 /**
- * 是否是 proxy 代理指向的草稿对象
- * @param mayDraft
- * @returns
+ * 是否是一个草稿对象代理节点
  */
 export function isDraft(mayDraft: any) {
-  if (isPrimitive(mayDraft)) {
-    return false;
-  }
-
-  const meta = getDraftMeta(mayDraft);
+  const meta = getDraftProxyMeta(mayDraft);
   if (!meta) {
     return false;
   }
@@ -121,24 +124,41 @@ export function genMetaVer() {
   return metaVer;
 }
 
-export function getNextMetaLevel(mayContainMetaObj: any) {
-  const meta = getDraftMeta(mayContainMetaObj);
+export function getNextMetaLevel(mayContainMetaObj: any, apiCtx: IApiCtx) {
+  const meta = getDraftMeta(mayContainMetaObj, apiCtx);
   return meta ? meta.level + 1 : 1;
 }
 
-export function getSafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T): DraftMeta<T> {
+export function getSafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T, apiCtx: IApiCtx): DraftMeta<T> {
   // @ts-ignore
-  return proxyDraft[META_KEY];
+  return apiCtx.metaMap.get(proxyDraft);
 }
 
-export function getDraftMeta<T extends any = any>(proxyDraft: T): DraftMeta<any> | null {
-  // @ts-ignore
-  return proxyDraft ? proxyDraft[META_KEY] || null : null;
+export function getDraftMeta(proxyDraft: any, apiCtx?: IApiCtx): DraftMeta<any> | null {
+  let apiCtxVar = apiCtx || getApiCtx(proxyDraft);
+  return apiCtxVar?.metaMap.get(proxyDraft) || null;
+}
+
+export function getMetaVer(mayDraftProxy: any): string {
+  return mayDraftProxy ? mayDraftProxy[META_VER] || '' : '';
+}
+
+export function getApiCtx(mayDraftProxy: any) {
+  const ver = getMetaVer(mayDraftProxy);
+  return ROOT_CTX.get(ver) || null;
+}
+
+export function getDraftProxyMeta(mayDraftProxy: any) {
+  const apiCtx = getApiCtx(mayDraftProxy);
+  if (!apiCtx) {
+    return null;
+  }
+  return apiCtx.metaMap.get(mayDraftProxy) || null;
 }
 
 export function isDiff(val1: any, val2: any) {
-  const meta1 = getDraftMeta(val1);
-  const meta2 = getDraftMeta(val2);
+  const meta1 = getDraftProxyMeta(val1);
+  const meta2 = getDraftProxyMeta(val2);
   if (!meta1 && !meta2) {
     return !Object.is(val1, val2);
   }

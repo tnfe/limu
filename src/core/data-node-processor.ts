@@ -32,15 +32,22 @@ function mayMarkModified(options: { calledBy: string; parentMeta: DraftMeta; op:
   }
 }
 
+function getValPathKey(parentMeta: DraftMeta, key: string) {
+  const pathCopy = parentMeta.keyPath.slice();
+  pathCopy.push(key);
+  const valPathKey = pathCopy.join('|');
+  return valPathKey;
+}
+
 export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: DraftMeta } & AnyObject) {
-  const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta } = copyCtx;
+  const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta, apiCtx } = copyCtx;
 
   /**
    * 防止 value 本身就是一个 Proxy
    * var draft_a1_b = draft.a1.b;
    * draft.a2 = draft_a1_b;
    */
-  const value = getUnProxyValue(mayProxyValue);
+  const value = getUnProxyValue(mayProxyValue, apiCtx);
 
   /**
    * 链路断裂，此对象未被代理
@@ -54,7 +61,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
     return;
   }
 
-  const { self, copy: parentCopy } = parentMeta;
+  const { self, copy: parentCopy, rootMeta } = parentMeta;
   mayMarkModified({ calledBy, parentMeta, op, key, parentType });
 
   // 是 Map, Set, Array 类型的方法操作或者值获取
@@ -89,11 +96,11 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
 
   const oldValue = parentCopy[key];
   const tryMarkDel = () => {
-    const oldValueMeta = getDraftMeta(oldValue);
+    const oldValueMeta = getDraftMeta(oldValue, apiCtx);
     oldValueMeta && (oldValueMeta.isDel = true);
   };
   const tryMarkUndel = () => {
-    const valueMeta = getDraftMeta(mayProxyValue);
+    const valueMeta = getDraftMeta(mayProxyValue, apiCtx);
     if (valueMeta && valueMeta.isDel) {
       valueMeta.isDel = false;
       valueMeta.key = key;
@@ -105,7 +112,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
   };
 
   if (calledBy === 'deleteProperty') {
-    const valueMeta = getDraftMeta(mayProxyValue);
+    const valueMeta = getDraftMeta(mayProxyValue, apiCtx);
     // for test/complex/data-node-change case3
     if (valueMeta) {
       valueMeta.isDel = true;
@@ -113,12 +120,20 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
       // for test/complex/data-node-change (node-change 2)
       tryMarkDel();
     }
+
+    const val = parentCopy[key];
+    if (!isPrimitive(val)) {
+      rootMeta.newNodeMap.delete(getValPathKey(parentMeta, key));
+    }
+
     delete parentCopy[key];
     return;
   }
 
-  if (!parentCopy[key] && !isPrimitive(value)) {
+  // set 时非原始值都当做新节点记录下来
+  if (!isPrimitive(value)) {
     parentMeta.newNodeStats[key] = true;
+    rootMeta.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
   }
   parentCopy[key] = value;
 

@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import { AnyObject, DraftMeta } from '../inner-types';
+import { AnyObject, DraftMeta, IApiCtx } from '../inner-types';
 import { ARRAY, MAP, oppositeOps, PROXYITEM_FNKEYS, SET } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { makeCopyWithMeta } from './copy';
@@ -11,20 +11,13 @@ import { attachMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(baseData: any, options: any) {
-  const { finishDraft = noop, ver, traps, parentType, parentMeta, key, fastModeRange, immutBase, extraProps, compareVer = false } = options;
-  const meta = newMeta(baseData, {
-    finishDraft,
-    ver,
-    parentMeta,
-    key,
-    immutBase,
-    compareVer,
-  });
+  const { traps, parentType, fastModeRange, immutBase, apiCtx } = options;
+  const meta = newMeta(baseData, options);
 
   const { copy, fast } = makeCopyWithMeta(baseData, meta, {
     parentType,
     fastModeRange,
-    extraProps,
+    apiCtx,
   });
   meta.copy = copy;
   meta.isFast = fast;
@@ -37,6 +30,9 @@ export function createScopedMeta(baseData: any, options: any) {
     meta.proxyVal = ret.proxy;
     meta.revoke = ret.revoke;
   }
+  apiCtx.metaMap.set(copy, meta);
+  // apiCtx.metaMap.set(baseData, meta);
+  apiCtx.metaMap.set(meta.proxyVal, meta);
 
   return meta;
 }
@@ -62,8 +58,8 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
     fastModeRange,
     immutBase,
     readOnly,
-    extraProps,
     compareVer,
+    apiCtx,
   } = options;
   let curVal = val;
 
@@ -91,7 +87,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
         return val;
       }
 
-      let valMeta = getSafeDraftMeta(val);
+      let valMeta = getSafeDraftMeta(val, apiCtx);
       // 惰性生成代理对象和其元数据
       if (!valMeta) {
         valMeta = createScopedMeta(val, {
@@ -103,8 +99,8 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
           fastModeRange,
           immutBase,
           readOnly,
-          extraProps,
           compareVer,
+          apiCtx,
         });
         recordVerScope(valMeta);
         // child value 指向 copy
@@ -132,7 +128,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
         inversePatches,
         usePatches,
       });
-      proxyItems = attachMeta(tmp, parentMeta, fastModeRange, extraProps);
+      proxyItems = attachMeta(tmp, parentMeta, { fast: fastModeRange, apiCtx });
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
@@ -145,7 +141,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
         inversePatches,
         usePatches,
       });
-      proxyItems = attachMeta(tmp, parentMeta, fastModeRange, extraProps);
+      proxyItems = attachMeta(tmp, parentMeta, { fast: fastModeRange, apiCtx });
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
@@ -161,12 +157,12 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
   return mayCreateProxyVal(curVal, key);
 }
 
-export function getUnProxyValue(value: any) {
+export function getUnProxyValue(value: any, apiCtx: IApiCtx) {
   if (!isObject(value)) {
     return value;
   }
 
-  const valueMeta = getSafeDraftMeta(value);
+  const valueMeta = getSafeDraftMeta(value, apiCtx);
   if (!valueMeta) return value;
 
   return valueMeta.copy;

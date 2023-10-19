@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DataType, FastModeRange, ObjectLike } from '../inner-types';
+import type { DataType, FastModeRange, IApiCtx, ObjectLike } from '../inner-types';
 import { ARRAY } from '../support/consts';
 import { isMap, isObject, isPrimitive, isSet } from '../support/util';
 import { attachMeta } from './meta';
@@ -80,13 +80,13 @@ export function makeCopyWithMeta(
   ori: any,
   meta: any,
   options: {
+    apiCtx: IApiCtx;
     parentType: DataType;
     fastModeRange: FastModeRange;
-    extraProps?: any;
   },
 ) {
-  const { extraProps } = options;
+  const { apiCtx } = options;
   const { copy, fast } = tryMakeCopy(ori, options);
-  attachMeta(copy, meta, fast, extraProps);
+  attachMeta(copy, meta, { apiCtx, fast });
   return { copy, fast };
 }

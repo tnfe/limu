@@ -3,10 +3,10 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta } from '../inner-types';
+import type { DraftMeta, IApiCtx } from '../inner-types';
 import { ARRAY, MAP, META_KEY, SET } from '../support/consts';
-import { isObject } from '../support/util';
-import { getSafeDraftMeta } from './meta';
+import { deepDrill, isObject } from '../support/util';
+import { getDraftMeta, getMetaVer } from './meta';
 
 function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targetNode: any; key: any }) {
   const { copy, isArrOrderChanged } = listMeta;
@@ -23,24 +23,51 @@ function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targe
   copy[key] = targetNode;
 }
 
-export function isInSameScope(mayDraftNode: any, callerScopeVer: string) {
-  if (!isObject(mayDraftNode)) {
+export function isInSameScope(mayDraftProxy: any, callerScopeVer: string) {
+  if (!isObject(mayDraftProxy)) {
     return true;
   }
-  return getSafeDraftMeta(mayDraftNode).ver === callerScopeVer;
+  return getMetaVer(mayDraftProxy) === callerScopeVer;
 }
 
-export function clearScopes(rootMeta: DraftMeta) {
+export function clearScopes(rootMeta: DraftMeta, apiCtx: IApiCtx) {
+  const { debug } = apiCtx;
+
+  // TODO 下钻有一定的性能损耗，允许用户关闭此逻辑 findDraftNodeNewRef=false
+  const drilledMap: Map<any, any> = new Map();
+  rootMeta.newNodeMap.forEach((v) => {
+    const { node, parent, key } = v;
+    const drilledNode = drilledMap.get(node);
+    if (drilledNode) {
+      // 同一个节点被多个父级引用了，只需要指向自身即可，无需再次下钻
+      parent[key] = drilledNode;
+      return;
+    }
+    const item = v;
+    deepDrill(node, parent, key, (obj: any, parentObj: any, key: any) => {
+      const meta = getDraftMeta(obj, apiCtx);
+      if (meta) {
+        const { modified, copy, self } = meta;
+        const targetNode = !modified ? self : copy;
+        parentObj[key] = targetNode;
+      }
+    });
+    item.target = parent[key]; // 此处可能已被替换为真正的目标节点
+    drilledMap.set(node, item.target);
+  });
+
   rootMeta.scopes.forEach((meta) => {
     const { modified, copy, parentMeta, key, self, revoke, proxyVal, isDel, isFast } = meta;
 
     if (!copy) return revoke();
-    // TODO: 优化此处的delete
-    if (isFast) {
-      // @ts-ignore
-      delete copy[META_KEY];
-    } else {
-      delete copy.__proto__[META_KEY];
+
+    if (debug) {
+      if (isFast) {
+        // @ts-ignore
+        delete copy[META_KEY];
+      } else {
+        delete copy.__proto__[META_KEY];
+      }
     }
 
     if (!parentMeta) return revoke();
@@ -72,7 +99,7 @@ export function clearScopes(rootMeta: DraftMeta) {
   rootMeta.scopes.length = 0;
 }
 
-export function extraFinalData(rootMeta: DraftMeta) {
+export function extractFinalData(rootMeta: DraftMeta, apiCtx: IApiCtx) {
   const { self, copy, modified } = rootMeta;
   let final = self;
   // 有 copy 不一定有修改行为，这里需做双重判断
@@ -80,7 +107,7 @@ export function extraFinalData(rootMeta: DraftMeta) {
     final = rootMeta.copy;
   }
   // if put this on first line, fail at test/set-other/update-object-item.ts
-  clearScopes(rootMeta);
+  clearScopes(rootMeta, apiCtx);
   return final;
 }
 

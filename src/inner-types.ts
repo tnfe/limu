@@ -29,16 +29,16 @@ export interface DraftMeta<T extends AnyObject = AnyObject> {
   isFast: boolean;
   /** 记录某些key对应值是否是一个全新节点 */
   newNodeStats: AnyObject<boolean>;
+  /** rootMeta 用此属性记录所有新节点 */
+  newNodeMap: Map<any, { parent: any; key: any; node: any; target: any }>;
   // TODO: 探索使用linkCount代替isDel，看是否能解决多引用问题
   linkCount: number;
   key: string;
-  // idx: number, // 数组元素才需要用到
   keyPath: string[];
   level: number;
   scopes: DraftMeta[];
   proxyVal: T;
   proxyItems: null | Map<any, any> | Set<any>;
-  finishDraft: (proxyDraft: ObjectLike) => ObjectLike;
   /** scope version */
   ver: string;
   /**
@@ -113,13 +113,23 @@ export interface ICreateDraftOptions {
    * also applicable to `createDraft(base, {readOnly:true})`
    */
   compareVer?: boolean;
-  extraProps?: AnyObject;
   /**
    * defaut: false, there will be no warn tip in the console for changing immut object while set disableWarn true
    */
   disableWarn?: boolean;
+  /** default: false */
+  debug?: boolean;
 }
 
 export interface IInnerCreateDraftOptions extends ICreateDraftOptions {
   [key: symbol]: any;
 }
+
+export interface IApiCtx {
+  metaMap: Map<any, DraftMeta>;
+  debug: boolean;
+  metaVer: string;
+}
+
+/** key: metaVer, value, apiCtx */
+export type RootCtx = Map<string, IApiCtx>;

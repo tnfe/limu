@@ -78,26 +78,24 @@ describe('check apis', () => {
     try {
       finishDraft({ a: 1 });
     } catch (e: any) {
-      expect(e.message).toMatch(/(?=not a Limu draft)/);
+      expect(e.message).toMatch(/(?=Not a Limu root draft)/);
     }
   });
 
-  test('createDraft: set extraProps', () => {
-    const base = { key: 1 };
-    const draft = createDraft(base, { extraProps: { a: 1 } });
-    draft.key = 2;
-    const final = finishDraft(draft);
-    expect(final.key === 2).toBeTruthy();
-    // @ts-ignore
-    expect(final.a === 1).toBeTruthy();
-  });
-
-  test('createDraft: set readOnly', () => {
+  test('createDraft: set readOnly true', () => {
     const base = { key: 1 };
     const draft = createDraft(base, { readOnly: true });
     draft.key = 2;
     const final = finishDraft(draft);
     expect(final.key === 1).toBeTruthy(); // still 1
+  });
+
+  test('createDraft: set readOnly false', () => {
+    const base = { key: 1 };
+    const draft = createDraft(base, { readOnly: false });
+    draft.key = 2;
+    const final = finishDraft(draft);
+    expect(final.key === 2).toBeTruthy();
   });
 
   test('createDraft: read arr index', () => {

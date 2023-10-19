@@ -3,21 +3,22 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
-import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_KEY, SET } from '../support/consts';
+import type { DraftMeta, IApiCtx, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
+import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_KEY, META_VER, SET } from '../support/consts';
 import { conf } from '../support/inner-data';
-import { canBeNum, isFn, isPrimitive, isSymbol } from '../support/util';
+import { canBeNum, has, isFn, isPrimitive, isSymbol } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { deepFreeze } from './freeze';
 import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
-import { genMetaVer, getSafeDraftMeta, isDraft } from './meta';
-import { extraFinalData, isInSameScope, recordVerScope } from './scope';
+import { genMetaVer, getSafeDraftMeta, isDraft, ROOT_CTX } from './meta';
+import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 
 // 可直接返回的属性
 // 避免 Cannot set property size of #<Map> which has only a getter
 // 避免 Cannot set property size of #<Set> which has only a getter
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
 const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
+export const FNIISH_HANDLER_MAP = new Map();
 
 export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const opts = options || {};
@@ -25,15 +26,18 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const fastModeRange = opts.fastModeRange || conf.fastModeRange;
   // @ts-ignore
   const immutBase = opts[IMMUT_BASE] ?? false;
-  const extraProps = opts.extraProps || null;
   const readOnly = opts.readOnly ?? false;
   const disableWarn = opts.disableWarn;
   const compareVer = opts.compareVer ?? false;
+  const debug = opts.debug ?? false;
   // 调用那一刻起，确定 autoFreeze 值
   // allow user overwrite autoFreeze setting in current call process
   const autoFreeze = opts.autoFreeze ?? conf.autoFreeze;
   // 暂未实现 to be implemented in the future
   const usePatches = opts.usePatches ?? conf.usePatches;
+  const metaVer = genMetaVer();
+  const apiCtx: IApiCtx = { metaMap: new Map(), debug, metaVer };
+  ROOT_CTX.set(metaVer, apiCtx);
 
   const warnReadOnly = () => {
     if (!disableWarn) {
@@ -79,7 +83,6 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   };
 
   const limuApis = (() => {
-    const metaVer = genMetaVer();
     // let revoke: null | (() => void) = null;
     /**
      * 为了和下面这个 immer case 保持行为一致
@@ -94,10 +97,14 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     const limuTraps = {
       // parent指向的是代理之前的对象
       get: (parent: any, key: any) => {
+        if (META_VER === key) {
+          return metaVer;
+        }
+
         let currentChildVal = parent[key];
 
         // 兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
-        if (key === 'toJSON' && Array.isArray(parent)) {
+        if (key === 'toJSON' && !has(parent, key)) {
           return currentChildVal;
         }
 
@@ -114,7 +121,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           return currentChildVal;
         }
 
-        const parentMeta = getSafeDraftMeta(parent) as DraftMeta;
+        const parentMeta = getSafeDraftMeta(parent, apiCtx) as DraftMeta;
         const parentType = parentMeta?.selfType;
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
@@ -136,6 +143,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           readOnly,
           inversePatches,
           usePatches, // not implement currently
+          apiCtx,
         });
 
         // 用下标取数组时，可直接返回
@@ -158,6 +166,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
             usePatches,
             parentType,
             parentMeta,
+            apiCtx,
           });
           execOnOperate('get', key, { parentMeta });
           return currentChildVal;
@@ -169,17 +178,18 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       // parent 指向的是代理之前的对象
       set: (parent: any, key: any, value: any) => {
         let targetValue = value;
-        const parentMeta = getSafeDraftMeta(parent);
+        const parentMeta = getSafeDraftMeta(parent, apiCtx);
 
+        // is a draft proxy node
         if (isDraft(value)) {
           // see case debug/complex/set-draft-node
           if (isInSameScope(value, metaVer)) {
-            targetValue = getUnProxyValue(value);
+            targetValue = getUnProxyValue(value, apiCtx);
             if (targetValue === parent[key]) {
               return true;
             }
           } else {
-            // TODO: judge value must be root draft node
+            // TODO: judge value must be a root draft node
             // assign another scope draft node to current scope
             canFreezeDraft = false;
           }
@@ -210,6 +220,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           value: targetValue,
           metaVer,
           calledBy: 'set',
+          apiCtx,
         });
         execOnOperate('set', key, { parentMeta });
 
@@ -217,7 +228,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       },
       // delete or Reflect.deleteProperty will trigger this trap
       deleteProperty: (parent: any, key: any) => {
-        const parentMeta = getSafeDraftMeta(parent);
+        const parentMeta = getSafeDraftMeta(parent, apiCtx);
         if (readOnly) {
           execOnOperate('del', key, { parentMeta, isChange: false });
           return warnReadOnly();
@@ -230,6 +241,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           value: '',
           metaVer,
           calledBy: 'deleteProperty',
+          apiCtx,
         });
         execOnOperate('del', key, { parentMeta });
 
@@ -248,7 +260,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         }
         let oriBase = mayDraft;
 
-        const draftMeta = getSafeDraftMeta(mayDraft);
+        const draftMeta = getSafeDraftMeta(mayDraft, apiCtx);
         if (draftMeta) {
           // 总是返回同一个 immutBase 代理对象
           if (immutBase && draftMeta.isImmutBase) {
@@ -261,20 +273,20 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           key: '',
           ver: metaVer,
           traps: limuTraps,
-          finishDraft: limuApis.finishDraft,
           immutBase,
           readOnly,
-          extraProps,
           compareVer,
+          apiCtx,
         });
         recordVerScope(meta);
+        FNIISH_HANDLER_MAP.set(meta.proxyVal, limuApis.finishDraft);
 
         return meta.proxyVal as T;
       },
       finishDraft: (proxyDraft: any) => {
         // attention: if pass a revoked proxyDraft
         // it will throw: Cannot perform 'set' on a proxy that has been revoked
-        const rootMeta = getSafeDraftMeta(proxyDraft);
+        const rootMeta = getSafeDraftMeta(proxyDraft, apiCtx);
         if (!rootMeta) {
           throw new Error('rootMeta should not be null!');
         }
@@ -288,13 +300,14 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           return proxyDraft;
         }
 
-        let final = extraFinalData(rootMeta);
+        let final = extractFinalData(rootMeta, apiCtx);
         if (autoFreeze && canFreezeDraft) {
           // TODO deep pruning
           // see https://github.com/immerjs/immer/issues/687
           // let cachedFrozenOriginalBase = frozenOriginalBaseMap.get(rootMeta.originalSelf);
           final = deepFreeze(final);
         }
+        apiCtx.metaMap.clear();
 
         // if (usePatches) {
         //   return [final, patches, inversePatches];

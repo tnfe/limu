@@ -1,8 +1,8 @@
 const strfy = (obj) => JSON.stringify(obj);
 
-exports.log = (obj) => console.log(strfy(obj));
-
 exports.noop = () => true;
+
+exports.log = (obj) => console.log(strfy(obj));
 
 exports.showMem = function (label = 'Process', newLine = false) {
   var mem = process.memoryUsage();

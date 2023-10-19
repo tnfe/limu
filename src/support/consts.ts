@@ -11,10 +11,13 @@ import type { DataType } from '../inner-types';
  */
 export const LIMU_MAJOR_VER = 3;
 
-export const VER = '3.6.0';
+export const VER = '3.7.0';
 
-// 用于验证 proxyDraft 和 finishDraft 函数 是否能够匹配，记录 meta 数据
+/** meta 数据key，仅 debug 模式才挂到对象的原型上 */
 export const META_KEY = Symbol('M');
+
+/** 版本号key */
+export const META_VER = Symbol('V');
 
 export const IMMU_META_KEY = Symbol('I');
 

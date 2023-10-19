@@ -193,6 +193,15 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
       if (executeAssertLogic) executeAssertLogic(final, base);
     });
 
+    // test debug situation
+    test(createDraftTip(testCaseDesc), () => {
+      const base = getBase();
+      const draft = createDraft(base, { ...(options || {}), debug: true });
+      operateDraft(draft, base);
+      const final = finishDraft(draft);
+      if (executeAssertLogic) executeAssertLogic(final, base);
+    });
+
     if (RUN_PRODUCE) {
       test(produceTip(testCaseDesc), () => {
         const base = getBase();
@@ -222,6 +231,14 @@ export function runObjectTestSuit(
     test(createDraftTip(testCaseDesc), () => {
       const objBase = getObjectBase();
       const objDraft = createDraft(objBase);
+      operateDraft(objDraft, objBase);
+      const objNew = finishDraft(objDraft);
+      executeAssertLogic(objNew, objBase);
+    });
+
+    test(createDraftTip(testCaseDesc), () => {
+      const objBase = getObjectBase();
+      const objDraft = createDraft(objBase, { debug: true });
       operateDraft(objDraft, objBase);
       const objNew = finishDraft(objDraft);
       executeAssertLogic(objNew, objBase);
@@ -262,6 +279,14 @@ export function runMapTestSuit(
       executeAssertLogic(mapNew, mapBase);
     });
 
+    test(createDraftTip(testCaseDesc), () => {
+      const mapBase = getMapBase();
+      const mapDraft = createDraft(mapBase, { debug: true });
+      operateDraft(mapDraft, mapBase);
+      const mapNew = finishDraft(mapDraft);
+      executeAssertLogic(mapNew, mapBase);
+    });
+
     if (RUN_PRODUCE) {
       test(produceTip(testCaseDesc), () => {
         const mapBase = getMapBase();
@@ -293,6 +318,14 @@ export function runSetTestSuit(
     test(createDraftTip(testCaseDesc), () => {
       const setBase = getSetBase();
       const setDraft = createDraft(setBase);
+      operateDraft(setDraft, setBase);
+      const setNew = finishDraft(setDraft);
+      executeAssertLogic(setNew, setBase);
+    });
+
+    test(createDraftTip(testCaseDesc), () => {
+      const setBase = getSetBase();
+      const setDraft = createDraft(setBase, { debug: true });
       operateDraft(setDraft, setBase);
       const setNew = finishDraft(setDraft);
       executeAssertLogic(setNew, setBase);
