@@ -36,6 +36,10 @@ npm i
 node opBigData.js // trigger test execution, the console echoes the result
 # or
 node caseOnlyRead.js
+npm run s1
+npm run s2
+npm run s3
+npm run s4
 ```
 
 You are very welcome to submit your test to the [benchmark directory](https://github.com/tnfe/limu/tree/main/benchmark) or [test directory](https://github.com/tnfe/limu/tree/main/test)
