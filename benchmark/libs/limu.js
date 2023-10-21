@@ -3,10 +3,10 @@
 // make sure you've runned command `npm run build` at project root dir
 const lib = require('../../dist/limu.js');
 
-const limuFast = {
+const limuDebug = {
   ...lib,
   createDraft(base, options) {
-    return lib.createDraft(base, { fastModeRange: 'all', ...(options || {}) });
+    return lib.createDraft(base, { debug:true, fastModeRange: 'all', ...(options || {}) });
   },
   produce(base, draftCb, options) {
     return lib.produce(base, draftCb, {
@@ -16,10 +16,10 @@ const limuFast = {
   },
 };
 
-const limuSlow = {
+const limuDebugSlow = {
   ...lib,
   createDraft(base, options) {
-    return lib.createDraft(base, { fastModeRange: 'none', ...(options || {}) });
+    return lib.createDraft(base, { debug:true, fastModeRange: 'none', ...(options || {}) });
   },
   produce(base, draftCb, options) {
     return lib.produce(base, draftCb, {
@@ -42,6 +42,6 @@ const limu = {
 
 module.exports = {
   limu,
-  limuFast,
-  limuSlow,
+  limuDebug,
+  limuDebugSlow,
 };

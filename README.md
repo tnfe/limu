@@ -185,7 +185,7 @@ Higher observability will greatly improve the development and debugging experien
 
 And the immer or mutative expansion is like this <img width="618" alt="image" src="https://github.com/unadlib/mutative/assets/7334950/44500c66-d691-4d29-b856-fa490d2bdf8f">
 
-My conclusion is that the pursuit of extreme performance `mutative` is indeed better, and the pursuit of debugging-friendly `limu` is better. In any case, in the case of freezing, both of them are several times higher than `immer`, and respect `mutative`'s immutable Exploration ∠(° ゝ °) ❤️
+One more thing, I am proud to announce that after 3.7 version, limu is now the fastest immutable js lib of all.
 
 ## License
 

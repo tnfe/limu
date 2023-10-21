@@ -1,5 +1,6 @@
 const immer = require('./libs/immer');
-const { limu, limuFast, limuSlow } = require('./libs/limu');
+const mutative = require('./libs/mutative');
+const { limu, limuDebug, limuDebugSlow } = require('./libs/limu');
 const pstr = require('./libs/pstr');
 const native = require('./libs/native');
 const util = require('./_util');
@@ -7,8 +8,9 @@ const util = require('./_util');
 const immutLibs = {
   immer,
   limu,
-  limuFast,
-  limuSlow,
+  limuDebug,
+  limuDebugSlow,
+  mutative,
   pstr,
   native, // just to see native js operation perf
 };
@@ -41,6 +43,7 @@ const OP_ARR = stategies[curStrategy][1]; // operate arr or not
 
 immer.setAutoFreeze(AUTO_FREEZE);
 limu.setAutoFreeze(AUTO_FREEZE);
+mutative.setAutoFreeze(AUTO_FREEZE);
 
 function getBase(arrLen = ARR_LEN) {
   return util.getBase(arrLen, false);
@@ -51,16 +54,20 @@ function oneBenchmark(libName, options) {
   let lib = immutLibs[libName];
   const base = getBase(arrLen);
   const start = Date.now();
-  userBenchmark({
-    libName,
-    lib,
-    base,
-    operateArr: OP_ARR,
-    moreDeepOp: MORE_DEEP_OP,
-  });
-  const taskSpend = Date.now() - start;
-
-  return taskSpend;
+  try {
+    userBenchmark({
+      libName,
+      lib,
+      base,
+      operateArr: OP_ARR,
+      moreDeepOp: MORE_DEEP_OP,
+    });
+    const taskSpend = Date.now() - start;
+    return taskSpend;
+  } catch (err) {
+    console.log(`${libName} throw err`);
+    throw err;
+  }
 }
 
 /**
@@ -95,8 +102,10 @@ exports.runPerfCase = async function (options) {
 
   measureBenchmark('immer', options);
   // speedup at: node caseOnlyRead.js
-  // measureBenchmark('limuFast', options);
-  measureBenchmark('limu', options); // now fastRangeMode is array by default
+  // measureBenchmark('limuDebug', options);
+  // measureBenchmark('limuDebugSlow', options);
+  measureBenchmark('limu', options);
+  measureBenchmark('mutative', options);
   measureBenchmark('pstr', options);
   measureBenchmark('native', options);
 
