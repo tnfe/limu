@@ -61,9 +61,9 @@ export const limuUtils = {
   shallowCompare,
   getDraftMeta,
 };
+export type LimuUtils = typeof limuUtils;
 
 type LimuApis = ReturnType<typeof buildLimuApis>;
-
 export type Draft<T> = T;
 export type CreateDraft = <T extends ObjectLike>(base: T, options?: ICreateDraftOptions) => Draft<T>;
 export type FinishDraft = <T extends ObjectLike>(draft: T) => T;
