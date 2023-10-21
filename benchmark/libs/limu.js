@@ -1,6 +1,6 @@
 // module.exports = require('limu');
 
-// make sure you've runned `npm run build` at root dir
+// make sure you've runned command `npm run build` at project root dir
 const lib = require('../../dist/limu.js');
 
 const limuFast = {

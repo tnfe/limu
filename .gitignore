@@ -4,6 +4,7 @@
 .coveralls.yml
 *.code-workspace
 
+dist
 debug
 coverage
 node_modules
