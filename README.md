@@ -19,7 +19,7 @@ It is fast, It is nearly more than **2 or 20** times faster than `immer` in diff
 
 ## Performance ⚡️
 
-No freeze by default, limu is 3 to 5 times or more faster than Immer in most scenarios
+No freeze by default, limu is 15 times or more faster than Immer in most scenarios
 
 [test 1](https://github.com/tnfe/limu/blob/main/benchmark/opBigData.js) (inspired by this [immer case](https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs) ) ![](https://user-images.githubusercontent.com/7334950/257369962-c0577e96-cb2c-48cb-8f65-c11979bfd506.png)
 
