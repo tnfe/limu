@@ -26,6 +26,7 @@ No freeze by default, limu is 3 to 5 times or more faster than Immer in most sce
 [test 2](https://github.com/tnfe/limu/blob/main/benchmark/caseReadWrite.js) ![test 2](https://user-images.githubusercontent.com/7334950/257380995-1bfc3652-1730-4ecd-ba1b-adaddd3db98d.png)
 
 The performance testing process is as follows
+> I am proud to announce that after 3.7 version, limu is now the fastest immutable js lib of all ( faster than immer and mutative ).
 
 ```bash
 git clone https://github.com/tnfe/limu
@@ -184,8 +185,6 @@ Higher observability will greatly improve the development and debugging experien
 <img width="574" alt="image" src="https://github.com/unadlib/mutative/assets/7334950/2f90b07d-e2e3-4104-916c-8c0add935b41">
 
 And the immer or mutative expansion is like this <img width="618" alt="image" src="https://github.com/unadlib/mutative/assets/7334950/44500c66-d691-4d29-b856-fa490d2bdf8f">
-
-One more thing, I am proud to announce that after 3.7 version, limu is now the fastest immutable js lib of all.
 
 ## License
 
