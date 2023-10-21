@@ -7,7 +7,7 @@ export type AnyObject<T extends any = any> = {
   [key: string]: T;
 };
 export type AnyArray = Array<any>;
-
+export type NumStrSymbol = number | string | symbol;
 export type Key = string | symbol;
 export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
 export type Op = 'del' | 'set' | 'get';
@@ -29,10 +29,6 @@ export interface DraftMeta<T extends AnyObject = AnyObject> {
   isFast: boolean;
   /** 记录某些key对应值是否是一个全新节点 */
   newNodeStats: AnyObject<boolean>;
-  /** rootMeta 用此属性记录所有新节点 */
-  newNodeMap: Map<any, { parent: any; key: any; node: any; target: any }>;
-  // TODO: 探索使用linkCount代替isDel，看是否能解决多引用问题
-  linkCount: number;
   key: string;
   keyPath: string[];
   level: number;
@@ -42,7 +38,7 @@ export interface DraftMeta<T extends AnyObject = AnyObject> {
   /** scope version */
   ver: string;
   /**
-   * set the comparision rull of root proxy state
+   * record the comparision rule of root proxy state
    */
   compareVer: boolean;
   revoke: any;
@@ -119,6 +115,8 @@ export interface ICreateDraftOptions {
   disableWarn?: boolean;
   /** default: false */
   debug?: boolean;
+  customKeys?: symbol[];
+  customGet?: (userCumtomKey: symbol) => any;
 }
 
 export interface IInnerCreateDraftOptions extends ICreateDraftOptions {
@@ -127,6 +125,8 @@ export interface IInnerCreateDraftOptions extends ICreateDraftOptions {
 
 export interface IApiCtx {
   metaMap: Map<any, DraftMeta>;
+  /** rootMeta 用此属性记录所有新节点 */
+  newNodeMap: Map<any, { parent: any; key: any; node: any; target: any }>;
   debug: boolean;
   metaVer: string;
 }

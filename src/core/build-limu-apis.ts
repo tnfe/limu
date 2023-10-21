@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta, IApiCtx, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
-import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_KEY, META_VER, SET } from '../support/consts';
+import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_VER, SET } from '../support/consts';
 import { conf } from '../support/inner-data';
 import { canBeNum, has, isFn, isPrimitive, isSymbol } from '../support/util';
 import { handleDataNode } from './data-node-processor';
@@ -16,13 +16,15 @@ import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 // 可直接返回的属性
 // 避免 Cannot set property size of #<Map> which has only a getter
 // 避免 Cannot set property size of #<Set> which has only a getter
-const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'];
+const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'] as const;
 const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
 export const FNIISH_HANDLER_MAP = new Map();
 
 export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const opts = options || {};
   const onOperate = opts.onOperate;
+  const customKeys = opts.customKeys || [];
+  const customGet = opts.customGet;
   const fastModeRange = opts.fastModeRange || conf.fastModeRange;
   // @ts-ignore
   const immutBase = opts[IMMUT_BASE] ?? false;
@@ -36,7 +38,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   // 暂未实现 to be implemented in the future
   const usePatches = opts.usePatches ?? conf.usePatches;
   const metaVer = genMetaVer();
-  const apiCtx: IApiCtx = { metaMap: new Map(), debug, metaVer };
+  const apiCtx: IApiCtx = { metaMap: new Map(), newNodeMap: new Map(), debug, metaVer };
   ROOT_CTX.set(metaVer, apiCtx);
 
   const warnReadOnly = () => {
@@ -100,19 +102,17 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         if (META_VER === key) {
           return metaVer;
         }
-
         let currentChildVal = parent[key];
 
-        // 兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
-        if (key === 'toJSON' && !has(parent, key)) {
-          return currentChildVal;
-        }
-
-        if (key === '__proto__' || key === META_KEY) {
+        // 判断 toJSON 是为了兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
+        if (key === '__proto__' || (key === 'toJSON' && !has(parent, key))) {
           return currentChildVal;
         }
 
         if (isSymbol(key)) {
+          if (customGet && customKeys.includes(key)) {
+            return customGet(key);
+          }
           // 防止直接对 draft 时报错：Method xx.yy called on incompatible receiver
           // 例如 Array.from(draft)
           if (isFn(currentChildVal)) {
@@ -125,7 +125,6 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         const parentType = parentMeta?.selfType;
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
-        // 是为了配合 data-node-processor 里的 ATTENTION_1
         if (TYPE_BLACK_LIST.includes(parentType) && PROPERTIES_BLACK_LIST.includes(key)) {
           return parentMeta.copy[key];
         }

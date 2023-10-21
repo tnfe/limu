@@ -11,15 +11,13 @@ import type { DataType } from '../inner-types';
  */
 export const LIMU_MAJOR_VER = 3;
 
-export const VER = '3.7.0';
+export const VER = '3.7.1';
 
 /** meta 数据key，仅 debug 模式才挂到对象的原型上 */
 export const META_KEY = Symbol('M');
 
 /** 版本号key */
 export const META_VER = Symbol('V');
-
-export const IMMU_META_KEY = Symbol('I');
 
 export const IMMUT_BASE = Symbol('IMMUT_BASE');
 

@@ -61,7 +61,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
     return;
   }
 
-  const { self, copy: parentCopy, rootMeta } = parentMeta;
+  const { self, copy: parentCopy } = parentMeta;
   mayMarkModified({ calledBy, parentMeta, op, key, parentType });
 
   // 是 Map, Set, Array 类型的方法操作或者值获取
@@ -123,7 +123,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
 
     const val = parentCopy[key];
     if (!isPrimitive(val)) {
-      rootMeta.newNodeMap.delete(getValPathKey(parentMeta, key));
+      apiCtx.newNodeMap.delete(getValPathKey(parentMeta, key));
     }
 
     delete parentCopy[key];
@@ -133,7 +133,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
   // set 时非原始值都当做新节点记录下来
   if (!isPrimitive(value)) {
     parentMeta.newNodeStats[key] = true;
-    rootMeta.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
+    apiCtx.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
   }
   parentCopy[key] = value;
 

@@ -35,7 +35,7 @@ export function clearScopes(rootMeta: DraftMeta, apiCtx: IApiCtx) {
 
   // TODO 下钻有一定的性能损耗，允许用户关闭此逻辑 findDraftNodeNewRef=false
   const drilledMap: Map<any, any> = new Map();
-  rootMeta.newNodeMap.forEach((v) => {
+  apiCtx.newNodeMap.forEach((v) => {
     const { node, parent, key } = v;
     const drilledNode = drilledMap.get(node);
     if (drilledNode) {

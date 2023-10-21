@@ -85,7 +85,6 @@ export function newMeta(baseData: any, options: any) {
     newNodeStats: {},
     newNodeMap: new Map(),
     newNodes: [],
-    linkCount: 1,
     ver,
     compareVer,
     revoke: noop,

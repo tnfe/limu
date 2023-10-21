@@ -11,7 +11,7 @@
    * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
    * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
    */
-  const VER$1 = '3.7.0';
+  const VER$1 = '3.7.1';
   /** meta 数据key，仅 debug 模式才挂到对象的原型上 */
   const META_KEY = Symbol('M');
   /** 版本号key */
@@ -268,7 +268,6 @@
       newNodeStats: {},
       newNodeMap: new Map(),
       newNodes: [],
-      linkCount: 1,
       ver,
       compareVer,
       revoke: noop,
@@ -464,7 +463,7 @@
     const { debug } = apiCtx;
     // TODO 下钻有一定的性能损耗，允许用户关闭此逻辑 findDraftNodeNewRef=false
     const drilledMap = new Map();
-    rootMeta.newNodeMap.forEach((v) => {
+    apiCtx.newNodeMap.forEach((v) => {
       const { node, parent, key } = v;
       const drilledNode = drilledMap.get(node);
       if (drilledNode) {
@@ -749,7 +748,7 @@
       parentDataNode[key] = value;
       return;
     }
-    const { self, copy: parentCopy, rootMeta } = parentMeta;
+    const { self, copy: parentCopy } = parentMeta;
     mayMarkModified({ calledBy, parentMeta, op, key, parentType });
     // 是 Map, Set, Array 类型的方法操作或者值获取
     const fnKeys = CAREFUL_FNKEYS[parentType] || [];
@@ -806,7 +805,7 @@
       }
       const val = parentCopy[key];
       if (!isPrimitive(val)) {
-        rootMeta.newNodeMap.delete(getValPathKey(parentMeta, key));
+        apiCtx.newNodeMap.delete(getValPathKey(parentMeta, key));
       }
       delete parentCopy[key];
       return;
@@ -814,7 +813,7 @@
     // set 时非原始值都当做新节点记录下来
     if (!isPrimitive(value)) {
       parentMeta.newNodeStats[key] = true;
-      rootMeta.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
+      apiCtx.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
     }
     parentCopy[key] = value;
     // 谨防是 a.b = { ... } ---> a.b = 1 的变异赋值方式
@@ -874,6 +873,8 @@
     var _a, _b, _c, _d, _e, _f;
     const opts = options || {};
     const onOperate = opts.onOperate;
+    const customKeys = opts.customKeys || [];
+    const customGet = opts.customGet;
     const fastModeRange = opts.fastModeRange || conf.fastModeRange;
     // @ts-ignore
     const immutBase = (_a = opts[IMMUT_BASE]) !== null && _a !== void 0 ? _a : false;
@@ -887,7 +888,7 @@
     // 暂未实现 to be implemented in the future
     const usePatches = (_f = opts.usePatches) !== null && _f !== void 0 ? _f : conf.usePatches;
     const metaVer = genMetaVer();
-    const apiCtx = { metaMap: new Map(), debug, metaVer };
+    const apiCtx = { metaMap: new Map(), newNodeMap: new Map(), debug, metaVer };
     ROOT_CTX.set(metaVer, apiCtx);
     const warnReadOnly = () => {
       if (!disableWarn) {
@@ -946,14 +947,14 @@
             return metaVer;
           }
           let currentChildVal = parent[key];
-          // 兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
-          if (key === 'toJSON' && !has(parent, key)) {
-            return currentChildVal;
-          }
-          if (key === '__proto__' || key === META_KEY) {
+          // 判断 toJSON 是为了兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
+          if (key === '__proto__' || (key === 'toJSON' && !has(parent, key))) {
             return currentChildVal;
           }
           if (isSymbol(key)) {
+            if (customGet && customKeys.includes(key)) {
+              return customGet(key);
+            }
             // 防止直接对 draft 时报错：Method xx.yy called on incompatible receiver
             // 例如 Array.from(draft)
             if (isFn(currentChildVal)) {
@@ -965,7 +966,6 @@
           const parentType = parentMeta === null || parentMeta === void 0 ? void 0 : parentMeta.selfType;
           // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
           // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
-          // 是为了配合 data-node-processor 里的 ATTENTION_1
           if (TYPE_BLACK_LIST.includes(parentType) && PROPERTIES_BLACK_LIST.includes(key)) {
             return parentMeta.copy[key];
           }
