@@ -1,6 +1,6 @@
 ## limu 🍋
 
-`limu` is short of **love immutable**, born for efficient creation and operation of immutable object, based on shallow copy on read and mark modified on write mechanism.
+`limu` is short for **love immutable**, born for efficient creation and operation of immutable object, based on shallow copy on read and mark modified on write mechanism.
 
 <p align="center">
   <a href="https://concentjs.github.io/concent-doc">
