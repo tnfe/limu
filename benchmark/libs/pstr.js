@@ -9,3 +9,7 @@ exports.finishDraft = function (obj) {
 exports.original = function (obj) {
   return obj;
 };
+
+exports.produce = function (obj, cb) {
+  cb(exports.createDraft(obj));
+};

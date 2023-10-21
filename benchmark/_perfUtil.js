@@ -3,6 +3,7 @@ const mutative = require('./libs/mutative');
 const { limu, limuDebug, limuDebugSlow } = require('./libs/limu');
 const pstr = require('./libs/pstr');
 const native = require('./libs/native');
+const structura = require('./libs/structura');
 const util = require('./_util');
 
 const immutLibs = {
@@ -10,6 +11,7 @@ const immutLibs = {
   limu,
   limuDebug,
   limuDebugSlow,
+  structura,
   mutative,
   pstr,
   native, // just to see native js operation perf
@@ -44,6 +46,7 @@ const OP_ARR = stategies[curStrategy][1]; // operate arr or not
 immer.setAutoFreeze(AUTO_FREEZE);
 limu.setAutoFreeze(AUTO_FREEZE);
 mutative.setAutoFreeze(AUTO_FREEZE);
+structura.enableAutoFreeze(AUTO_FREEZE)
 
 function getBase(arrLen = ARR_LEN) {
   return util.getBase(arrLen, false);
@@ -106,6 +109,7 @@ exports.runPerfCase = async function (options) {
   // measureBenchmark('limuDebugSlow', options);
   measureBenchmark('limu', options);
   measureBenchmark('mutative', options);
+  measureBenchmark('structura', options);
   measureBenchmark('pstr', options);
   measureBenchmark('native', options);
 
