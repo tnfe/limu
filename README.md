@@ -9,6 +9,7 @@
 </p>
 
 It is fast, It is nearly more than **2 or 20** times faster than `immer` in different situations. Click this [online perf demo](https://codesandbox.io/s/limu-simple-perf-case-ycky1t?file=/src/index.js) to review the amazing result.
+> No freeze by default, limu is 10 times or more faster than Immer in most scenarios
 
 - Debugging friendly, view draft directly anytime without `current`.
 - Smaller package, only 4.3kb gzip.
@@ -19,14 +20,13 @@ It is fast, It is nearly more than **2 or 20** times faster than `immer` in diff
 
 ## Performance ⚡️
 
-No freeze by default, limu is 15 times or more faster than Immer in most scenarios
+No freeze by default, limu is 10 times or more faster than Immer in most scenarios after 3.7 version, limu is now the fastest immutable js lib of all ( faster than immer and mutative ).
 
 [test 1](https://github.com/tnfe/limu/blob/main/benchmark/opBigData.js) (inspired by this [immer case](https://github.com/immerjs/immer/blob/main/__performance_tests__/add-data.mjs) ) ![](https://user-images.githubusercontent.com/7334950/257369962-c0577e96-cb2c-48cb-8f65-c11979bfd506.png)
 
 [test 2](https://github.com/tnfe/limu/blob/main/benchmark/caseReadWrite.js) ![test 2](https://user-images.githubusercontent.com/7334950/257380995-1bfc3652-1730-4ecd-ba1b-adaddd3db98d.png)
 
 The performance testing process is as follows
-> I am proud to announce that after 3.7 version, limu is now the fastest immutable js lib of all ( faster than immer and mutative ).
 
 ```bash
 git clone https://github.com/tnfe/limu
