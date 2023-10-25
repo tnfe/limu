@@ -11,7 +11,7 @@ import type { DataType } from '../inner-types';
  */
 export const LIMU_MAJOR_VER = 3;
 
-export const VER = '3.7.2';
+export const VER = '3.7.3';
 
 /** meta 数据key，仅 debug 模式才挂到对象的原型上 */
 export const META_KEY = Symbol('M');
@@ -106,7 +106,7 @@ export const CAREFUL_FNKEYS: Record<string, string[]> = {
 export const CHANGE_FNKEYS: Record<string, string[]> = {
   [MAP]: ['clear', 'set', 'delete'],
   [SET]: ['clear', 'add', 'delete'],
-  [ARRAY]: arrFnKeys,
+  [ARRAY]: ['pop', 'push', 'shift', 'unshift', 'splice', 'sort', 'copyWithin'],
 };
 
 export const PROXYITEM_FNKEYS: Record<string, string[]> = {

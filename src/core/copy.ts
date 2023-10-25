@@ -15,6 +15,7 @@ export function deepCopy<T extends ObjectLike>(obj: T): T {
     }
 
     // TODO: 或许这里通过 metaVer 能够解决多引用问题 ( see 3.4.2 )
+    // TODO: 传入参数 reuse，确定是否走逻辑查看 meta.modified，并复用 meta.copy or meta.self
 
     let newNode = obj;
     if (Array.isArray(obj)) {
