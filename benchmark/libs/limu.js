@@ -1,6 +1,7 @@
 const lib = require('limu');
 // make sure you've runned command `npm run build` at project root dir
 // const lib = require('../../dist/limu.js');
+// console.log('read dist');
 
 const limuDebug = {
   ...lib,

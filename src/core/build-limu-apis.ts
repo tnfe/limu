@@ -17,7 +17,10 @@ import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 // 避免 Cannot set property size of #<Map> which has only a getter
 // 避免 Cannot set property size of #<Set> which has only a getter
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'] as const;
-const TYPE_BLACK_LIST = [ARRAY, SET, MAP];
+const PBL_DICT: Record<string, number> = {}; // for perf
+PROPERTIES_BLACK_LIST.forEach(item => PBL_DICT[item] = 1);
+
+const TYPE_BLACK_DICT: Record<string, number> = { [ARRAY]: 1, [SET]: 1, [MAP]: 1 }; // for perf
 export const FNIISH_HANDLER_MAP = new Map();
 
 export function buildLimuApis(options?: IInnerCreateDraftOptions) {
@@ -125,7 +128,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         const parentType = parentMeta?.selfType;
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
-        if (TYPE_BLACK_LIST.includes(parentType) && PROPERTIES_BLACK_LIST.includes(key)) {
+        if (TYPE_BLACK_DICT[parentType] && PBL_DICT[key]) {
           return parentMeta.copy[key];
         }
         // 可能会指向代理对象
@@ -306,8 +309,9 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           // let cachedFrozenOriginalBase = frozenOriginalBaseMap.get(rootMeta.originalSelf);
           final = deepFreeze(final);
         }
-        apiCtx.metaMap.clear();
+        ROOT_CTX.delete(metaVer);
 
+        // limu doesn't need this currently
         // if (usePatches) {
         //   return [final, patches, inversePatches];
         // }

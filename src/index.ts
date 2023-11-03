@@ -6,18 +6,15 @@
 import { buildLimuApis, FNIISH_HANDLER_MAP } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
-import { getDraftMeta, isDiff as isDiffFn, isDraft as isDraftFn, shallowCompare as shallowCompareFn } from './core/meta';
 import { current as currentFn, original as originalFn } from './core/user-util';
 import type { ICreateDraftOptions, IInnerCreateDraftOptions, IOperateParams, ObjectLike, Op } from './inner-types';
-
 import { IMMUT_BASE, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
 import { canBeNum, isFn, isMap, isObject, isPrimitive, isPromiseFn, isPromiseResult, isSet, isSymbol, noop } from './support/util';
-
-export type { ICreateDraftOptions, IOperateParams, ObjectLike, Op };
-
+import { getDraftMeta, isDiff as isDiffFn, isDraft as isDraftFn, shallowCompare as shallowCompareFn } from './core/meta';
 // 避免降到测试覆盖率
-// export { getDraftMeta, isDraft, isDiff, shallowCompare }
+// export { getDraftMeta, isDraft, isDiff, shallowCompare };
+export type { ICreateDraftOptions, IOperateParams, ObjectLike, Op };
 
 // isDraft isDiff shallowCompare 高频使用的从顶层暴露，其他随 limuUtils 里暴露
 

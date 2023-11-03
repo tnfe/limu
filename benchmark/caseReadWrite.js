@@ -19,16 +19,15 @@ runPerfCase({
         draft.a7.b.c.d.e.f.g.h.i.j.k.l.m.n = 2;
       }
 
-      if (operateArr) {
-        draft.arr[draft.arr.length - 1].a = 888;
-        // draft.arr.forEach((item, idx) => { // bad way
-        lib.original(draft.arr).forEach((item, idx) => {
-          // good way
-          if (idx === 100) {
-            draft.arr[1].a = 888;
-          }
-        });
-      }
+      // if (operateArr) {
+      //   draft.arr[draft.arr.length - 1].a = 888;
+      //   // draft.arr.forEach((item, idx) => { // bad way
+      //   lib.original(draft.arr).forEach((item, idx) => { // good way
+      //     if (idx === 100) {
+      //       draft.arr[1].a = 888;
+      //     }
+      //   });
+      // }
     });
 
     if (base === final) {

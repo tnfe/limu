@@ -84,9 +84,15 @@ export function makeCopyWithMeta(
     apiCtx: IApiCtx;
     parentType: DataType;
     fastModeRange: FastModeRange;
+    immutBase: boolean;
   },
 ) {
-  const { apiCtx } = options;
+  const { apiCtx, immutBase } = options;
+  // LABEL: FIX IMMUT MEM LEAK
+  if (immutBase) {
+    return { copy: ori, fast: false };
+  }
+
   const { copy, fast } = tryMakeCopy(ori, options);
   attachMeta(copy, meta, { apiCtx, fast });
   return { copy, fast };

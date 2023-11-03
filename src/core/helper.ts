@@ -8,6 +8,7 @@ import { ARRAY, MAP, oppositeOps, PROXYITEM_FNKEYS, SET } from '../support/const
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { makeCopyWithMeta } from './copy';
 import { attachMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
+// import { getMergeStatus, setMergeStatus, JUST_MERGED, JUST_READ } from './user-util';
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(baseData: any, options: any) {
@@ -15,6 +16,7 @@ export function createScopedMeta(baseData: any, options: any) {
   const meta = newMeta(baseData, options);
 
   const { copy, fast } = makeCopyWithMeta(baseData, meta, {
+    immutBase,
     parentType,
     fastModeRange,
     apiCtx,
@@ -67,8 +69,15 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
   if (readOnly && parentMeta && !isFn(val)) {
     const { copy, self } = parentMeta;
     const latestVal = self[key];
-    copy[key] = latestVal;
-    curVal = latestVal;
+    if (curVal !== latestVal) {
+      const meta = apiCtx.metaMap.get(curVal);
+      if (meta) {
+        apiCtx.metaMap.delete(curVal);
+        apiCtx.metaMap.delete(meta.proxyVal);
+      }
+      copy[key] = latestVal;
+      curVal = latestVal;
+    }
   }
 
   const mayCreateProxyVal = (val: any, inputKey?: string) => {
@@ -168,7 +177,7 @@ export function getUnProxyValue(value: any, apiCtx: IApiCtx) {
   return valueMeta.copy;
 }
 
-export function recordPatch(options: { meta: DraftMeta; [key: string]: any }) {
+export function recordPatch(options: { meta: DraftMeta;[key: string]: any }) {
   // TODO: to be implement in the future
   noop(options, oppositeOps);
 }

@@ -99,12 +99,10 @@ function measureBenchmark(libName, options) {
  * @param {(params: {lib: typeof limu, base:any, operateArr:boolean, moreDeepOp:boolean })=>void} options.userBenchmark - 是否复用base
  */
 exports.runPerfCase = async function (options) {
-  const { arrLen = ARR_LEN } = options;
+  const { arrLen = ARR_LEN, seeMemLeakTimes = 2 } = options;
   console.log(`autoFreeze ${AUTO_FREEZE}, opArr ${OP_ARR}, moreDeepOp ${MORE_DEEP_OP}, arrLen ${arrLen}`);
   util.showMem('Before measure', true);
-
   measureBenchmark('immer', options);
-  // speedup at: node caseOnlyRead.js
   // measureBenchmark('limuDebug', options);
   // measureBenchmark('limuDebugSlow', options);
   measureBenchmark('limu', options);
@@ -115,7 +113,7 @@ exports.runPerfCase = async function (options) {
 
   // see if mem leak or not
   console.log('');
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < seeMemLeakTimes; i++) {
     await util.sleep();
     util.showMem(`After ${5000 * (i + 1)} ms`);
   }
