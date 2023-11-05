@@ -8,7 +8,7 @@ import { ARRAY } from '../support/consts';
 import { isMap, isObject, isPrimitive, isSet } from '../support/util';
 import { attachMeta } from './meta';
 
-export function deepCopy<T extends ObjectLike>(obj: T): T {
+export function deepCopy<T = ObjectLike>(obj: T): T {
   const innerDeep = (obj: any) => {
     if (isPrimitive(obj)) {
       return obj;

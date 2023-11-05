@@ -62,8 +62,8 @@ export type LimuUtils = typeof limuUtils;
 
 type LimuApis = ReturnType<typeof buildLimuApis>;
 export type Draft<T> = T;
-export type CreateDraft = <T extends ObjectLike>(base: T, options?: ICreateDraftOptions) => Draft<T>;
-export type FinishDraft = <T extends ObjectLike>(draft: T) => T;
+export type CreateDraft = <T = ObjectLike>(base: T, options?: ICreateDraftOptions) => Draft<T>;
+export type FinishDraft = <T = ObjectLike>(draft: T) => T;
 export type ProduceCb<T> = (draft: Draft<T>) => void;
 export type GenNewStateCb<T> = (state: T) => T;
 // export type GenNewPatchesCb<T> = (state: T) => any[];
@@ -72,18 +72,18 @@ export type GenNewStateCb<T> = (state: T) => T;
  * 同步完成生成草稿、修改草稿、结束草稿3个步骤的函数
  */
 export interface IProduce {
-  <T extends ObjectLike>(baseState: T, recipe: ProduceCb<T>, options?: ICreateDraftOptions): T;
+  <T = ObjectLike>(baseState: T, recipe: ProduceCb<T>, options?: ICreateDraftOptions): T;
   /**
    * use in react:
    * setState(produce(draft=>{
    *    draft.name = 2;
    * }));
    */
-  <T extends ObjectLike>(recipe: ProduceCb<T>, options?: ICreateDraftOptions): GenNewStateCb<T>;
+  <T = ObjectLike>(recipe: ProduceCb<T>, options?: ICreateDraftOptions): GenNewStateCb<T>;
 }
 
 // export interface IProduceWithPatches {
-//   <T extends ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
+//   <T = ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
 // }
 
 /** limu 的版本号 */
@@ -93,7 +93,7 @@ export const VER = v;
  * 创建草稿函数，可对返回的草稿对象直接修改，此修改不会影响原始对象
  * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
  */
-export function createDraft<T extends ObjectLike = ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
+export function createDraft<T = ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
   const apis = buildLimuApis(options as IInnerCreateDraftOptions);
   // @ts-ignore add [as] just for click to see implement
   return apis.createDraft(base) as LimuApis['createDraft'];
@@ -103,7 +103,7 @@ export function createDraft<T extends ObjectLike = ObjectLike>(base: T, options?
  * 结束草稿的函数，生成的新对象和原始对象会结构共享
  * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
  */
-export function finishDraft<T extends ObjectLike = ObjectLike>(draft: Draft<T>): T {
+export function finishDraft<T = ObjectLike>(draft: Draft<T>): T {
   const finishHandler: LimuApis['finishDraft'] = FNIISH_HANDLER_MAP.get(draft);
   if (!finishHandler) {
     throw new Error(`Not a Limu root draft or draft has been finished!`);
@@ -165,7 +165,7 @@ export const deepFreeze = deepFreezeFn;
 /**
  * 对传入值做深克隆，返回的是克隆后的新值，如传入原始值则不做任何操作，原样返回
  */
-export function deepCopy<T extends ObjectLike>(obj: T) {
+export function deepCopy<T = ObjectLike>(obj: T) {
   return deepCopyFn(obj);
 }
 
@@ -174,7 +174,7 @@ export function deepCopy<T extends ObjectLike>(obj: T) {
  * immut 采用了读时浅代理的机制，相比deepFreeze会拥有更好性能，适用于不暴露原始对象出去，只暴露生成的不可变对象出去的场景
  * @see: https://tnfe.github.io/limu/docs/api/basic/immut
  */
-export function immut<T extends ObjectLike>(base: T, options?: Omit<ICreateDraftOptions, 'readOnly'>): T {
+export function immut<T = ObjectLike>(base: T, options?: Omit<ICreateDraftOptions, 'readOnly'>): T {
   const limuApis = buildLimuApis({ ...(options || {}), readOnly: true, [IMMUT_BASE]: true });
   const immutData = limuApis.createDraft(base);
   return immutData;

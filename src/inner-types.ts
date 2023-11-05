@@ -13,7 +13,7 @@ export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
 export type Op = 'del' | 'set' | 'get';
 export type DataType = 'Map' | 'Set' | 'Array' | 'Object';
 export type FastModeRange = 'array' | 'all' | 'none';
-export interface DraftMeta<T extends AnyObject = AnyObject> {
+export interface DraftMeta<T = AnyObject> {
   rootMeta: DraftMeta;
   parentMeta: null | DraftMeta;
   parent: null | ObjectLike;

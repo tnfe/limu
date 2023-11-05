@@ -256,7 +256,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     };
 
     return {
-      createDraft: <T extends ObjectLike>(mayDraft: T): T => {
+      createDraft: <T = ObjectLike>(mayDraft: T): T => {
         if (isPrimitive(mayDraft)) {
           throw new Error('base state can not be primitive');
         }

@@ -2,6 +2,7 @@
 
 export const produce = `
 import * as limu from 'limu';
+// ---------------- 以下代码可复制到console运行（window全局已绑定limu对象）----------------
 
 const { produce } = limu;
 const baseState = {
@@ -31,7 +32,8 @@ const nextState = producer(baseState);
 `;
 
 export const createDraft = `
-import { createDraft, finishDraft } from 'limu';
+import * as limu from 'limu';
+// ---------------- 以下代码可复制到console运行（window全局已绑定limu对象）----------------
 
 const { createDraft, finishDraft } = limu;
 const base = { a: 1, b: { b1: 1, b2: 2, b3: { b31: 1 } }, c: [1, 2, 3], d: { d1: 1000 }, e: 1000 };
@@ -54,10 +56,11 @@ console.log(final.e); // undefined
 `;
 
 export const immut = `
-import { immut } from 'limu';
+import * as limu from 'limu';
+// ---------------- 以下代码可复制到console运行（window全局已绑定limu对象）----------------
 
 // immut 对base生成一个不可修改的对象im，但base的修改将同步会影响到im，并始终和 base 保持结构共享
-
+const { immut } = limu;
 // 场景1：直接修改base
 const base = { a: 1, b: 2, c: [1, 2, 3], d: { d1: 1, d2: 2 } };
 const im = immut(base);
@@ -80,6 +83,7 @@ console.log(im.d.d1); // 100，im和base始终保持数据同步
 
 export const onOperate = `
 import * as limu from 'limu';
+// ---------------- 以下代码可复制到console运行（window全局已绑定limu对象）----------------
 
 // 基于 onOperate 可监听所有数据变更流程，produce/createDraft 均支持
 // produce(base, draftCb, { onOperate })

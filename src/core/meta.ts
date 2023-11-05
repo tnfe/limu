@@ -128,7 +128,7 @@ export function getNextMetaLevel(mayContainMetaObj: any, apiCtx: IApiCtx) {
   return meta ? meta.level + 1 : 1;
 }
 
-export function getSafeDraftMeta<T extends ObjectLike = ObjectLike>(proxyDraft: T, apiCtx: IApiCtx): DraftMeta<T> {
+export function getSafeDraftMeta<T = ObjectLike>(proxyDraft: T, apiCtx: IApiCtx): DraftMeta<T> {
   // @ts-ignore
   return apiCtx.metaMap.get(proxyDraft);
 }
