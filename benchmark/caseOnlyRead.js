@@ -6,7 +6,7 @@ runPerfCase({
   arrLen: 10000,
   userBenchmark: (params) => {
     const { lib, base, moreDeepOp } = params;
-    lib.produce(base, (draft)=>{
+    lib.produce(base, (draft) => {
       noop(draft.a);
       if (moreDeepOp) {
         noop(draft.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z);

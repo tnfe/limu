@@ -177,7 +177,7 @@ export function getUnProxyValue(value: any, apiCtx: IApiCtx) {
   return valueMeta.copy;
 }
 
-export function recordPatch(options: { meta: DraftMeta;[key: string]: any }) {
+export function recordPatch(options: { meta: DraftMeta; [key: string]: any }) {
   // TODO: to be implement in the future
   noop(options, oppositeOps);
 }

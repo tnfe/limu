@@ -31,7 +31,8 @@ runPerfCase({
         if (operateArr) {
           draft.arr[draft.arr.length - 1].a = 888;
           // draft.arr.forEach((item, idx) => { // bad way
-          lib.original(draft.arr).forEach((item, idx) => { // good way
+          lib.original(draft.arr).forEach((item, idx) => {
+            // good way
             if (idx === 100) {
               draft.arr[1].a = 888;
             }
@@ -50,6 +51,5 @@ runPerfCase({
       const z6 = immutData.a6.b.c.d.e.f.g.h.i.j.k.l.m.n;
       const z7 = immutData.a7.b.c.d.e.f.g.h.i.j.k.l.m.n;
     }
-
   },
 }).catch(console.error);

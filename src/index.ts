@@ -6,12 +6,12 @@
 import { buildLimuApis, FNIISH_HANDLER_MAP } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
+import { getDraftMeta, isDiff as isDiffFn, isDraft as isDraftFn, shallowCompare as shallowCompareFn } from './core/meta';
 import { current as currentFn, original as originalFn } from './core/user-util';
 import type { ICreateDraftOptions, IInnerCreateDraftOptions, IOperateParams, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
 import { canBeNum, isFn, isMap, isObject, isPrimitive, isPromiseFn, isPromiseResult, isSet, isSymbol, noop } from './support/util';
-import { getDraftMeta, isDiff as isDiffFn, isDraft as isDraftFn, shallowCompare as shallowCompareFn } from './core/meta';
 // 避免降到测试覆盖率
 // export { getDraftMeta, isDraft, isDiff, shallowCompare };
 export type { ICreateDraftOptions, IOperateParams, ObjectLike, Op };
@@ -152,6 +152,17 @@ function produceFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
 //   return produceFn(baseState, cb, copyOpts);
 // };
 
+/**
+ * ```ts
+ * // normal use:
+ * const next = produce(draft=>draft.a=1);
+ *
+ * // use in react:
+ * setState(produce(draft=>{
+ *    draft.name = 2;
+ * }));
+ * ```
+ */
 export const produce = produceFn as unknown as IProduce;
 
 // to be implemented in the future

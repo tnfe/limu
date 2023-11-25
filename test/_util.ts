@@ -54,6 +54,8 @@ export const produceTip = (testDescribe: string) => `${testDescribe} (with produ
 
 export const createDraftTip = (testDescribe: string) => `${testDescribe} (with createDraft, finishDraft)`;
 
+export const createDraftDebugTip = (testDescribe: string) => `${testDescribe} ([debugMode] with createDraft, finishDraft)`;
+
 export const strfy = (obj: any, space?: number) => {
   if (typeof obj === 'string') return obj;
   return JSON.stringify(obj, null, space ?? 0);
@@ -194,7 +196,7 @@ export function runTestSuit<T extends ObjectLike = ObjectLike>(
     });
 
     // test debug situation
-    test(createDraftTip(testCaseDesc), () => {
+    test(createDraftDebugTip(testCaseDesc), () => {
       const base = getBase();
       const draft = createDraft(base, { ...(options || {}), debug: true });
       operateDraft(draft, base);
@@ -323,7 +325,7 @@ export function runSetTestSuit(
       executeAssertLogic(setNew, setBase);
     });
 
-    test(createDraftTip(testCaseDesc), () => {
+    test(createDraftDebugTip(testCaseDesc), () => {
       const setBase = getSetBase();
       const setDraft = createDraft(setBase, { debug: true });
       operateDraft(setDraft, setBase);

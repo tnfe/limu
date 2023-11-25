@@ -46,6 +46,7 @@ const jestConfig = {
     // '<rootDir>/test/array-other/object-item-2.ts',
     // '<rootDir>/test/array-other/object-item-3.ts',
     // '<rootDir>/test/array-other/object-list.ts',
+    // '<rootDir>/test/array-other/case1-of-helux.ts',
 
     // '<rootDir>/test/map-other/case-nested-object.ts',
     // '<rootDir>/test/map-other/case1.ts',

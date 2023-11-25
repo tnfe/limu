@@ -46,7 +46,7 @@ const OP_ARR = stategies[curStrategy][1]; // operate arr or not
 immer.setAutoFreeze(AUTO_FREEZE);
 limu.setAutoFreeze(AUTO_FREEZE);
 mutative.setAutoFreeze(AUTO_FREEZE);
-structura.enableAutoFreeze(AUTO_FREEZE)
+structura.enableAutoFreeze(AUTO_FREEZE);
 
 function getBase(arrLen = ARR_LEN) {
   return util.getBase(arrLen, false);

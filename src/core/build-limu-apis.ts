@@ -18,7 +18,7 @@ import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 // 避免 Cannot set property size of #<Set> which has only a getter
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'] as const;
 const PBL_DICT: Record<string, number> = {}; // for perf
-PROPERTIES_BLACK_LIST.forEach(item => PBL_DICT[item] = 1);
+PROPERTIES_BLACK_LIST.forEach((item) => (PBL_DICT[item] = 1));
 
 const TYPE_BLACK_DICT: Record<string, number> = { [ARRAY]: 1, [SET]: 1, [MAP]: 1 }; // for perf
 export const FNIISH_HANDLER_MAP = new Map();

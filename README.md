@@ -9,6 +9,7 @@
 </p>
 
 It is fast, It is nearly more than **2 or 20** times faster than `immer` in different situations. Click this [online perf demo](https://codesandbox.io/s/limu-simple-perf-case-ycky1t?file=/src/index.js) to review the amazing result.
+
 > No freeze by default, limu is 10 times or more faster than Immer in most scenarios
 
 - Debugging friendly, view draft directly anytime without `current`.

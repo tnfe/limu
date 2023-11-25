@@ -18,4 +18,4 @@ function compare(arrNew, arrBase) {
   expect(arrBase[0].name === '111').toBeTruthy();
 }
 
-runTestSuit('test object-item', 'item', getArrBase, changeDraft, compare);
+runTestSuit('test object-item', 'change one item', getArrBase, changeDraft, compare);

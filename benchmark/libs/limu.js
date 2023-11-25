@@ -6,7 +6,7 @@ const lib = require('limu');
 const limuDebug = {
   ...lib,
   createDraft(base, options) {
-    return lib.createDraft(base, { debug:true, fastModeRange: 'all', ...(options || {}) });
+    return lib.createDraft(base, { debug: true, fastModeRange: 'all', ...(options || {}) });
   },
   produce(base, draftCb, options) {
     return lib.produce(base, draftCb, {
@@ -19,7 +19,7 @@ const limuDebug = {
 const limuDebugSlow = {
   ...lib,
   createDraft(base, options) {
-    return lib.createDraft(base, { debug:true, fastModeRange: 'none', ...(options || {}) });
+    return lib.createDraft(base, { debug: true, fastModeRange: 'none', ...(options || {}) });
   },
   produce(base, draftCb, options) {
     return lib.produce(base, draftCb, {
