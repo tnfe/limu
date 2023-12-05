@@ -69,6 +69,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         const changeFnKeys = CHANGE_FNKEYS[selfType] || [];
         isChanged = changeFnKeys.includes(key);
       } else if (op !== 'get') {
+        // 变化之后取 copy 比较
         const node = modified ? copy : self;
         isChanged = inputPMeta ? node[key] !== value : true;
       }

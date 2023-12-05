@@ -9,7 +9,7 @@ const jestConfig = {
   ],
   setupFilesAfterEnv: [],
   testMatch: [
-    // lastest case count: 512
+    // lastest case count: 513
     '<rootDir>/test/**/*.ts',
 
     // '<rootDir>/test/api-params/readOnly.ts',
@@ -19,6 +19,7 @@ const jestConfig = {
     // '<rootDir>/test/map-other/case-nested-object.ts',
 
     // '<rootDir>/test/api/api.ts',
+    // '<rootDir>/test/api/immut.ts',
     // '<rootDir>/test/api/limuUtils.ts',
     // '<rootDir>/test/api/setAutoFreeze.ts',
     // '<rootDir>/test/api/setAutoFreezeFalse.ts',
@@ -82,7 +83,7 @@ const jestConfig = {
 
     // '<rootDir>/test/diff-with-immer/sort.ts',
   ],
-  testPathIgnorePatterns: ['<rootDir>/test/_util.ts'],
+  testPathIgnorePatterns: ['<rootDir>/test/_util.ts', '<rootDir>/test/_data.ts'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'ts-jest',
     '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '<rootDir>/fileTransform.js',

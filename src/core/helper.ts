@@ -95,7 +95,11 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
         valMeta = createScopedMeta(key, val, options);
         recordVerScope(valMeta);
         // child value 指向 copy
-        parent[key] = valMeta.copy;
+        if (parentMeta.selfType === MAP) {
+          parent.set(key, valMeta.copy);
+        } else {
+          parent[key] = valMeta.copy;
+        }
       }
       return valMeta.proxyVal;
     }
