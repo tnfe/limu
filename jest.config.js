@@ -11,6 +11,9 @@ const jestConfig = {
   testMatch: [
     '<rootDir>/test/**/*.ts',
 
+    // '<rootDir>/test/api-params/readOnly.ts',
+    // '<rootDir>/test/api-params/onOperate.ts',
+
     // '<rootDir>/test/complex/scope-change.ts',
     // '<rootDir>/test/map-other/case-nested-object.ts',
 

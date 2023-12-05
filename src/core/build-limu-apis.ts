@@ -13,12 +13,19 @@ import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
 import { genMetaVer, getSafeDraftMeta, isDraft, ROOT_CTX } from './meta';
 import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 
+interface IExecOnOptions {
+  parentMeta: DraftMeta;
+  isChange?: boolean;
+  value?: any;
+  mayProxyVal?: any;
+}
+
 // 可直接返回的属性
 // 避免 Cannot set property size of #<Map> which has only a getter
 // 避免 Cannot set property size of #<Set> which has only a getter
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'] as const;
 const PBL_DICT: Record<string, number> = {}; // for perf
-PROPERTIES_BLACK_LIST.forEach((item) => (PBL_DICT[item] = 1));
+PROPERTIES_BLACK_LIST.forEach(item => PBL_DICT[item] = 1);
 
 const TYPE_BLACK_DICT: Record<string, number> = { [ARRAY]: 1, [SET]: 1, [MAP]: 1 }; // for perf
 export const FNIISH_HANDLER_MAP = new Map();
@@ -51,10 +58,11 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     return true;
   };
 
-  const execOnOperate = (op: Op, key: string, options: { parentMeta: DraftMeta; isChange?: boolean; value?: any }) => {
-    const { parentMeta } = options;
-    if (!parentMeta || !onOperate) return;
+  const execOnOperate = (op: Op, key: string, options: IExecOnOptions) => {
+    const { parentMeta, mayProxyVal } = options;
+    if (!parentMeta || !onOperate) return mayProxyVal;
     const { selfType, keyPath, self, copy } = parentMeta;
+    const grandpaMeta: any = parentMeta.parentMeta || {};
 
     let value: any = null;
     let isChange = false;
@@ -75,8 +83,9 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       value = copy[key] || self[key];
     }
 
-    onOperate({
+    const replacedVal = onOperate({
       parentType: selfType,
+      grandpaType: grandpaMeta.selfType || '',
       op,
       isBuiltInFnKey,
       isChange,
@@ -84,7 +93,9 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       keyPath,
       fullKeyPath: keyPath.concat(key),
       value,
+      proxyValue: mayProxyVal,
     });
+    return replacedVal !== undefined ? replacedVal : mayProxyVal;
   };
 
   const limuApis = (() => {
@@ -105,11 +116,12 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         if (META_VER === key) {
           return metaVer;
         }
-        let currentChildVal = parent[key];
+        /** current child value, it may been replaced to a proxy value later */
+        let mayProxyVal = parent[key];
 
         // 判断 toJSON 是为了兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
         if (key === '__proto__' || (key === 'toJSON' && !has(parent, key))) {
-          return currentChildVal;
+          return mayProxyVal;
         }
 
         if (isSymbol(key)) {
@@ -118,10 +130,10 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           }
           // 防止直接对 draft 时报错：Method xx.yy called on incompatible receiver
           // 例如 Array.from(draft)
-          if (isFn(currentChildVal)) {
-            return currentChildVal.bind(parent);
+          if (isFn(mayProxyVal)) {
+            return mayProxyVal.bind(parent);
           }
-          return currentChildVal;
+          return mayProxyVal;
         }
 
         const parentMeta = getSafeDraftMeta(parent, apiCtx) as DraftMeta;
@@ -132,7 +144,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           return parentMeta.copy[key];
         }
         // 可能会指向代理对象
-        currentChildVal = getMayProxiedVal(currentChildVal, {
+        mayProxyVal = getMayProxiedVal(mayProxyVal, {
           key,
           parentMeta,
           parentType,
@@ -151,16 +163,15 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         // 用下标取数组时，可直接返回
         // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
         if (parentType === ARRAY && canBeNum(key)) {
-          execOnOperate('get', key, { parentMeta });
-          return currentChildVal;
+          return execOnOperate('get', key, { parentMeta, mayProxyVal });
         }
 
         // @ts-ignore
         if (CAREFUL_TYPES[parentType]) {
-          currentChildVal = handleDataNode(parent, {
+          mayProxyVal = handleDataNode(parent, {
             op: key,
             key,
-            value: currentChildVal,
+            value: mayProxyVal,
             metaVer,
             calledBy: 'get',
             patches,
@@ -170,12 +181,10 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
             parentMeta,
             apiCtx,
           });
-          execOnOperate('get', key, { parentMeta });
-          return currentChildVal;
+          return execOnOperate('get', key, { parentMeta, mayProxyVal });
         }
 
-        execOnOperate('get', key, { parentMeta });
-        return currentChildVal;
+        return execOnOperate('get', key, { parentMeta, mayProxyVal });
       },
       // parent 指向的是代理之前的对象
       set: (parent: any, key: any, value: any) => {

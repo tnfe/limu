@@ -45,7 +45,10 @@ export interface DraftMeta<T = AnyObject> {
 }
 
 export interface IOperateParams {
+  /** 父亲节点的类型 */
   parentType: DataType;
+  /** 爷爷节点的类型，可能 map item 需要此类型做一些特殊逻辑，故此处提供，如为 ''，表示无爷爷节点 */
+  grandpaType: DataType;
   key: string;
   /**
    * key path contains parent node key
@@ -64,7 +67,10 @@ export interface IOperateParams {
    */
   isChange: boolean;
   op: Op;
+  /** raw value */
   value: any;
+  /** proxy value */
+  proxyValue: any;
 }
 
 export interface ICreateDraftOptions {
@@ -77,8 +83,10 @@ export interface ICreateDraftOptions {
   usePatches?: boolean;
   /**
    * any draft operation will trigger this callback
+   * for read opertion, if give a specified result, it will been passed to user,
+   * this is a dangerous behavior, and the caller is responsible for the consequences
    */
-  onOperate?: (params: IOperateParams) => void;
+  onOperate?: (params: IOperateParams) => any;
   /**
    * default: 'array', this param means fastMode effect range,
    * set this param 'all' only if need extremly fast performance,
