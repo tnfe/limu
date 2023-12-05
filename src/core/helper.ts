@@ -47,15 +47,7 @@ export function shouldGenerateProxyItems(parentType: any, key: any) {
 }
 
 export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & AnyObject) {
-  const {
-    key,
-    parentMeta,
-    parent,
-    parentType,
-    fastModeRange,
-    readOnly,
-    apiCtx,
-  } = options;
+  const { key, parentMeta, parent, parentType, fastModeRange, readOnly, apiCtx } = options;
   let curVal = val;
 
   // keep copy always same with self when readOnly = true
@@ -168,7 +160,7 @@ export function replaceSetOrMapMethods(
   meta: DraftMeta,
   options: {
     dataType: 'Map' | 'Set';
-    apiCtx: any,
+    apiCtx: any;
   },
 ) {
   const { dataType, apiCtx } = options;
@@ -201,7 +193,7 @@ export function replaceSetOrMapMethods(
       markModified(meta);
       if (meta.hasOnOperate) {
         const value = args[1];
-        meta.rootMeta.execOnOperate('set', args[0], { mayProxyVal: value, value, parentMeta: meta })
+        meta.rootMeta.execOnOperate('set', args[0], { mayProxyVal: value, value, parentMeta: meta });
       }
       // @ts-ignore
       return oriSet(...args);
@@ -211,8 +203,8 @@ export function replaceSetOrMapMethods(
       const mayProxyVal = oriGet(...args);
       if (meta.hasOnOperate) {
         const draftMeta = getDraftMeta(mayProxyVal, apiCtx);
-        const value = draftMeta ? (draftMeta.copy || draftMeta.self) : mayProxyVal;
-        meta.rootMeta.execOnOperate('get', args[0], { mayProxyVal, value, parentMeta: meta, isChanged: false })
+        const value = draftMeta ? draftMeta.copy || draftMeta.self : mayProxyVal;
+        meta.rootMeta.execOnOperate('get', args[0], { mayProxyVal, value, parentMeta: meta, isChanged: false });
       }
       return mayProxyVal;
     };

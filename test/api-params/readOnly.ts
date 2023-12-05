@@ -2,7 +2,6 @@
 import { createDraft, finishDraft } from '../_util';
 
 describe('param readOnly', () => {
-
   // readOnly=true 时，draft 始终和 base 保持数据同步
   test('test onOperate', () => {
     const base = { a: 50, b: 2, c: { d: { e: 1 } } };
@@ -40,7 +39,7 @@ describe('param readOnly', () => {
     expect(draft.a === undefined).toBeTruthy(); // get a
     expect(base.a === undefined).toBeTruthy();
 
-    console.log('getHit', getHit)
+    console.log('getHit', getHit);
     expect(getHit === 12).toBeTruthy();
     expect(delHit === 1).toBeTruthy();
 

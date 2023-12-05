@@ -51,7 +51,7 @@ describe('check apis', () => {
     }
 
     try {
-      const curryCb = produce(async () => { });
+      const curryCb = produce(async () => {});
       curryCb({ tip: 'react base state' });
     } catch (e: any) {
       expect(e.message).toMatch(/(?=produce callback can not be a promise function or result)/);

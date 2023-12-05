@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta, IApiCtx, IInnerCreateDraftOptions, ObjectLike, Op, IExecOnOptions } from '../inner-types';
+import type { DraftMeta, IApiCtx, IExecOnOptions, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
 import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_VER, SET } from '../support/consts';
 import { conf } from '../support/inner-data';
 import { canBeNum, has, isFn, isPrimitive, isSymbol } from '../support/util';
@@ -18,7 +18,7 @@ import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 // 避免 Cannot set property size of #<Set> which has only a getter
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'] as const;
 const PBL_DICT: Record<string, number> = {}; // for perf
-PROPERTIES_BLACK_LIST.forEach(item => PBL_DICT[item] = 1);
+PROPERTIES_BLACK_LIST.forEach((item) => (PBL_DICT[item] = 1));
 
 const TYPE_BLACK_DICT: Record<string, number> = { [ARRAY]: 1, [SET]: 1, [MAP]: 1 }; // for perf
 export const FNIISH_HANDLER_MAP = new Map();
@@ -53,11 +53,11 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
 
   const execOnOperate = (op: Op, key: string, options: IExecOnOptions) => {
     const { mayProxyVal, parentMeta: inputPMeta, value } = options;
-    if (!onOperate) return mayProxyVal;
+    let isChanged = false;
+    if (!onOperate) return { isChanged, mayProxyVal };
     const parentMeta = (inputPMeta || {}) as DraftMeta;
     const { selfType = '', keyPath = [], copy, self, modified } = parentMeta || {};
 
-    let isChanged = false;
     let isBuiltInFnKey = false;
     // 优先采用显式传递的 isChange
     if (options.isChanged !== undefined) {
@@ -75,9 +75,18 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       }
     }
 
-    const replacedVal = onOperate({
+    let replacedValue: any = null;
+    let isReplaced = false;
+    const replaceValue = (value) => {
+      isReplaced = true;
+      replacedValue = value;
+    };
+    const getReplaced = () => ({ isReplaced, replacedValue });
+    onOperate({
       parentType: selfType,
       op,
+      replaceValue,
+      getReplaced,
       isBuiltInFnKey,
       isChanged,
       key,
@@ -86,7 +95,10 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       value,
       proxyValue: mayProxyVal,
     });
-    return replacedVal !== undefined ? replacedVal : mayProxyVal;
+    return {
+      mayProxyVal: isReplaced ? replacedValue : mayProxyVal,
+      isChanged,
+    };
   };
 
   const limuApis = (() => {
@@ -150,7 +162,8 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         // 用下标取数组时，可直接返回
         // 例如数组操作: arrDraft[0].xxx = 'new'， 此时 arrDraft[0] 需要操作的是代理对象
         if (parentType === ARRAY && canBeNum(key)) {
-          return execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal });
+          const ret = execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal });
+          return ret.mayProxyVal;
         }
 
         // @ts-ignore
@@ -165,10 +178,12 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
             parentMeta,
             apiCtx,
           });
-          return execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal });
+          const ret = execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal });
+          return ret.mayProxyVal;
         }
 
-        return execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal });
+        const ret = execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal });
+        return ret.mayProxyVal;
       },
       // parent 指向的是代理之前的对象
       set: (parent: any, key: any, value: any) => {
@@ -207,15 +222,26 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           parentMeta.__callSet = true;
         }
 
-        execOnOperate('set', key, { parentMeta, value: targetValue });
-        handleDataNode(parent, {
-          parentMeta,
-          key,
-          value: targetValue,
-          metaVer,
-          calledBy: 'set',
-          apiCtx,
-        });
+        let isChanged = false;
+        if (!onOperate) {
+          // 变化之后取 copy 比较
+          const node = parentMeta.modified ? parentMeta.copy : parentMeta.self;
+          isChanged = node[key] !== value;
+        } else {
+          const ret = execOnOperate('set', key, { parentMeta, value: targetValue });
+          isChanged = ret.isChanged;
+        }
+
+        if (isChanged) {
+          handleDataNode(parent, {
+            parentMeta,
+            key,
+            value: targetValue,
+            metaVer,
+            calledBy: 'set',
+            apiCtx,
+          });
+        }
 
         return true;
       },

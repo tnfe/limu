@@ -2,7 +2,6 @@ import { createDraft } from '../../src';
 import { dictFictory } from '../_data';
 
 describe('check onOperate', () => {
-
   test('onOperate: set map item same value', () => {
     const base = dictFictory();
     const draft = createDraft(base, {
@@ -13,7 +12,7 @@ describe('check onOperate', () => {
         }
       },
     });
-    const item = draft.extra.map.get(1)
+    const item = draft.extra.map.get(1);
     if (item) {
       item.name = item.name;
     }
@@ -29,7 +28,7 @@ describe('check onOperate', () => {
         }
       },
     });
-    const item = draft.extra.map.get(1)
+    const item = draft.extra.map.get(1);
     if (item) {
       item.name = item.name + 'new';
     }
@@ -44,15 +43,17 @@ describe('check onOperate', () => {
         const { fullKeyPath, isChanged, op } = params;
         if (fullKeyPath[fullKeyPath.length - 1] === 'name' && op !== 'get') {
           count += 1;
-          if (count === 1) { // 第一次变了
+          if (count === 1) {
+            // 第一次变了
             expect(isChanged).toBe(true);
-          } else { // 第一次没变
+          } else {
+            // 第一次没变
             expect(isChanged).toBe(false);
           }
         }
       },
     });
-    const item = draft.extra.map.get(1)
+    const item = draft.extra.map.get(1);
     if (item) {
       item.name = 'new_1';
       item.name = 'new_1';
@@ -70,13 +71,12 @@ describe('check onOperate', () => {
         }
       },
     });
-    const item = draft.extra.map.get(1)
+    const item = draft.extra.map.get(1);
     if (item) {
       item.name = 'new_1';
       item.name = 'new_2';
     }
   });
-
 
   test('onOperate: set map item 3 times ( new_1, new_2, new_2 ) ', () => {
     const base = dictFictory();
@@ -87,22 +87,24 @@ describe('check onOperate', () => {
         const { fullKeyPath, isChanged, op } = params;
         if (fullKeyPath[fullKeyPath.length - 1] === 'name' && op !== 'get') {
           count += 1;
-          if (count === 1) { // 第1次变了
+          if (count === 1) {
+            // 第1次变了
             expect(isChanged).toBe(true);
-          } else if (count === 2) { // 第2次变了
+          } else if (count === 2) {
+            // 第2次变了
             expect(isChanged).toBe(true);
-          } else { // 第3次没变
+          } else {
+            // 第3次没变
             expect(isChanged).toBe(false);
           }
         }
       },
     });
-    const item = draft.extra.map.get(1)
+    const item = draft.extra.map.get(1);
     if (item) {
       item.name = 'new_1';
       item.name = 'new_2';
       item.name = 'new_2';
     }
   });
-
 });

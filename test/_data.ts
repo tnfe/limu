@@ -1,4 +1,3 @@
-
 export function dictFictory() {
   return {
     a: {

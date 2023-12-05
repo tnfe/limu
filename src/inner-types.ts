@@ -21,7 +21,6 @@ export interface IExecOnOptions {
   mayProxyVal?: any;
 }
 
-
 export interface DraftMeta<T = AnyObject> {
   rootMeta: DraftMeta;
   parentMeta: null | DraftMeta;
@@ -80,6 +79,15 @@ export interface IOperateParams {
   value: any;
   /** proxy value */
   proxyValue: any;
+  /**
+   * when get op triggered, user can pass a new value to replace the inner returned value,
+   * this is a dangerous behavior, the caller is responsible for the consequences
+   */
+  replaceValue: (newValue: any) => void;
+  /**
+   * get replaced info
+   */
+  getReplaced: <T = any>() => { isReplaced: boolean; replacedValue: T };
 }
 
 export interface ICreateDraftOptions {
@@ -90,8 +98,6 @@ export interface ICreateDraftOptions {
   autoFreeze?: boolean;
   /**
    * any draft operation will trigger this callback
-   * for read opertion, if give a specified result, it will been passed to user,
-   * this is a dangerous behavior, and the caller is responsible for the consequences
    */
   onOperate?: (params: IOperateParams) => any;
   /**
