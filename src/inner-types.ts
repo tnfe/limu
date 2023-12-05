@@ -13,6 +13,15 @@ export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
 export type Op = 'del' | 'set' | 'get';
 export type DataType = 'Map' | 'Set' | 'Array' | 'Object';
 export type FastModeRange = 'array' | 'all' | 'none';
+
+export interface IExecOnOptions {
+  parentMeta: DraftMeta | null;
+  isChange?: boolean;
+  value?: any;
+  mayProxyVal?: any;
+}
+
+
 export interface DraftMeta<T = AnyObject> {
   rootMeta: DraftMeta;
   parentMeta: null | DraftMeta;
@@ -24,6 +33,8 @@ export interface DraftMeta<T = AnyObject> {
   modified: boolean;
   /** 记录数组顺序是否发生变化，辅助数组结构的数据在 clearScopes 阶段决策如何重赋值 */
   isArrOrderChanged: boolean;
+  hasOnOperate: boolean;
+  execOnOperate: (op: Op, key: string, options: IExecOnOptions) => any;
   isImmutBase: boolean;
   isDel: boolean;
   isFast: boolean;

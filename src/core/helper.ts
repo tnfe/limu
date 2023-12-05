@@ -7,13 +7,14 @@ import { AnyObject, DraftMeta, IApiCtx } from '../inner-types';
 import { ARRAY, MAP, oppositeOps, PROXYITEM_FNKEYS, SET } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { makeCopyWithMeta } from './copy';
-import { attachMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
+import { attachMeta, getDraftMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
 // import { getMergeStatus, setMergeStatus, JUST_MERGED, JUST_READ } from './user-util';
 import { recordVerScope } from './scope';
 
-export function createScopedMeta(baseData: any, options: any) {
+export function createScopedMeta(key: any, baseData: any, options: any) {
   const { traps, parentType, fastModeRange, immutBase, apiCtx } = options;
-  const meta = newMeta(baseData, options);
+  // new meta data for current data node
+  const meta = newMeta(key, baseData, options);
 
   const { copy, fast } = makeCopyWithMeta(baseData, meta, {
     immutBase,
@@ -50,17 +51,13 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
   const {
     key,
     parentMeta,
-    ver,
-    traps,
     parent,
     patches,
     inversePatches,
     usePatches,
     parentType,
     fastModeRange,
-    immutBase,
     readOnly,
-    compareVer,
     apiCtx,
   } = options;
   let curVal = val;
@@ -99,18 +96,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
       let valMeta = getSafeDraftMeta(val, apiCtx);
       // 惰性生成代理对象和其元数据
       if (!valMeta) {
-        valMeta = createScopedMeta(val, {
-          key,
-          parentMeta,
-          parentType,
-          ver,
-          traps,
-          fastModeRange,
-          immutBase,
-          readOnly,
-          compareVer,
-          apiCtx,
-        });
+        valMeta = createScopedMeta(key, val, options);
         recordVerScope(valMeta);
         // child value 指向 copy
         parent[key] = valMeta.copy;
@@ -136,10 +122,11 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
         patches,
         inversePatches,
         usePatches,
+        apiCtx,
       });
       proxyItems = attachMeta(tmp, parentMeta, { fast: fastModeRange, apiCtx });
 
-      // 区别于 2.0.2 版本，这里提前把copy指回来
+      // 区别于 2.0.2 版本，这里提前把 copy 指回来
       parentMeta.copy = proxyItems;
     } else if (parentType === MAP) {
       const tmp = new Map();
@@ -149,6 +136,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
         patches,
         inversePatches,
         usePatches,
+        apiCtx,
       });
       proxyItems = attachMeta(tmp, parentMeta, { fast: fastModeRange, apiCtx });
 
@@ -177,8 +165,8 @@ export function getUnProxyValue(value: any, apiCtx: IApiCtx) {
   return valueMeta.copy;
 }
 
-export function recordPatch(options: { meta: DraftMeta; [key: string]: any }) {
-  // TODO: to be implement in the future
+// TODO: to be implement in the future
+export function recordPatch(options: { meta: DraftMeta;[key: string]: any }) {
   noop(options, oppositeOps);
 }
 
@@ -194,9 +182,10 @@ export function replaceSetOrMapMethods(
     patches: any[];
     inversePatches: any[];
     usePatches: boolean;
+    apiCtx: any,
   },
 ) {
-  const { dataType } = options;
+  const { dataType, apiCtx } = options;
   // 拦截 set delete clear add，注意 set，add 在末尾判断后添加
   // 支持用户使用 callback 的第三位参数 (val, key, map) 的 map 当做 draft 使用
   const oriDel = mapOrSet.delete.bind(mapOrSet);
@@ -215,18 +204,34 @@ export function replaceSetOrMapMethods(
     const oriAdd = mapOrSet.add.bind(mapOrSet);
     mapOrSet.add = function limuAdd(...args: any[]) {
       markModified(meta);
-      recordPatch({ meta, ...options });
+      // recordPatch({ meta, ...options });
       return oriAdd(...args);
     };
   }
 
   if (dataType === MAP) {
     const oriSet = mapOrSet.set.bind(mapOrSet);
+    const oriGet = mapOrSet.get.bind(mapOrSet);
     mapOrSet.set = function limuSet(...args: any[]) {
       markModified(meta);
-      recordPatch({ meta, ...options });
+      if (meta.hasOnOperate) {
+        const { rootMeta, parentMeta } = meta;
+        const value = args[1];
+        rootMeta.execOnOperate('set', args[0], { mayProxyVal: value, value, parentMeta })
+      }
+      // recordPatch({ meta, ...options });
       // @ts-ignore
       return oriSet(...args);
+    };
+
+    mapOrSet.get = function limuGet(...args: any[]) {
+      const mayProxyVal = oriGet(...args);
+      if (meta.hasOnOperate) {
+        const { rootMeta, parentMeta } = meta;
+        const value = getDraftMeta(mayProxyVal, apiCtx);
+        rootMeta.execOnOperate('get', args[0], { mayProxyVal, value, parentMeta, isChange: false })
+      }
+      return mayProxyVal;
     };
   }
 }

@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DraftMeta, IApiCtx, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
+import type { DraftMeta, IApiCtx, IInnerCreateDraftOptions, ObjectLike, Op, IExecOnOptions } from '../inner-types';
 import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_VER, SET } from '../support/consts';
 import { conf } from '../support/inner-data';
 import { canBeNum, has, isFn, isPrimitive, isSymbol } from '../support/util';
@@ -12,13 +12,6 @@ import { deepFreeze } from './freeze';
 import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
 import { genMetaVer, getSafeDraftMeta, isDraft, ROOT_CTX } from './meta';
 import { extractFinalData, isInSameScope, recordVerScope } from './scope';
-
-interface IExecOnOptions {
-  parentMeta: DraftMeta;
-  isChange?: boolean;
-  value?: any;
-  mayProxyVal?: any;
-}
 
 // 可直接返回的属性
 // 避免 Cannot set property size of #<Map> which has only a getter
@@ -33,6 +26,7 @@ export const FNIISH_HANDLER_MAP = new Map();
 export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const opts = options || {};
   const onOperate = opts.onOperate;
+  const hasOnOperate = !!onOperate;
   const customKeys = opts.customKeys || [];
   const customGet = opts.customGet;
   const fastModeRange = opts.fastModeRange || conf.fastModeRange;
@@ -155,9 +149,10 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           fastModeRange,
           immutBase,
           readOnly,
-          inversePatches,
-          usePatches, // not implement currently
+          inversePatches, // TODO not implement currently, may remove it in the future
+          usePatches, // TODO not implement currently, may remove it in the future
           apiCtx,
+          hasOnOperate,
         });
 
         // 用下标取数组时，可直接返回
@@ -280,16 +275,17 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           oriBase = draftMeta.self;
         }
 
-        const meta = createScopedMeta(oriBase, {
-          key: '',
+        const meta = createScopedMeta('', oriBase, {
           ver: metaVer,
           traps: limuTraps,
           immutBase,
           readOnly,
           compareVer,
           apiCtx,
+          hasOnOperate,
         });
         recordVerScope(meta);
+        meta.execOnOperate = execOnOperate;
         FNIISH_HANDLER_MAP.set(meta.proxyVal, limuApis.finishDraft);
 
         return meta.proxyVal as T;
