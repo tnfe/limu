@@ -16,8 +16,8 @@ export type FastModeRange = 'array' | 'all' | 'none';
 
 export interface IExecOnOptions {
   parentMeta: DraftMeta | null;
-  isChange?: boolean;
-  value?: any;
+  value: any;
+  isChanged?: boolean;
   mayProxyVal?: any;
 }
 
@@ -56,10 +56,8 @@ export interface DraftMeta<T = AnyObject> {
 }
 
 export interface IOperateParams {
-  /** 父亲节点的类型 */
-  parentType: DataType;
-  /** 爷爷节点的类型，可能 map item 需要此类型做一些特殊逻辑，故此处提供，如为 ''，表示无爷爷节点 */
-  grandpaType: DataType;
+  /** 父亲节点的类型，零长字符串表示无父亲节点 */
+  parentType: DataType | '';
   key: string;
   /**
    * key path contains parent node key
@@ -74,9 +72,9 @@ export interface IOperateParams {
    */
   isBuiltInFnKey: boolean;
   /**
-   * is current operation a operation that will directly change data node
+   * is data node changed by current operation
    */
-  isChange: boolean;
+  isChanged: boolean;
   op: Op;
   /** raw value */
   value: any;
@@ -90,8 +88,6 @@ export interface ICreateDraftOptions {
    * allow user overwrite global autoFreeze setting in current call process
    */
   autoFreeze?: boolean;
-  /** it does't works currently */
-  usePatches?: boolean;
   /**
    * any draft operation will trigger this callback
    * for read opertion, if give a specified result, it will been passed to user,

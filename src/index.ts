@@ -147,11 +147,6 @@ function produceFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
   return innerProduce(baseState, cb, options) as any;
 }
 
-// function producePatchesFn(baseState: any, cb: any, options?: ICreateDraftOptions) {
-//   const copyOpts: ICreateDraftOptions = { ... (options || {}), usePatches: true };
-//   return produceFn(baseState, cb, copyOpts);
-// };
-
 /**
  * ```ts
  * // normal use:

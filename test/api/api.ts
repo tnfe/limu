@@ -51,7 +51,7 @@ describe('check apis', () => {
     }
 
     try {
-      const curryCb = produce(async () => {});
+      const curryCb = produce(async () => { });
       curryCb({ tip: 'react base state' });
     } catch (e: any) {
       expect(e.message).toMatch(/(?=produce callback can not be a promise function or result)/);
@@ -359,8 +359,8 @@ describe('check apis', () => {
     const base = { a: 1, b: 2, c: { c1: 3, c2: { last: 100 } }, d: [1, 2, 3, 4] };
     const draft = createDraft(base, {
       onOperate: (params) => {
-        const { key, op, value, isChange } = params;
-        if (!isChange) return;
+        const { key, op, value, isChanged } = params;
+        if (!isChanged) return;
         if (key === 'a') {
           expect(op === 'get').toBeTruthy();
           expect(value === 1).toBeTruthy();
@@ -397,8 +397,9 @@ describe('check apis', () => {
     const base = { a: 1, b: 2, c: { c1: 3 } };
     const draft = createDraft(base, {
       onOperate: (params) => {
-        const { key, op, value, isChange } = params;
-        if (!isChange) return;
+        const { key, op, value, isChanged } = params;
+
+        if (!isChanged) return;
         if (key === 'a') {
           expect(op === 'set').toBeTruthy();
           expect(value === 200).toBeTruthy();
@@ -424,23 +425,28 @@ describe('check apis', () => {
 
   function testForFast(fastModeRange) {
     const base = { a: 1, b: 2, c: { c1: 3 }, d: [1, 2, 3] };
-    let onOperateHit = 0;
-    let opArrHit = 0;
+    let totalHit = 0;
+    let changedHit = 0;
+    let arrHit = 0;
     const draft = createDraft(base, {
       fastModeRange,
       onOperate: (params) => {
-        if (!params.isChange || params.isBuiltInFnKey) return;
-        onOperateHit += 1;
-        if (params.parentType === 'Array') opArrHit += 1;
+        totalHit += 1;
+        if (!params.isChanged) return;
+        changedHit += 1;
+        if (params.parentType === 'Array') {
+          // set value , set length
+          arrHit += 1;
+        }
       },
     });
-    draft.a = 200;
+    draft.a = 200; // hit 1 ( set a 200 )
     // @ts-ignore
-    delete draft.b;
-    draft.c.c1 = 300;
-    draft.d.push(1);
-    draft.d.push(2);
-    draft.d.push(3);
+    delete draft.b; // hit 1 ( del b 2 )
+    draft.c.c1 = 300; // hit 2 ( get c,  set c1 300 )
+    draft.d.push(1); // hit 4 ( get d, get push, set 3 1, set length 4 )
+    draft.d.push(2); // hit 4 ( ... )
+    draft.d.push(3); // hit 4 ( ... )
     const final = finishDraft(draft);
 
     expect(base !== final).toBeTruthy();
@@ -451,8 +457,9 @@ describe('check apis', () => {
     expect(final.b === undefined).toBeTruthy();
     expect(final.c).toMatchObject({ c1: 300 });
 
-    expect(onOperateHit === 9).toBeTruthy();
-    expect(opArrHit === 6).toBeTruthy();
+    expect(changedHit === 9).toBeTruthy();
+    expect(totalHit === 16).toBeTruthy();
+    expect(arrHit === 6).toBeTruthy();
   }
 
   test('fastModeRange all', () => {

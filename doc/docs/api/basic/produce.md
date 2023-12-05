@@ -121,13 +121,13 @@ const next = produce(
 将生成以下日志
 
 ```ts
-{"parentType":"Object","op":"get","isBuiltInFnKey":false,"isChange":false,"key":"c","keyPath":[],"fullKeyPath":["c"],"value":[1,2,3]}
-{"parentType":"Array","op":"get","isBuiltInFnKey":true,"isChange":true,"key":"push","keyPath":["c"],"fullKeyPath":["c","push"]}
-{"parentType":"Array","op":"set","isBuiltInFnKey":false,"isChange":true,"key":"3","keyPath":["c"],"fullKeyPath":["c","3"],"value":4}
-{"parentType":"Array","op":"set","isBuiltInFnKey":false,"isChange":true,"key":"length","keyPath":["c"],"fullKeyPath":["c","length"],"value":4}
-{"parentType":"Object","op":"set","isBuiltInFnKey":false,"isChange":true,"key":"a","keyPath":[],"fullKeyPath":["a"],"value":100}
-{"parentType":"Object","op":"get","isBuiltInFnKey":false,"isChange":false,"key":"d","keyPath":[],"fullKeyPath":["d"],"value":{"d1":1,"d2":2}}
-{"parentType":"Object","op":"del","isBuiltInFnKey":false,"isChange":true,"key":"d1","keyPath":["d"],"fullKeyPath":["d","d1"],"value":1}
+{"parentType":"Object","op":"get","isBuiltInFnKey":false,"isChanged":false,"key":"c","keyPath":[],"fullKeyPath":["c"],"value":[1,2,3]}
+{"parentType":"Array","op":"get","isBuiltInFnKey":true,"isChanged":true,"key":"push","keyPath":["c"],"fullKeyPath":["c","push"]}
+{"parentType":"Array","op":"set","isBuiltInFnKey":false,"isChanged":true,"key":"3","keyPath":["c"],"fullKeyPath":["c","3"],"value":4}
+{"parentType":"Array","op":"set","isBuiltInFnKey":false,"isChanged":true,"key":"length","keyPath":["c"],"fullKeyPath":["c","length"],"value":4}
+{"parentType":"Object","op":"set","isBuiltInFnKey":false,"isChanged":true,"key":"a","keyPath":[],"fullKeyPath":["a"],"value":100}
+{"parentType":"Object","op":"get","isBuiltInFnKey":false,"isChanged":false,"key":"d","keyPath":[],"fullKeyPath":["d"],"value":{"d1":1,"d2":2}}
+{"parentType":"Object","op":"del","isBuiltInFnKey":false,"isChanged":true,"key":"d1","keyPath":["d"],"fullKeyPath":["d","d1"],"value":1}
 ```
 
 `onOperate`的回调参数`IOperateParams`解释
@@ -145,7 +145,7 @@ interface IOperateParams {
   /** 当前key是否是内置函数，针对 'Map' 'Set' 'Array' 的操作时会可能为true，例如 forEach */
   isBuiltInFnKey: boolean;
   /** 当前操作是否将引起数据改变，如 Array.map 不会，Array.push 则会 */
-  isChange: boolean;
+  isChanged: boolean;
   /** 操作类型 */
   op: 'del' | 'set' | 'get';
   /** 对应的操作值 */

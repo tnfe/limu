@@ -40,6 +40,9 @@ isDraft(draft); // true
 
 判断任意两个值是否相等，主要解决代理后的对象判断问题
 
+- tru 表示不相等
+- false 表示相等
+
 判断其他普通值
 
 ```ts
@@ -54,9 +57,6 @@ ifDiff(obj, obj); // false
 判断代理对象
 
 ```ts
-ifDiff(1, 1); // false
-ifDiff(1, 0); // true
-
 const base = createDraft({ a: { b: 1 } });
 // 创建两个base的只读代理对象
 const im1 = immut(base);
