@@ -77,7 +77,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
 
     let replacedValue: any = null;
     let isReplaced = false;
-    const replaceValue = (value) => {
+    const replaceValue = (value: any) => {
       isReplaced = true;
       replacedValue = value;
     };
