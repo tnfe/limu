@@ -157,6 +157,9 @@ export function getDraftProxyMeta(mayDraftProxy: any) {
   return apiCtx.metaMap.get(mayDraftProxy) || null;
 }
 
+/**
+ * 判断两个值是否相同，true 表示不相等，false 表示相等
+ */
 export function isDiff(val1: any, val2: any) {
   const meta1 = getDraftProxyMeta(val1);
   const meta2 = getDraftProxyMeta(val2);
