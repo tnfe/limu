@@ -6,6 +6,8 @@
 export type AnyObject<T extends any = any> = {
   [key: string]: T;
 };
+export type Fn = (...args: any[]) => any;
+export type Primitive = boolean | number | string | symbol | null | undefined | BigInt;
 export type AnyArray = Array<any>;
 export type NumStrSymbol = number | string | symbol;
 export type Key = string | symbol;
@@ -55,6 +57,10 @@ export interface DraftMeta<T = AnyObject> {
 }
 
 export interface IOperateParams {
+  /** 如果时根节点，父亲为 undefined */
+  parent?: any;
+  /** 如果时根节点，父亲代理为 undefined */
+  parentProxy?: any;
   /** 父亲节点的类型，零长字符串表示无父亲节点 */
   parentType: DataType | '';
   key: string;

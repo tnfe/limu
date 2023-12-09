@@ -56,7 +56,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     let isChanged = false;
     if (!onOperate) return { isChanged, mayProxyVal };
     const parentMeta = (inputPMeta || {}) as DraftMeta;
-    const { selfType = '', keyPath = [], copy, self, modified } = parentMeta || {};
+    const { selfType = '', keyPath = [], copy, self, modified, proxyVal: parentProxy } = parentMeta || {};
 
     let isBuiltInFnKey = false;
     // 优先采用显式传递的 isChange
@@ -83,7 +83,9 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     };
     const getReplaced = () => ({ isReplaced, replacedValue });
     onOperate({
+      parent: self,
       parentType: selfType,
+      parentProxy,
       op,
       replaceValue,
       getReplaced,

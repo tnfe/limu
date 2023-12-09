@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DataType, ObjectLike } from '../inner-types';
+import type { AnyObject, DataType, Fn, ObjectLike, Primitive } from '../inner-types';
 import { ARR_DESC, desc2dataType, FN_DESC, MAP_DESC, OBJ_DESC, SET_DESC } from './consts';
 
 export const toString = Object.prototype.toString;
@@ -65,20 +65,20 @@ export function noop(...args: any[]) {
   return args;
 }
 
-export function isObject(val: any) {
+export function isObject(val: any): val is AnyObject {
   // attention，null desc is '[object Null]'
   return getValStrDesc(val) === OBJ_DESC;
 }
 
-export function isMap(val: any) {
+export function isMap(val: any): val is Map<any, any> {
   return getValStrDesc(val) === MAP_DESC;
 }
 
-export function isSet(val: any) {
+export function isSet(val: any): val is Set<any> {
   return getValStrDesc(val) === SET_DESC;
 }
 
-export function isFn(val: any) {
+export function isFn(val: any): val is Fn {
   return getValStrDesc(val) === FN_DESC;
 }
 
@@ -88,7 +88,7 @@ export function getDataType(dataNode: any): DataType {
   return dataType;
 }
 
-export function isPrimitive(val: any) {
+export function isPrimitive(val: any): val is Primitive {
   const desc = getValStrDesc(val);
   return ![OBJ_DESC, ARR_DESC, MAP_DESC, SET_DESC, FN_DESC].includes(desc);
 }
@@ -108,7 +108,7 @@ export function canBeNum(val: any) {
   return false;
 }
 
-export function isSymbol(maySymbol: any) {
+export function isSymbol(maySymbol: any): maySymbol is symbol {
   return typeof maySymbol === 'symbol';
 }
 
