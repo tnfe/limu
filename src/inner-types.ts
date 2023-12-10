@@ -57,6 +57,8 @@ export interface DraftMeta<T = AnyObject> {
 }
 
 export interface IOperateParams {
+  /** 操作记录是否来自于 immut 创建的对象 */
+  immutBase: boolean;
   /** 如果时根节点，父亲为 undefined */
   parent?: any;
   /** 如果时根节点，父亲代理为 undefined */

@@ -83,6 +83,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     };
     const getReplaced = () => ({ isReplaced, replacedValue });
     onOperate({
+      immutBase,
       parent: self,
       parentType: selfType,
       parentProxy,
