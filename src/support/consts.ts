@@ -11,7 +11,7 @@ import type { DataType } from '../inner-types';
  */
 export const LIMU_MAJOR_VER = 3;
 
-export const VER = '3.11.7';
+export const VER = '3.11.8';
 
 /** meta 数据key，仅 debug 模式才挂到对象的原型上 */
 export const META_KEY = Symbol('M');
@@ -25,6 +25,8 @@ export const MAP = 'Map';
 export const SET = 'Set';
 export const ARRAY = 'Array';
 export const OBJECT = 'Object';
+
+export const JS_SYM_KEYS = [Symbol.iterator, Symbol.toStringTag]
 
 export const CAREFUL_TYPES = { Map: MAP, Set: SET, Array: ARRAY } as const;
 

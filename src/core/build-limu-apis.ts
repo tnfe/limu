@@ -4,9 +4,9 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta, IApiCtx, IExecOnOptions, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
-import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_VER, SET } from '../support/consts';
+import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_VER, SET, JS_SYM_KEYS } from '../support/consts';
 import { conf } from '../support/inner-data';
-import { canBeNum, has, isPrimitive } from '../support/util';
+import { canBeNum, has, isPrimitive, isFn } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { deepFreeze } from './freeze';
 import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
@@ -122,7 +122,12 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         }
         /** current child value, it may been replaced to a proxy value later */
         const currentVal = parent[key];
-        if (Symbol.toStringTag === key) {
+        if (JS_SYM_KEYS.includes(key)) {
+          // 避免报错 Method xx.yy called on incompatible receiver
+          // 例如 Array.from(draft)
+          if (isFn(currentVal)) {
+            return currentVal.bind(parent);
+          }
           return currentVal;
         }
         // 判断 toJSON 是为了兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson

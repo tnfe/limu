@@ -9,14 +9,15 @@ const jestConfig = {
   ],
   setupFilesAfterEnv: [],
   testMatch: [
-    // lastest case count: 513
+    // lastest case count: 517
     '<rootDir>/test/**/*.ts',
 
     // '<rootDir>/test/api-params/readOnly.ts',
     // '<rootDir>/test/api-params/onOperate.ts',
 
     // '<rootDir>/test/complex/scope-change.ts',
-    // '<rootDir>/test/map-other/case-nested-object.ts',
+    // '<rootDir>/test/complex/arr-from-set.ts',
+    // '<rootDir>/test/map-other/read-inner-symbol-key.ts',
 
     // '<rootDir>/test/api/api.ts',
     // '<rootDir>/test/api/immut.ts',
