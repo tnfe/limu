@@ -34,9 +34,7 @@ function mayMarkModified(options: { calledBy: string; parentMeta: DraftMeta; op:
 
 function getValPathKey(parentMeta: DraftMeta, key: string) {
   const pathCopy = parentMeta.keyPath.slice();
-
   pathCopy.push(key);
-  console.log('getValPathKey', pathCopy);
   const valPathKey = pathCopy.join('|');
   return valPathKey;
 }
