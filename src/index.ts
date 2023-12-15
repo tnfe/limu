@@ -11,7 +11,20 @@ import { current as currentFn, original as originalFn } from './core/user-util';
 import type { ICreateDraftOptions, IInnerCreateDraftOptions, IOperateParams, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
-import { canBeNum, has, isFn, isMap, isObject, isPrimitive, isPromiseFn, isPromiseResult, isSet, isSymbol, noop, getDataType } from './support/util';
+import {
+  canBeNum,
+  getDataType,
+  has,
+  isFn,
+  isMap,
+  isObject,
+  isPrimitive,
+  isPromiseFn,
+  isPromiseResult,
+  isSet,
+  isSymbol,
+  noop,
+} from './support/util';
 // 避免降到测试覆盖率
 // export { getDraftMeta, isDraft, isDiff, shallowCompare };
 export type { ICreateDraftOptions, IOperateParams, ObjectLike, Op };
