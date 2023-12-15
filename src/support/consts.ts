@@ -26,6 +26,10 @@ export const SET = 'Set';
 export const ARRAY = 'Array';
 export const OBJECT = 'Object';
 
+/**
+ * limu 需要关心的 symbol 读取 key 列表
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol
+ */
 export const JS_SYM_KEYS = [Symbol.iterator, Symbol.toStringTag]
 
 export const CAREFUL_TYPES = { Map: MAP, Set: SET, Array: ARRAY } as const;
