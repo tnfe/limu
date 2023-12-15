@@ -6,7 +6,7 @@
 import type { DraftMeta, IApiCtx, IExecOnOptions, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
 import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_VER, SET } from '../support/consts';
 import { conf } from '../support/inner-data';
-import { canBeNum, has, isFn, isPrimitive, isSymbol } from '../support/util';
+import { canBeNum, has, isPrimitive } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { deepFreeze } from './freeze';
 import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
@@ -28,7 +28,6 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const onOperate = opts.onOperate;
   const hasOnOperate = !!onOperate;
   const customKeys = opts.customKeys || [];
-  const customGet = opts.customGet;
   const fastModeRange = opts.fastModeRange || conf.fastModeRange;
   // @ts-ignore
   const immutBase = opts[IMMUT_BASE] ?? false;
@@ -51,8 +50,8 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     return true;
   };
 
-  const execOnOperate = (op: Op, key: string, options: IExecOnOptions) => {
-    const { mayProxyVal, parentMeta: inputPMeta, value } = options;
+  const execOnOperate = (op: Op, key: any, options: IExecOnOptions) => {
+    const { mayProxyVal, parentMeta: inputPMeta, value, isCustom = false } = options;
     let isChanged = false;
     if (!onOperate) return { isChanged, mayProxyVal };
     const parentMeta = (inputPMeta || {}) as DraftMeta;
@@ -92,6 +91,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       getReplaced,
       isBuiltInFnKey,
       isChanged,
+      isCustom,
       key,
       keyPath,
       fullKeyPath: keyPath.concat(key),
@@ -122,25 +122,21 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         }
         /** current child value, it may been replaced to a proxy value later */
         const currentVal = parent[key];
+        if (Symbol.toStringTag === key) {
+          return currentVal;
+        }
         // 判断 toJSON 是为了兼容 JSON.stringify 调用, https://javascript.info/json#custom-tojson
         if (key === '__proto__' || (key === 'toJSON' && !has(parent, key))) {
           return currentVal;
         }
-
-        if (isSymbol(key)) {
-          if (customGet && customKeys.includes(key)) {
-            return customGet(key);
-          }
-          // 防止直接对 draft 时报错：Method xx.yy called on incompatible receiver
-          // 例如 Array.from(draft)
-          if (isFn(currentVal)) {
-            return currentVal.bind(parent);
-          }
-          return currentVal;
-        }
-
         let mayProxyVal = currentVal;
         const parentMeta = getSafeDraftMeta(parent, apiCtx) as DraftMeta;
+
+        if (customKeys.includes(key)) {
+          const ret = execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal, isChanged: false, isCustom: true });
+          return ret.mayProxyVal;
+        }
+
         const parentType = parentMeta?.selfType;
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'

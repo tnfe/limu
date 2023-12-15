@@ -20,6 +20,7 @@ export interface IExecOnOptions {
   parentMeta: DraftMeta | null;
   value: any;
   isChanged?: boolean;
+  isCustom?: boolean;
   mayProxyVal?: any;
 }
 
@@ -65,7 +66,8 @@ export interface IOperateParams {
   parentProxy?: any;
   /** 父亲节点的类型，零长字符串表示无父亲节点 */
   parentType: DataType | '';
-  key: string;
+  /** key 可能为 symbol，请谨慎处理 */
+  key: any;
   /**
    * key path contains parent node key
    */
@@ -82,6 +84,10 @@ export interface IOperateParams {
    * is data node changed by current operation
    */
   isChanged: boolean;
+  /**
+   * is key come from customKeys or not
+   */
+  isCustom: boolean;
   op: Op;
   /** raw value */
   value: any;
@@ -144,8 +150,7 @@ export interface ICreateDraftOptions {
   disableWarn?: boolean;
   /** default: false */
   debug?: boolean;
-  customKeys?: symbol[];
-  customGet?: (userCumtomKey: symbol) => any;
+  customKeys?: NumStrSymbol[];
 }
 
 export interface IInnerCreateDraftOptions extends ICreateDraftOptions {
