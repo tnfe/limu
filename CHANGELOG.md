@@ -2,7 +2,7 @@
 
 [released] - 2024-01-05
 
-## [3.12.0](xx) (2023-12-24)
+## [3.12.0](https://github.com/tnfe/limu/commit/c773ccda1ef433102585840b0629947827ed89c4) (2024-01-05)
 
 * **设定对象不转为代理** 新增`markRaw`函数，用于标记不需要被代理的对象节点
 
@@ -28,6 +28,9 @@ const next2 = finishDraft(draft2);
 // 由于 markRaw 标记导致对象失去结构共享特性，node 节点在所有快照里指向同一个引用，
 // 故修改值后会影响所有快照里的被 markRaw 标记的节点
 expect(next.a.key.sub === 100).toBeTruthy();
+// 如未标记 markRaw，应该是：
+// expect(next.a.key.sub === 1).toBeTruthy();
+
 expect(next2.a.key.sub === 100).toBeTruthy();
 ```
 
