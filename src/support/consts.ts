@@ -11,7 +11,7 @@ import type { DataType } from '../inner-types';
  */
 export const LIMU_MAJOR_VER = 3;
 
-export const VER = '3.11.9';
+export const VER = '3.12.0';
 
 /** meta 数据key，仅 debug 模式才挂到对象的原型上 */
 export const META_KEY = Symbol('M');
@@ -20,6 +20,9 @@ export const META_KEY = Symbol('M');
 export const META_VER = Symbol('V');
 
 export const IMMUT_BASE = Symbol('IMMUT_BASE');
+
+/** markRaw 调用会给对象标记 IS_RAW 为 true */
+export const IS_RAW = Symbol('IS_RAW');
 
 export const MAP = 'Map';
 export const SET = 'Set';

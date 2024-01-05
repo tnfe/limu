@@ -151,6 +151,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         // 可能会指向代理对象
         mayProxyVal = getMayProxiedVal(currentVal, {
           key,
+          compareVer,
           parentMeta,
           parentType,
           ver: metaVer,
@@ -318,6 +319,9 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         if (rootMeta.level !== 0) {
           throw new Error('can not finish sub draft node!');
         }
+
+        // TODO support fastCopy
+
         // immutBase 是一个一直可用的对象
         // 对 immut() 返回的对象调用 finishDraft 则总是返回 immutBase 自身代理
         // 将 immut() 返回结果传给 finishDraft 是无意义的

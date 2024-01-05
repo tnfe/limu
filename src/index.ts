@@ -7,7 +7,7 @@ import { buildLimuApis, FNIISH_HANDLER_MAP } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
 import { getDraftMeta, isDiff as isDiffFn, isDraft as isDraftFn, shallowCompare as shallowCompareFn } from './core/meta';
-import { current as currentFn, original as originalFn } from './core/user-util';
+import { current as currentFn, original as originalFn, markRaw as markRawFn } from './core/user-util';
 import type { ICreateDraftOptions, IInnerCreateDraftOptions, IOperateParams, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
@@ -23,6 +23,7 @@ import {
   isPromiseResult,
   isSet,
   isSymbol,
+  isMardedRaw,
   noop,
 } from './support/util';
 // 避免降到测试覆盖率
@@ -66,6 +67,7 @@ export const limuUtils = {
   isPromiseFn,
   isPromiseResult,
   isSymbol,
+  isMardedRaw,
   canBeNum,
   isDraft,
   isDiff,
@@ -219,6 +221,11 @@ export function getAutoFreeze() {
  * 查看草稿对应的原始值
  */
 export const original = originalFn;
+
+/**
+ * 标记对象为 raw，此对象再次被复用时不会被代理，需注意标为 raw 后此对象会失去结构共享特性
+ */
+export const markRaw = markRawFn;
 
 /**
  * 导出草稿的副本数据（ 即深克隆当前草稿 ）

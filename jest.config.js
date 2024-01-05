@@ -9,7 +9,7 @@ const jestConfig = {
   ],
   setupFilesAfterEnv: [],
   testMatch: [
-    // lastest case count: 517
+    // lastest case count: 520
     '<rootDir>/test/**/*.ts',
 
     // '<rootDir>/test/api-params/readOnly.ts',
@@ -81,6 +81,7 @@ const jestConfig = {
     // '<rootDir>/test/complex/case1.ts',
     // '<rootDir>/test/complex/case-push.ts',
     // '<rootDir>/test/complex/case-node-change.ts',
+    // '<rootDir>/test/complex/obj-value-of.ts',
 
     // '<rootDir>/test/diff-with-immer/sort.ts',
   ],

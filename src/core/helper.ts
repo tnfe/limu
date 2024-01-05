@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import { AnyObject, DraftMeta, IApiCtx } from '../inner-types';
-import { ARRAY, MAP, PROXYITEM_FNKEYS, SET } from '../support/consts';
+import { ARRAY, MAP, PROXYITEM_FNKEYS, SET, IS_RAW } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { makeCopyWithMeta } from './copy';
 import { attachMeta, getDraftMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
@@ -76,8 +76,12 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
     }
 
     if (!isFn(val)) {
-      // 是一个全新的节点，不必生成代理，以便提高性能
-      if (parentMeta.newNodeStats[key]) {
+      if (
+        // 是一个全新的节点，不必生成代理，以便提高性能
+        parentMeta.newNodeStats[key]
+        // 已被 markRaw 标记，不需转为代理
+        || val[IS_RAW]
+      ) {
         return val;
       }
 

@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { AnyObject, DataType, Fn, ObjectLike, Primitive } from '../inner-types';
-import { ARR_DESC, desc2dataType, FN_DESC, MAP_DESC, OBJ_DESC, SET_DESC } from './consts';
+import { ARR_DESC, desc2dataType, FN_DESC, MAP_DESC, OBJ_DESC, SET_DESC, IS_RAW } from './consts';
 
 export const toString = Object.prototype.toString;
 
@@ -110,6 +110,14 @@ export function canBeNum(val: any) {
 
 export function isSymbol(maySymbol: any): maySymbol is symbol {
   return typeof maySymbol === 'symbol';
+}
+
+/**
+ * 是否已被 markRaw 标记
+ */
+export function isMardedRaw(val: any): boolean {
+  if (!val) return false;
+  return val[IS_RAW] ?? false;
 }
 
 const descProto: Record<string, any> = {
