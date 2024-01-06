@@ -102,9 +102,9 @@ exports.runPerfCase = async function (options) {
   const { arrLen = ARR_LEN, seeMemLeakTimes = 2 } = options;
   console.log(`autoFreeze ${AUTO_FREEZE}, opArr ${OP_ARR}, moreDeepOp ${MORE_DEEP_OP}, arrLen ${arrLen}`);
   util.showMem('Before measure', true);
-  measureBenchmark('immer', options);
   // measureBenchmark('limuDebug', options);
   // measureBenchmark('limuDebugSlow', options);
+  measureBenchmark('immer', options);
   measureBenchmark('limu', options);
   measureBenchmark('mutative', options);
   measureBenchmark('structura', options);

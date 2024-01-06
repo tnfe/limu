@@ -27,6 +27,6 @@ export function current<T extends any = any>(mayDraftProxy: T): T {
 
 export function markRaw<T extends any = any>(rawVal: T): T {
   if (!rawVal || isPrimitive(rawVal)) return rawVal;
-  rawVal[IS_RAW] = true;
+  (rawVal as any)[IS_RAW] = true;
   return rawVal;
 }
