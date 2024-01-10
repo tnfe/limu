@@ -1,6 +1,6 @@
 {
   "name": "limu",
-  "version": "3.12.1",
+  "version": "3.12.2",
   "description": "A fast js lib of immutable data, based on shallow copy on read and mark modified on write mechanism",
   "keywords": [
     "immutable",

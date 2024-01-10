@@ -136,11 +136,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
     apiCtx.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
   }
 
-  // called by set, del
-  // if (op !== 'get') {
-  // }
   parentCopy[key] = value;
-
   // 谨防是 a.b = { ... } ---> a.b = 1 的变异赋值方式
   tryMarkDel();
   tryMarkUndel();
