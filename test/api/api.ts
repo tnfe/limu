@@ -444,9 +444,9 @@ describe('check apis', () => {
     // @ts-ignore
     delete draft.b; // hit 1 ( del b 2 )
     draft.c.c1 = 300; // hit 2 ( get c,  set c1 300 )
-    draft.d.push(1); // hit 4 ( get d, get push, set 3 1, set length 4 )
-    draft.d.push(2); // hit 4 ( ... )
-    draft.d.push(3); // hit 4 ( ... )
+    draft.d.push(1); // hit 5 ( get d, get push, get length, set 3 1, set length 4 )
+    draft.d.push(2); // hit 5 ( ... )
+    draft.d.push(3); // hit 5 ( ... )
     const final = finishDraft(draft);
 
     expect(base !== final).toBeTruthy();
@@ -458,7 +458,7 @@ describe('check apis', () => {
     expect(final.c).toMatchObject({ c1: 300 });
 
     expect(changedHit === 9).toBeTruthy();
-    expect(totalHit === 16).toBeTruthy();
+    expect(totalHit === 19).toBeTruthy();
     expect(arrHit === 6).toBeTruthy();
   }
 

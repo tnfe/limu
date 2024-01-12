@@ -146,6 +146,9 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         // copyWithin、sort 、valueOf... will hit the keys of 'asymmetricMatch', 'nodeType',
         // PROPERTIES_BLACK_LIST 里 'length', 'constructor', 'asymmetricMatch', 'nodeType'
         if (TYPE_BLACK_DICT[parentType] && PBL_DICT[key]) {
+          if (key === 'length' || key === 'size') {
+            execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal });
+          }
           return parentMeta.copy[key];
         }
         // 可能会指向代理对象
