@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { AnyObject, DataType, Fn, ObjectLike, Primitive } from '../inner-types';
-import { ARR_DESC, desc2dataType, FN_DESC, MAP_DESC, OBJ_DESC, SET_DESC, IS_RAW } from './consts';
+import { ARR_DESC, desc2dataType, FN_DESC, IS_RAW, MAP_DESC, OBJ_DESC, SET_DESC } from './consts';
 
 export const toString = Object.prototype.toString;
 

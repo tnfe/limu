@@ -4,9 +4,9 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { DraftMeta, IApiCtx, IExecOnOptions, IInnerCreateDraftOptions, ObjectLike, Op } from '../inner-types';
-import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, MAP, META_VER, SET, JS_SYM_KEYS } from '../support/consts';
+import { ARRAY, CAREFUL_FNKEYS, CAREFUL_TYPES, CHANGE_FNKEYS, IMMUT_BASE, JS_SYM_KEYS, MAP, META_VER, SET } from '../support/consts';
 import { conf } from '../support/inner-data';
-import { canBeNum, has, isPrimitive, isFn } from '../support/util';
+import { canBeNum, has, isFn, isPrimitive } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { deepFreeze } from './freeze';
 import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
@@ -126,6 +126,30 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           // 避免报错 Method xx.yy called on incompatible receiver
           // 例如 Array.from(draft)
           if (isFn(currentVal)) {
+            // 执行 for(const item of list){ ... } 语句
+            if (Symbol.iterator === key && Array.isArray(parent)) {
+              let idx = 0;
+              // 模拟迭代器
+              // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_iterable_protocol
+              const iter = () => ({
+                next: () => {
+                  const len = parent.length;
+                  if (len === 0) {
+                    return { done: true, value: undefined };
+                  }
+                  // 前一次迭代已到达最后一个元素时，idx === len
+                  const done = idx === len;
+                  // key 格式统一为字符串，故这里包一层 String
+                  const value = done ? undefined : limuTraps.get(parent, String(idx));
+                  idx++;
+                  return { done, value };
+                },
+                [Symbol.iterator]: () => {
+                  return iter;
+                },
+              });
+              return iter;
+            }
             return currentVal.bind(parent);
           }
           return currentVal;
@@ -135,7 +159,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           return currentVal;
         }
         let mayProxyVal = currentVal;
-        const parentMeta = getSafeDraftMeta(parent, apiCtx) as DraftMeta;
+        const parentMeta = getSafeDraftMeta(parent, apiCtx);
 
         if (customKeys.includes(key)) {
           const ret = execOnOperate('get', key, { parentMeta, mayProxyVal, value: currentVal, isChanged: false, isCustom: true });

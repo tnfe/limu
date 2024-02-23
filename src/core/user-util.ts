@@ -3,10 +3,10 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
+import { IS_RAW } from '../support/consts';
+import { isPrimitive } from '../support/util';
 import { deepCopy } from './copy';
 import { getDraftMeta } from './meta';
-import { isPrimitive } from '../support/util';
-import { IS_RAW } from '../support/consts';
 
 export function original<T extends any = any>(mayDraftProxy: T): T {
   const meta = getDraftMeta(mayDraftProxy);

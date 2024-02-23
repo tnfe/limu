@@ -1,7 +1,6 @@
-import { markRaw, limuUtils, createDraft, finishDraft } from '../../src';
+import { createDraft, finishDraft, limuUtils, markRaw } from '../../src';
 
 describe('markRaw', () => {
-
   test('should change all snap same node', () => {
     const base = { a: { key: null as any } };
 
@@ -23,7 +22,6 @@ describe('markRaw', () => {
     expect(next2.a.key.sub === 100).toBeTruthy();
   });
 
-
   test('no markRaw', () => {
     const base = { a: { key: null as any } };
 
@@ -39,5 +37,4 @@ describe('markRaw', () => {
     expect(next.a.key.sub === 1).toBeTruthy();
     expect(next2.a.key.sub === 100).toBeTruthy();
   });
-
 });

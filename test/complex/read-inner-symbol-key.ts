@@ -5,7 +5,6 @@ import { immut } from '../../src';
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol
  */
 describe('trigger read js internal symbol key', () => {
-
   // 3.11.7 优化 customKeys 逻辑后，js 内部 key 未拦截导致这里报错
   // throw err: Cannot convert a Symbol value to a string
   // 3.11.8 引入 JS_SYM_KEYS 做拦截判断
@@ -36,5 +35,4 @@ describe('trigger read js internal symbol key', () => {
     expect(state.val[t]).toBe(1);
     expect(t.description).toBe('t');
   });
-
 });

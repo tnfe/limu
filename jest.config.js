@@ -9,7 +9,7 @@ const jestConfig = {
   ],
   setupFilesAfterEnv: [],
   testMatch: [
-    // lastest case count: 520
+    // lastest case count: 523
     '<rootDir>/test/**/*.ts',
 
     // '<rootDir>/test/api-params/readOnly.ts',
