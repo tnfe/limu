@@ -131,7 +131,7 @@ export interface ICreateDraftOptions {
    */
   readOnly?: boolean;
   /**
-   * default: false, set the comparision rull of root proxy state,
+   * default: false, set the comparision rule of root proxy state,
    * the below code explains the function of this parameter
    * ```ts
    * const base = {...};

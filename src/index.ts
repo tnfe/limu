@@ -3,7 +3,7 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import { buildLimuApis, FNIISH_HANDLER_MAP } from './core/build-limu-apis';
+import { buildLimuApis, FINISH_HANDLER_MAP } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
 import { getDraftMeta, isDiff as isDiffFn, isDraft as isDraftFn, shallowCompare as shallowCompareFn } from './core/meta';
@@ -121,11 +121,11 @@ export function createDraft<T = ObjectLike>(base: T, options?: ICreateDraftOptio
  * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
  */
 export function finishDraft<T = ObjectLike>(draft: Draft<T>): T {
-  const finishHandler: LimuApis['finishDraft'] = FNIISH_HANDLER_MAP.get(draft);
+  const finishHandler: LimuApis['finishDraft'] = FINISH_HANDLER_MAP.get(draft);
   if (!finishHandler) {
     throw new Error(`Not a Limu root draft or draft has been finished!`);
   }
-  FNIISH_HANDLER_MAP.delete(draft);
+  FINISH_HANDLER_MAP.delete(draft);
   return finishHandler(draft);
 }
 

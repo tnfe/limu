@@ -21,7 +21,7 @@ const PBL_DICT: Record<string, number> = {}; // for perf
 PROPERTIES_BLACK_LIST.forEach((item) => (PBL_DICT[item] = 1));
 
 const TYPE_BLACK_DICT: Record<string, number> = { [ARRAY]: 1, [SET]: 1, [MAP]: 1 }; // for perf
-export const FNIISH_HANDLER_MAP = new Map();
+export const FINISH_HANDLER_MAP = new Map();
 
 export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const opts = options || {};
@@ -332,7 +332,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         });
         recordVerScope(meta);
         meta.execOnOperate = execOnOperate;
-        FNIISH_HANDLER_MAP.set(meta.proxyVal, limuApis.finishDraft);
+        FINISH_HANDLER_MAP.set(meta.proxyVal, limuApis.finishDraft);
 
         return meta.proxyVal as T;
       },
