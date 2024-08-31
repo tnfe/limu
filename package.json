@@ -39,6 +39,7 @@
   ],
   "scripts": {
     "build": "npm run build:umd & npm run build:umd-min",
+    "build:cjs": "tsc & CJS=true rollup -c",
     "build:umd": "tsc & rollup -c",
     "build:umd-min": "tsc & MIN=true rollup -c",
     "cov": "jest --coverage",

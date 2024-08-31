@@ -47,9 +47,15 @@ let umdOutput = {
   file: 'dist/limu.js',
 };
 
+const isCJS = process.env.CJS === 'true'
+if (isCJS) {
+  umdOutput.format = 'cjs';
+  umdOutput.file = 'dist/limu.mjs';
+}
+
 if (process.env.MIN === 'true') {
   plugins.push(terser());
-  umdOutput.file = 'dist/limu.min.js';
+  umdOutput.file = `dist/limu.min.${isCJS ? 'mjs' : 'js'}`;
 }
 
 module.exports = {
