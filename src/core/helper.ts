@@ -30,7 +30,8 @@ export function createScopedMeta(key: any, baseData: any, options: any) {
   } else {
     const ret = Proxy.revocable(copy, traps);
     meta.proxyVal = ret.proxy;
-    meta.revoke = ret.revoke;
+    // meta.revoke = ret.revoke;
+    meta.revoke = noop;
   }
   apiCtx.metaMap.set(copy, meta);
   // apiCtx.metaMap.set(baseData, meta);

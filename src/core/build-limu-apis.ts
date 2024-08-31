@@ -219,15 +219,17 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       },
       // parent 指向的是代理之前的对象
       set: (parent: any, key: any, value: any) => {
-        let targetValue = value;
         const parentMeta = getSafeDraftMeta(parent, apiCtx);
+        // fix issue https://github.com/tnfe/limu/issues/12
+        let isValueDraft = false;
 
         // is a draft proxy node
         if (isDraft(value)) {
+          isValueDraft = true;
           // see case debug/complex/set-draft-node
           if (isInSameScope(value, metaVer)) {
-            targetValue = getUnProxyValue(value, apiCtx);
-            if (targetValue === parent[key]) {
+            const rawValue = getUnProxyValue(value, apiCtx);
+            if (rawValue === parent[key]) {
               return true;
             }
           } else {
@@ -238,7 +240,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         }
 
         if (readOnly) {
-          execOnOperate('set', key, { parentMeta, isChanged: false, value: targetValue });
+          execOnOperate('set', key, { parentMeta, isChanged: false, value });
           return warnReadOnly();
         }
 
@@ -246,8 +248,8 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         if (parentMeta && parentMeta.selfType === ARRAY) {
           // @ts-ignore
           if (parentMeta.copy && parentMeta.__callSet && canBeNum(key)) {
-            execOnOperate('set', key, { parentMeta, value: targetValue });
-            parentMeta.copy[key] = targetValue;
+            execOnOperate('set', key, { parentMeta, value });
+            parentMeta.copy[key] = value;
             return true;
           }
           // @ts-ignore, mark is set called on parent node
@@ -260,7 +262,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           const node = parentMeta.modified ? parentMeta.copy : parentMeta.self;
           isChanged = node[key] !== value;
         } else {
-          const ret = execOnOperate('set', key, { parentMeta, value: targetValue });
+          const ret = execOnOperate('set', key, { parentMeta, value });
           isChanged = ret.isChanged;
         }
 
@@ -268,10 +270,11 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           handleDataNode(parent, {
             parentMeta,
             key,
-            value: targetValue,
+            value,
             metaVer,
             calledBy: 'set',
             apiCtx,
+            isValueDraft,
           });
         }
 

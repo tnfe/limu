@@ -40,7 +40,7 @@ function getValPathKey(parentMeta: DraftMeta, key: string) {
 }
 
 export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: DraftMeta } & AnyObject) {
-  const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta, apiCtx } = copyCtx;
+  const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta, apiCtx, isValueDraft } = copyCtx;
 
   /**
    * 防止 value 本身就是一个 Proxy
@@ -131,7 +131,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
   }
 
   // set 时非原始值都当做新节点记录下来
-  if (!isPrimitive(value)) {
+  if (!isValueDraft && !isPrimitive(value)) {
     parentMeta.newNodeStats[key] = true;
     apiCtx.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
   }
