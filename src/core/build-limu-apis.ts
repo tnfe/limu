@@ -43,6 +43,15 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const apiCtx: IApiCtx = { metaMap: new Map(), newNodeMap: new Map(), debug, metaVer };
   ROOT_CTX.set(metaVer, apiCtx);
 
+  const autoRevoke = opts.autoRevoke ?? conf.autoRevoke;
+  const silenceSetTrapErr = opts.silenceSetTrapErr ?? true;
+  const logChangeFailed = (op: string, key: string) => {
+    console.warn(`${op} ${key} failed, cuase draft root has been finised!`);
+    return silenceSetTrapErr;
+  };
+
+  let isDraftFinished = false;
+
   const warnReadOnly = () => {
     if (!disableWarn) {
       console.warn('can not mutate state at readOnly mode!');
@@ -189,6 +198,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           readOnly,
           apiCtx,
           hasOnOperate,
+          autoRevoke,
         });
 
         // 用下标取数组时，可直接返回
@@ -219,6 +229,10 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       },
       // parent 指向的是代理之前的对象
       set: (parent: any, key: any, value: any) => {
+        if (isDraftFinished) {
+          return logChangeFailed('set', key);
+        }
+
         const parentMeta = getSafeDraftMeta(parent, apiCtx);
         // fix issue https://github.com/tnfe/limu/issues/12
         let isValueDraft = false;
@@ -282,6 +296,10 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       },
       // delete or Reflect.deleteProperty will trigger this trap
       deleteProperty: (parent: any, key: any) => {
+        if (isDraftFinished) {
+          return logChangeFailed('set', key);
+        }
+
         const parentMeta = getSafeDraftMeta(parent, apiCtx);
         const value = parent[key];
         if (readOnly) {
@@ -332,6 +350,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           compareVer,
           apiCtx,
           hasOnOperate,
+          autoRevoke,
         });
         recordVerScope(meta);
         meta.execOnOperate = execOnOperate;
@@ -368,6 +387,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         }
         ROOT_CTX.delete(metaVer);
 
+        isDraftFinished = true;
         return final;
       },
     };

@@ -11,7 +11,7 @@ import { attachMeta, getDraftMeta, getSafeDraftMeta, markModified, newMeta } fro
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(key: any, baseData: any, options: any) {
-  const { traps, parentType, fastModeRange, immutBase, apiCtx } = options;
+  const { traps, parentType, fastModeRange, immutBase, apiCtx, autoRevoke } = options;
   // new meta data for current data node
   const meta = newMeta(key, baseData, options);
 
@@ -30,8 +30,7 @@ export function createScopedMeta(key: any, baseData: any, options: any) {
   } else {
     const ret = Proxy.revocable(copy, traps);
     meta.proxyVal = ret.proxy;
-    // meta.revoke = ret.revoke;
-    meta.revoke = noop;
+    meta.revoke = autoRevoke ? ret.revoke : noop;
   }
   apiCtx.metaMap.set(copy, meta);
   // apiCtx.metaMap.set(baseData, meta);

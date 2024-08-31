@@ -99,7 +99,7 @@ function measureBenchmark(libName, options) {
  * @param {(params: {lib: typeof limu, base:any, operateArr:boolean, moreDeepOp:boolean })=>void} options.userBenchmark - 是否复用base
  */
 exports.runPerfCase = async function (options) {
-  const { arrLen = ARR_LEN, seeMemLeakTimes = 2 } = options;
+  const { arrLen = ARR_LEN, seeMemLeakTimes = 6 } = options;
   console.log(`autoFreeze ${AUTO_FREEZE}, opArr ${OP_ARR}, moreDeepOp ${MORE_DEEP_OP}, arrLen ${arrLen}`);
   util.showMem('Before measure', true);
   // measureBenchmark('limuDebug', options);

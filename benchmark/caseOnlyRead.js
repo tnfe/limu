@@ -2,7 +2,7 @@ const { noop } = require('./_util');
 const { runPerfCase } = require('./_perfUtil');
 
 runPerfCase({
-  loopLimit: 200,
+  loopLimit: 100,
   arrLen: 10000,
   userBenchmark: (params) => {
     const { lib, base, moreDeepOp } = params;

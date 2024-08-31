@@ -19,10 +19,18 @@ export function has(obj: any, key: any) {
 }
 
 export function deepDrill<T extends ObjectLike>(obj: T, parentObj: any, key: any, subObjCb: (obj: any, parentObj: any, key: any) => void) {
+  const list: any[] = [];
   const innerDeep = (obj: any, parentObj: any, key: any) => {
     if (isPrimitive(obj)) {
       return;
     }
+
+    if (list.includes(obj)) {
+      // 出现循环引用，及时跳出来，避免出现错误：Maximum call stack size exceeded
+      return;
+    }
+    list.push(obj);
+
     subObjCb(obj, parentObj, key);
 
     // const drillThenCb = (obj: any, parentObj: any, key: any) => {

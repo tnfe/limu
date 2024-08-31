@@ -106,7 +106,20 @@ export interface IOperateParams {
 
 export interface ICreateDraftOptions {
   /**
-   * default: global.autoFreeze ( false )
+   * default: true,
+   * autoRevoke = true means that all draft proxy node will be revoke by linu internal code after finishDraft.
+   */
+  autoRevoke?: boolean;
+  /**
+   * default: true,
+   * when autoRevoke = false, changing a proxy draft node will cause an error:
+   * TypeError: 'set' on proxy: trap returned falsish for property '{xxx_prop_name}',
+   * limu will silence this error by default, but if user want to catch this error,
+   * user can set silenceSetTrapErr=false.
+   */
+  silenceSetTrapErr?: boolean;
+  /**
+   * default: global.autoFreeze ( false ),
    * allow user overwrite global autoFreeze setting in current call process
    */
   autoFreeze?: boolean;
