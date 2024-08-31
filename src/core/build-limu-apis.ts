@@ -297,7 +297,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       // delete or Reflect.deleteProperty will trigger this trap
       deleteProperty: (parent: any, key: any) => {
         if (isDraftFinished) {
-          return logChangeFailed('set', key);
+          return logChangeFailed('delete', key);
         }
 
         const parentMeta = getSafeDraftMeta(parent, apiCtx);

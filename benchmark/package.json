@@ -7,10 +7,14 @@
   "author": "",
   "main": "caseReadWrite.js",
   "scripts": {
-    "s1": "ST=1 node ./caseReadWrite.js",
-    "s2": "ST=2 node ./caseReadWrite.js",
-    "s3": "ST=3 node ./caseReadWrite.js",
-    "s4": "ST=4 node ./caseReadWrite.js",
+    "s1": "ST=1 node --expose-gc ./caseReadWrite.js",
+    "s2": "ST=2 node --expose-gc ./caseReadWrite.js",
+    "s3": "ST=3 node --expose-gc ./caseReadWrite.js",
+    "s4": "ST=4 node --expose-gc ./caseReadWrite.js",
+    "s1d": "DISABLE_REVOKE=1 ST=1 node --expose-gc ./caseReadWrite.js",
+    "s2d": "DISABLE_REVOKE=1 ST=2 node --expose-gc ./caseReadWrite.js",
+    "s3d": "DISABLE_REVOKE=1 ST=3 node --expose-gc ./caseReadWrite.js",
+    "s4d": "DISABLE_REVOKE=1 ST=4 node --expose-gc ./caseReadWrite.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
