@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createDraft, finishDraft, isDraft } from '../_util';
+import { createDraft, finishDraft } from '../_util';
 
 describe('del-then-assign', () => {
   test('case 1', () => {

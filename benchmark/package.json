@@ -8,19 +8,19 @@
   "main": "caseReadWrite.js",
   "scripts": {
     "s1": "ST=1 node --expose-gc ./caseReadWrite.js",
-    "s2": "ST=2 node --expose-gc ./caseReadWrite.js",
-    "s3": "ST=3 node --expose-gc ./caseReadWrite.js",
-    "s4": "ST=4 node --expose-gc ./caseReadWrite.js",
     "s1d": "DISABLE_REVOKE=1 ST=1 node --expose-gc ./caseReadWrite.js",
+    "s2": "ST=2 node --expose-gc ./caseReadWrite.js",
     "s2d": "DISABLE_REVOKE=1 ST=2 node --expose-gc ./caseReadWrite.js",
+    "s3": "ST=3 node --expose-gc ./caseReadWrite.js",
     "s3d": "DISABLE_REVOKE=1 ST=3 node --expose-gc ./caseReadWrite.js",
+    "s4": "ST=4 node --expose-gc ./caseReadWrite.js",
     "s4d": "DISABLE_REVOKE=1 ST=4 node --expose-gc ./caseReadWrite.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "i": "^0.3.7",
     "immer": "^9.0.15",
-    "limu": "^3.13.0",
+    "limu": "^3.13.2",
     "mutative": "^0.5.0",
     "npm": "^10.2.1",
     "structurajs": "^0.11.6"

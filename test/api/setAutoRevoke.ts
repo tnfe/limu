@@ -1,7 +1,7 @@
 // @ts-nocheck
+import type { ICreateDraftOptions } from '../../src';
 import { createDraft, finishDraft } from '../../src';
 import '../_util';
-import type { ICreateDraftOptions } from '../../src';
 
 function changeTest(options: ICreateDraftOptions) {
   const base = { a: 1, b: { test: 2 }, c: { c1: 1 } };
