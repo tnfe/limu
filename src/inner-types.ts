@@ -107,7 +107,7 @@ export interface IOperateParams {
 export interface ICreateDraftOptions {
   /**
    * default: true,
-   * autoRevoke = true means that all draft proxy node will be revoke by linu internal code after finishDraft.
+   * autoRevoke = true means that all draft proxy node will be revoke by limu internal code after finishDraft.
    */
   autoRevoke?: boolean;
   /**

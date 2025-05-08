@@ -13,7 +13,9 @@ function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targe
   const { targetNode, key } = ctx;
   // 数组顺序已变化
   if (isArrOrderChanged) {
-    const key = copy.findIndex((item: any) => item === itemMeta.copy);
+    // fix issue https://github.com/tnfe/limu/issues/13
+    // 元素经过 sort 后，可能已变成 proxy 对象，所以这里需要比较 copy 和 proxyVal
+    const key = copy.findIndex((item: any) => item === itemMeta.copy || item === itemMeta.proxyVal);
     if (key >= 0) {
       copy[key] = targetNode;
     }

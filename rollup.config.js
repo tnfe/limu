@@ -47,7 +47,7 @@ let umdOutput = {
   file: 'dist/limu.js',
 };
 
-const isCJS = process.env.CJS === 'true'
+const isCJS = process.env.CJS === 'true';
 if (isCJS) {
   umdOutput.format = 'cjs';
   umdOutput.file = 'dist/limu.mjs';
