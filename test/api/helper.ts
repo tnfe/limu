@@ -1,6 +1,5 @@
 import * as copy from '../../src/core/copy';
 import * as helper from '../../src/core/helper';
-import { ARRAY, OBJECT } from '../../src/support/consts';
 import '../_util';
 
 describe('check helper', () => {
@@ -8,40 +7,24 @@ describe('check helper', () => {
     expect(helper.shouldGenerateProxyItems('Array', 'key')).toBeTruthy();
   });
   test('tryMakeCopy', () => {
-    const fastModeRange = 'array';
     const mapBase = new Map();
-    const { copy: mapCopy } = copy.tryMakeCopy(mapBase, {
-      parentType: OBJECT,
-      fastModeRange,
-    });
+    const mapCopy = copy.tryMakeCopy(mapBase);
     expect(mapBase !== mapCopy).toBeTruthy();
 
     const arrBase = [];
-    const { copy: arrCopy } = copy.tryMakeCopy(arrBase, {
-      parentType: ARRAY,
-      fastModeRange,
-    });
+    const arrCopy = copy.tryMakeCopy(arrBase);
     expect(arrBase !== arrCopy).toBeTruthy();
 
     const setBase = new Set();
-    const { copy: setCopy } = copy.tryMakeCopy(setBase, {
-      parentType: OBJECT,
-      fastModeRange,
-    });
+    const setCopy = copy.tryMakeCopy(setBase);
     expect(setBase !== setCopy).toBeTruthy();
 
     const objBase = {};
-    const { copy: objCopy } = copy.tryMakeCopy(objBase, {
-      parentType: OBJECT,
-      fastModeRange,
-    });
+    const objCopy = copy.tryMakeCopy(objBase);
     expect(objBase !== objCopy).toBeTruthy();
 
     const numBase = 2;
-    const { copy: numCopy } = copy.tryMakeCopy(numBase, {
-      parentType: OBJECT,
-      fastModeRange,
-    });
+    const numCopy = copy.tryMakeCopy(numBase);
     expect(numBase === numCopy).toBeTruthy();
   });
 });

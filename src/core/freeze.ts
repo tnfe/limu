@@ -46,6 +46,7 @@ export function deepFreeze<T extends ObjectLike>(obj: T) {
   // get all properties
   const propertyNames = Object.getOwnPropertyNames(obj);
   propertyNames.forEach((name) => {
+    // @ts-ignore
     const value = obj[name];
     deepFreeze(value);
   });

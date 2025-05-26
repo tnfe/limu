@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { AnyObject, DataType, Fn, ObjectLike, Primitive } from '../inner-types';
-import { ARR_DESC, desc2dataType, FN_DESC, IS_RAW, MAP_DESC, OBJ_DESC, SET_DESC } from './consts';
+import { ARR_DESC, desc2dataType, FN_DESC, IS_RAW, MAP_DESC, META_VER, OBJ_DESC, SET_DESC } from './consts';
 
 export const toString = Object.prototype.toString;
 
@@ -142,4 +142,19 @@ export function injectMetaProto(rawObj: any) {
   Object.setPrototypeOf(pureObj, rootProto);
   Object.setPrototypeOf(rawObj, pureObj);
   return rawObj;
+}
+
+export function getProxyVer(mayProxy: any) {
+  if (!mayProxy) {
+    return '';
+  }
+  return mayProxy[META_VER] || '';
+}
+
+export function isPrevVerDraft(mayProxy: any, curVer: string) {
+  const ver = getProxyVer(mayProxy);
+  if (!ver) {
+    return false;
+  }
+  return ver !== curVer;
 }

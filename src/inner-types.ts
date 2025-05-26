@@ -14,7 +14,6 @@ export type Key = string | symbol;
 export type ObjectLike = AnyObject | AnyArray | Map<any, any> | Set<any>;
 export type Op = 'del' | 'set' | 'get';
 export type DataType = 'Map' | 'Set' | 'Array' | 'Object';
-export type FastModeRange = 'array' | 'all' | 'none';
 
 export interface IExecOnOptions {
   parentMeta: DraftMeta | null;
@@ -25,6 +24,7 @@ export interface IExecOnOptions {
 }
 
 export interface DraftMeta<T = AnyObject> {
+  id: string;
   rootMeta: DraftMeta;
   parentMeta: null | DraftMeta;
   parent: null | ObjectLike;
@@ -39,11 +39,19 @@ export interface DraftMeta<T = AnyObject> {
   execOnOperate: (op: Op, key: string, options: IExecOnOptions) => any;
   isImmutBase: boolean;
   isDel: boolean;
-  isFast: boolean;
   /** 记录某些key对应值是否是一个全新节点 */
   newNodeStats: AnyObject<boolean>;
   key: string;
+  /** 当前数据节点的访问路径数组，可能包含 symbol 值 */
   keyPath: string[];
+  /** 此路径中会将 symbol 转为内部识别的 string 存储 */
+  keyStrPath: string[];
+  /**
+   * 多条路径指向当前对象时，keyPaths.length > 1
+  */
+  keyPaths: string[][];
+  /** 多条执行当前对象的此路径，子项中会将 symbol 转为内部识别的 string 存储 */
+  keyStrPaths: string[][];
   level: number;
   scopes: DraftMeta[];
   proxyVal: T;
@@ -95,7 +103,8 @@ export interface IOperateParams {
   proxyValue: any;
   /**
    * when get op triggered, user can pass a new value to replace the inner returned value,
-   * this is a dangerous behavior, the caller is responsible for the consequences
+   * when set op triggered, user can pass a new value to replace the previous setted value,
+   * this is a dangerous behavior, the caller should be responsible for the consequence
    */
   replaceValue: (newValue: any) => void;
   /**
@@ -128,18 +137,6 @@ export interface ICreateDraftOptions {
    */
   onOperate?: (params: IOperateParams) => any;
   /**
-   * default: 'array', this param means fastMode effect range,
-   * set this param 'all' only if need extremly fast performance,
-   * when disable fastMode: LIMU_META stored at obj.copy.__proto__,
-   * when enable fastMode: LIMU_META stored at obj.copy with a symbol key,
-   * ```text
-   * 'none' means disalbe fastMode for all dataNode
-   * 'array' means enable fastMode for array items
-   * 'all' means enable fastMode for all dataNode
-   * ```
-   */
-  fastModeRange?: FastModeRange;
-  /**
    * create a read only draft
    */
   readOnly?: boolean;
@@ -161,8 +158,6 @@ export interface ICreateDraftOptions {
    * defaut: false, there will be no warn tip in the console for changing immut object while set disableWarn true
    */
   disableWarn?: boolean;
-  /** default: false */
-  debug?: boolean;
   customKeys?: NumStrSymbol[];
 }
 
@@ -174,7 +169,6 @@ export interface IApiCtx {
   metaMap: Map<any, DraftMeta>;
   /** rootMeta 用此属性记录所有新节点 */
   newNodeMap: Map<any, { parent: any; key: any; node: any; target: any }>;
-  debug: boolean;
   metaVer: string;
 }
 

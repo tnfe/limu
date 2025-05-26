@@ -423,13 +423,12 @@ describe('check apis', () => {
     draft.c.c1 = 300;
   });
 
-  function testForFast(fastModeRange) {
+  function testForFast() {
     const base = { a: 1, b: 2, c: { c1: 3 }, d: [1, 2, 3] };
     let totalHit = 0;
     let changedHit = 0;
     let arrHit = 0;
     const draft = createDraft(base, {
-      fastModeRange,
       onOperate: (params) => {
         totalHit += 1;
         if (!params.isChanged) return;
@@ -462,12 +461,9 @@ describe('check apis', () => {
     expect(arrHit === 6).toBeTruthy();
   }
 
-  test('fastModeRange all', () => {
-    testForFast('all');
-  });
-
-  test('fastModeRange none', () => {
-    testForFast('none');
+  // 4.0 之后 fastModeRange 已移除
+  test('fastModeRange deleted', () => {
+    testForFast();
   });
 
   test('deepCopy', () => {

@@ -9,14 +9,18 @@ const jestConfig = {
   ],
   setupFilesAfterEnv: [],
   testMatch: [
-    // lastest case count: 523
+    // lastest passed case count: 533
     '<rootDir>/test/**/*.ts',
+
+    // '<rootDir>/test/multi-ref/*.ts',
+    // '<rootDir>/test/multi-ref/cpr-after-finish.ts',
 
     // '<rootDir>/test/api-params/readOnly.ts',
     // '<rootDir>/test/api-params/onOperate.ts',
 
     // '<rootDir>/test/complex/scope-change.ts',
     // '<rootDir>/test/complex/arr-from-set.ts',
+    // '<rootDir>/test/complex/symbol-key.ts',
     // '<rootDir>/test/map-other/read-inner-symbol-key.ts',
 
     // '<rootDir>/test/api/api.ts',

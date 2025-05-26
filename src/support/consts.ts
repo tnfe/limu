@@ -6,23 +6,24 @@
 import type { DataType } from '../inner-types';
 
 /**
- * 因 3.0 做了大的架构改进，让其行为和 immer 保持了 100% 一致，和 2.0 版本处于不兼容状态
- * 此处标记版本号辅助测试用例为2.0走一些特殊逻辑
+ * 4.0 开始，新增 keyPaths 支持多引用记录
  */
-export const LIMU_MAJOR_VER = 3;
+export const VER = '4.0.0';
 
-export const VER = '3.13.2';
-
-/** meta 数据key，仅 debug 模式才挂到对象的原型上 */
+/** meta 数据key，仅 debug 模式才挂到对象的原型上 (4.0+ 移除debug) */
 export const META_KEY = Symbol('M');
 
 /** 版本号key */
 export const META_VER = Symbol('V');
 
+/** 标识这是一个 immut 创建的根对象 */
 export const IMMUT_BASE = Symbol('IMMUT_BASE');
 
 /** markRaw 调用会给对象标记 IS_RAW 为 true */
 export const IS_RAW = Symbol('IS_RAW');
+
+/** 数据节点私有数据 */
+export const PRIVATE_META = Symbol('P');
 
 export const MAP = 'Map';
 export const SET = 'Set';
@@ -116,3 +117,9 @@ export const PROXYITEM_FNKEYS: Record<string, string[]> = {
   [SET]: ['forEach'],
   [ARRAY]: ['forEach', 'map'],
 };
+
+export const OP_GET = 'get';
+
+export const OP_SET = 'set';
+
+export const OP_DEL = 'del';

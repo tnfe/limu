@@ -4,9 +4,10 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { AnyObject, DraftMeta, IApiCtx, ObjectLike, RootCtx } from '../inner-types';
-import { META_KEY, META_VER } from '../support/consts';
-import { verWrap } from '../support/inner-data';
-import { getDataType, injectMetaProto, noop } from '../support/util';
+import { META_VER, PRIVATE_META } from '../support/consts';
+import { genMetaId } from '../support/inner-data';
+import { getDataType, noop } from '../support/util';
+import { getKeyStrPath } from './path-util';
 
 export const ROOT_CTX: RootCtx = new Map();
 
@@ -20,21 +21,6 @@ export function markModified(meta: DraftMeta) {
   };
 
   doMark(meta);
-}
-
-export function attachMeta(dataNode: any, meta: DraftMeta, options: { fast: boolean; apiCtx: IApiCtx }) {
-  if (options.apiCtx.debug) {
-    const { fast } = options;
-    // speed up read performance when debug is true, especially for array forEach scene
-    if (fast) {
-      dataNode[META_KEY] = meta;
-    } else {
-      injectMetaProto(dataNode);
-      dataNode.__proto__[META_KEY] = meta;
-    }
-  }
-
-  return dataNode;
 }
 
 export function getKeyPath(draftNode: any, curKey: string, apiCtx: IApiCtx) {
@@ -52,15 +38,18 @@ export function newMeta(key: any, baseData: any, options: any) {
   const dataType = getDataType(baseData);
 
   let keyPath: string[] = [];
+  let keyStrPath: string[] = [];
   let level = 0;
   let copy = null;
   if (parentMeta) {
     copy = parentMeta.copy;
     level = getNextMetaLevel(copy, apiCtx);
     keyPath = getKeyPath(copy, key, apiCtx);
+    keyStrPath = getKeyStrPath(keyPath);
   }
 
   const meta: DraftMeta = {
+    id: genMetaId(),
     // @ts-ignore add later
     rootMeta: null,
     parentMeta,
@@ -71,6 +60,9 @@ export function newMeta(key: any, baseData: any, options: any) {
     copy: null,
     key,
     keyPath,
+    keyStrPath,
+    keyPaths: [keyPath],
+    keyStrPaths: [keyStrPath],
     level,
     // @ts-ignore add later
     /** @type any */
@@ -78,9 +70,12 @@ export function newMeta(key: any, baseData: any, options: any) {
     proxyItems: null,
     modified: false,
     scopes: [],
+    /**
+     * 当前对象 是否是一个一直可用的代理对象（不会被revoke），
+     * 服务于 immut 接口
+     */
     isImmutBase: immutBase,
     isDel: false,
-    isFast: false,
     isArrOrderChanged: false,
     newNodeStats: {},
     newNodeMap: new Map(),
@@ -101,7 +96,7 @@ export function newMeta(key: any, baseData: any, options: any) {
 }
 
 /**
- * 是否是一个草稿对象代理节点
+ * 是否是一个当前版本对应的草稿对象代理节点
  */
 export function isDraft(mayDraft: any) {
   const meta = getDraftProxyMeta(mayDraft);
@@ -110,19 +105,6 @@ export function isDraft(mayDraft: any) {
   }
 
   return !meta.isImmutBase;
-}
-
-export function genMetaVer() {
-  if (verWrap.value >= Number.MAX_SAFE_INTEGER) {
-    verWrap.value = 1;
-    verWrap.usablePrefix += 1;
-  } else {
-    verWrap.value += 1;
-  }
-
-  const { value, usablePrefix } = verWrap;
-  const metaVer = `${usablePrefix}_${value}`;
-  return metaVer;
 }
 
 export function getNextMetaLevel(mayContainMetaObj: any, apiCtx: IApiCtx) {
@@ -208,4 +190,14 @@ export function shallowCompare(prevObj: AnyObject, nextObj: AnyObject, compareLi
   };
   const isEqual = !isObjDiff(prevObj, nextObj);
   return isEqual;
+}
+
+export function getPrivateMeta(proxyData: any): DraftMeta {
+  return proxyData[PRIVATE_META];
+}
+
+export function replaceMetaPartial(oldMeta: any, newMeta: any, key: any) {
+  newMeta.copy = oldMeta.copy;
+  newMeta.self = oldMeta.self;
+  newMeta.parentMeta[key] = oldMeta.self;
 }

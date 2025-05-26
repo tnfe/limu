@@ -27,9 +27,13 @@ global.isDraft = limu.isDraft;
 
 exports.immut = limu.immut;
 
+exports.limuUtils = limu.limuUtils;
+
 exports.createDraft = limu.createDraft;
 
 exports.finishDraft = limu.finishDraft;
+
+exports.isDraft = limu.isDraft;
 
 exports.produce = limu.produce;
 
@@ -153,6 +157,42 @@ exports.runObjectTestSuit = function runObjectTestSuit(
   })
 }
 
+exports.runMapTestSuit = function(
+  testSuitDesc,
+  testCaseDesc,
+  getMapBase,
+  operateDraft,
+  executeAssertLogic,
+) {
+  describe(testSuitDesc, () => {
+    test(createDraftTip(testCaseDesc), () => {
+      const mapBase = getMapBase();
+      const mapDraft = createDraft(mapBase);
+      operateDraft(mapDraft, mapBase);
+      const mapNew = finishDraft(mapDraft);
+      executeAssertLogic(mapNew, mapBase);
+    });
+
+    test(createDraftTip(testCaseDesc), () => {
+      const mapBase = getMapBase();
+      const mapDraft = createDraft(mapBase, { debug: true });
+      operateDraft(mapDraft, mapBase);
+      const mapNew = finishDraft(mapDraft);
+      executeAssertLogic(mapNew, mapBase);
+    });
+
+    if (RUN_PRODUCE) {
+      test(produceTip(testCaseDesc), () => {
+        const mapBase = getMapBase();
+        const mapNew = produce(mapBase, (mapDraft) => {
+          operateDraft(mapDraft, mapBase);
+        });
+        executeAssertLogic(mapNew, mapBase);
+      });
+    }
+  });
+}
+
 
 exports.logAsStr = function (obj) {
   if (typeof obj === 'string') {
@@ -230,6 +270,12 @@ global.expect = function (ac) {
         throw new Error('toMatchObject false');
       }
     },
+    toBeInstanceOf: (ins) => {
+      if(!ac instanceof ins){
+        console.log('expect: ', ins);
+        console.log('actual: ', typeof ac);
+      }
+    }
   };
 }
 

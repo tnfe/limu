@@ -4,37 +4,40 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import { AnyObject, DraftMeta, IApiCtx } from '../inner-types';
-import { ARRAY, IS_RAW, MAP, PROXYITEM_FNKEYS, SET } from '../support/consts';
+import { ARRAY, IS_RAW, MAP, PROXYITEM_FNKEYS, SET, PRIVATE_META } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
-import { makeCopyWithMeta } from './copy';
-import { attachMeta, getDraftMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
+import { mayMakeCopy } from './copy';
+import { getDraftMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(key: any, baseData: any, options: any) {
-  const { traps, parentType, fastModeRange, immutBase, apiCtx, autoRevoke } = options;
+  const { traps, immutBase, apiCtx, autoRevoke } = options;
   // new meta data for current data node
   const meta = newMeta(key, baseData, options);
 
-  const { copy, fast } = makeCopyWithMeta(baseData, meta, {
-    immutBase,
-    parentType,
-    fastModeRange,
-    apiCtx,
-  });
+  const copy = mayMakeCopy(baseData, options);
   meta.copy = copy;
-  meta.isFast = fast;
+  const dataNodeTraps = {
+    ...traps,
+    get: (parent: any, key: any) => {
+      if (PRIVATE_META === key) {
+        return meta;
+      }
+      return traps.get(parent, key);
+    },
+  };
   if (immutBase) {
-    const ret = new Proxy(copy, traps);
+    const ret = new Proxy(copy, dataNodeTraps);
     meta.proxyVal = ret;
     meta.revoke = noop;
   } else {
-    const ret = Proxy.revocable(copy, traps);
+    const ret = Proxy.revocable(copy, dataNodeTraps);
     meta.proxyVal = ret.proxy;
     meta.revoke = autoRevoke ? ret.revoke : noop;
   }
   apiCtx.metaMap.set(copy, meta);
-  // apiCtx.metaMap.set(baseData, meta);
   apiCtx.metaMap.set(meta.proxyVal, meta);
+  apiCtx.metaMap.set(meta.self, meta);
 
   return meta;
 }
@@ -47,24 +50,7 @@ export function shouldGenerateProxyItems(parentType: any, key: any) {
 }
 
 export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & AnyObject) {
-  const { key, parentMeta, parent, parentType, fastModeRange, readOnly, apiCtx } = options;
-  let curVal = val;
-
-  // keep copy always same with self when readOnly = true
-  if (readOnly && parentMeta && !isFn(val)) {
-    const { copy, self } = parentMeta;
-    const latestVal = self[key];
-    if (curVal !== latestVal) {
-      const meta = apiCtx.metaMap.get(curVal);
-      if (meta) {
-        apiCtx.metaMap.delete(curVal);
-        apiCtx.metaMap.delete(meta.proxyVal);
-      }
-      copy[key] = latestVal;
-      curVal = latestVal;
-    }
-  }
-
+  const { key, parentMeta, parent, parentType, apiCtx } = options;
   const mayCreateProxyVal = (val: any, inputKey?: string) => {
     const key = inputKey || '';
     if (isPrimitive(val) || !val) {
@@ -86,6 +72,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
       }
 
       let valMeta = getSafeDraftMeta(val, apiCtx);
+
       // 惰性生成代理对象和其元数据
       if (!valMeta) {
         valMeta = createScopedMeta(key, val, options);
@@ -117,7 +104,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
         dataType: SET,
         apiCtx,
       });
-      proxyItems = attachMeta(tmp, parentMeta, { fast: fastModeRange, apiCtx });
+      proxyItems = tmp;
 
       // 区别于 2.0.2 版本，这里提前把 copy 指回来
       parentMeta.copy = proxyItems;
@@ -128,7 +115,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
         dataType: MAP,
         apiCtx,
       });
-      proxyItems = attachMeta(tmp, parentMeta, { fast: fastModeRange, apiCtx });
+      proxyItems = tmp;
 
       // 区别于 2.0.2 版本，这里提前把copy指回来
       parentMeta.copy = proxyItems;
@@ -141,7 +128,7 @@ export function getMayProxiedVal(val: any, options: { parentMeta: DraftMeta } & 
     return val;
   };
 
-  return mayCreateProxyVal(curVal, key);
+  return mayCreateProxyVal(val, key);
 }
 
 export function getUnProxyValue(value: any, apiCtx: IApiCtx) {

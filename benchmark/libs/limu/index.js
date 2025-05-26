@@ -1,7 +1,7 @@
-const lib = require('limu');
+// const lib = require('limu');
 // make sure you've runned command `npm run build` at project root dir
-// const lib = require('../../dist/limu.js');
-// console.log('read dist limu');
+const lib = require('../../../dist/limu.js'); console.log('read dist limu');
+// const lib = require('./limu-3.13.0.js'); console.log('read current dif limu-3.13.0');
 
 console.log('process.env.DISABLE_REVOKE', process.env.DISABLE_REVOKE);
 console.log('process.env.ST', process.env.ST);

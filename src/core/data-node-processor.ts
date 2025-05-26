@@ -13,10 +13,13 @@ import {
   SHOULD_REASSIGN_ARR_METHODS,
   SHOULD_REASSIGN_MAP_METHODS,
   SHOULD_REASSIGN_SET_METHODS,
+  OP_DEL,
+  OP_SET,
 } from '../support/consts';
 import { isFn, isPrimitive } from '../support/util';
 import { getUnProxyValue } from './helper';
 import { getDraftMeta, markModified } from './meta';
+import { delKeyPath } from './path-util';
 
 function mayMarkModified(options: { calledBy: string; parentMeta: DraftMeta; op: string; parentType: string; key: string | number }) {
   const { calledBy, parentMeta, op, parentType } = options;
@@ -40,7 +43,10 @@ function getValPathKey(parentMeta: DraftMeta, key: string) {
 }
 
 export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: DraftMeta } & AnyObject) {
-  const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta, apiCtx, isValueDraft } = copyCtx;
+  const {
+    op, key, value: mayProxyValue, calledBy, parentType, parentMeta,
+    apiCtx, isValueDraft, mayNewNode,
+  } = copyCtx;
 
   /**
    * 防止 value 本身就是一个 Proxy
@@ -111,11 +117,17 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
     }
   };
 
-  if (calledBy === 'deleteProperty') {
+  if (OP_DEL === op) {
     const valueMeta = getDraftMeta(mayProxyValue, apiCtx);
     // for test/complex/data-node-change case3
     if (valueMeta) {
-      valueMeta.isDel = true;
+      const { keyPaths } = valueMeta;
+      if (keyPaths.length === 1) {
+        valueMeta.isDel = true;
+      } else {
+        // 存在多个路径指到当前对象时，调用 delKeyPath 删一条路径，并将 keyPath, keyStrPath 重新指向一个存在的路径
+        delKeyPath(valueMeta);
+      }
     } else {
       // for test/complex/data-node-change (node-change 2)
       tryMarkDel();
@@ -131,9 +143,11 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
   }
 
   // set 时非原始值都当做新节点记录下来
-  if (!isValueDraft && !isPrimitive(value)) {
-    parentMeta.newNodeStats[key] = true;
-    apiCtx.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
+  if (OP_SET === op && mayNewNode) {
+    if (!isValueDraft && !isPrimitive(value)) {
+      parentMeta.newNodeStats[key] = true;
+      apiCtx.newNodeMap.set(getValPathKey(parentMeta, key), { parent: parentCopy, node: value, key, target: null });
+    }
   }
 
   parentCopy[key] = value;

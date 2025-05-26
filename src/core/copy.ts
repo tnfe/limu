@@ -3,10 +3,8 @@
  *
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
-import type { DataType, FastModeRange, IApiCtx, ObjectLike } from '../inner-types';
-import { ARRAY } from '../support/consts';
+import type { ObjectLike } from '../inner-types';
 import { isMap, isObject, isPrimitive, isSet } from '../support/util';
-import { attachMeta } from './meta';
 
 export function deepCopy<T = ObjectLike>(obj: T): T {
   const innerDeep = (obj: any) => {
@@ -49,19 +47,36 @@ export function deepCopy<T = ObjectLike>(obj: T): T {
   return innerDeep(obj);
 }
 
+export function makeCopy(val: any) {
+  if (Array.isArray(val)) {
+    return val.slice();
+  }
+  if (isObject(val)) {
+    return { ...val };
+  }
+  if (isMap(val)) {
+    return new Map(val);
+  }
+  if (isSet(val)) {
+    return new Set(val);
+  }
+  return val;
+}
+
 /**
  * 尝试生成copy
  * @param val
  * @returns
  */
-export function tryMakeCopy(val: any, options: { parentType: DataType; fastModeRange: FastModeRange }) {
-  const { parentType, fastModeRange } = options;
-
-  if (Array.isArray(val)) {
-    return { copy: val.slice(), fast: false };
+export function tryMakeCopy(val: any, readOnly?: boolean) {
+  if (readOnly) {
+    return val;
   }
 
-  const fast = (fastModeRange === 'array' && parentType === ARRAY) || fastModeRange === 'all';
+  if (Array.isArray(val)) {
+    return val.slice();
+  }
+
   let copy = val;
   if (val && isObject(val)) {
     copy = { ...val };
@@ -73,27 +88,22 @@ export function tryMakeCopy(val: any, options: { parentType: DataType; fastModeR
     copy = new Set(val);
   }
 
-  return { copy, fast };
+  return copy;
 }
 
 // 调用处已保证 meta 不为空
-export function makeCopyWithMeta(
+export function mayMakeCopy(
   ori: any,
-  meta: any,
   options: {
-    apiCtx: IApiCtx;
-    parentType: DataType;
-    fastModeRange: FastModeRange;
     immutBase: boolean;
+    readOnly: boolean;
   },
 ) {
-  const { apiCtx, immutBase } = options;
-  // LABEL: FIX IMMUT MEM LEAK
-  if (immutBase) {
-    return { copy: ori, fast: false };
+  // LABEL: SEE IF IMMUT HAS MEM LEAK
+  if (options.immutBase) {
+    return ori;
   }
 
-  const { copy, fast } = tryMakeCopy(ori, options);
-  attachMeta(copy, meta, { apiCtx, fast });
-  return { copy, fast };
+  const copy = tryMakeCopy(ori, options.readOnly);
+  return copy;
 }
