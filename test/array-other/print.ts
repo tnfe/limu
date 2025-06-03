@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createDraft, finishDraft, isNewArch, logStr, strfy } from '../_util';
+import { createDraft, finishDraft, logStr, strfy } from '../_util';
 
 describe('arr print', () => {
   test('pass', () => {

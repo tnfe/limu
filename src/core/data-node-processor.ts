@@ -9,12 +9,12 @@ import {
   CAREFUL_FNKEYS,
   CHANGE_ARR_ORDER_METHODS,
   MAP,
+  OP_DEL,
+  OP_SET,
   SET,
   SHOULD_REASSIGN_ARR_METHODS,
   SHOULD_REASSIGN_MAP_METHODS,
   SHOULD_REASSIGN_SET_METHODS,
-  OP_DEL,
-  OP_SET,
 } from '../support/consts';
 import { isFn, isPrimitive } from '../support/util';
 import { getUnProxyValue } from './helper';
@@ -43,10 +43,7 @@ function getValPathKey(parentMeta: DraftMeta, key: string) {
 }
 
 export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: DraftMeta } & AnyObject) {
-  const {
-    op, key, value: mayProxyValue, calledBy, parentType, parentMeta,
-    apiCtx, isValueDraft, mayNewNode,
-  } = copyCtx;
+  const { op, key, value: mayProxyValue, calledBy, parentType, parentMeta, apiCtx, isValueDraft, mayNewNode } = copyCtx;
 
   /**
    * 防止 value 本身就是一个 Proxy

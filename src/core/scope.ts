@@ -6,7 +6,7 @@
 import type { DraftMeta, IApiCtx } from '../inner-types';
 import { ARRAY, MAP, SET } from '../support/consts';
 import { deepDrill, isObject } from '../support/util';
-import { getDraftMetaByCtx, getDraftMeta, getMetaVer, getMultiRefPaths, clearMultiRefData } from './meta';
+import { clearMultiRefData, getDraftMeta, getDraftMetaByCtx, getMetaVer, getMultiRefPaths } from './meta';
 import { getKeyStrByPath, getVal, setVal } from './path-util';
 
 function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targetNode: any; key: any }) {
@@ -131,7 +131,7 @@ export function handleMultiRef(rootMeta: DraftMeta, final: any) {
     const isEq = results[0] === results[1];
     if (!isEq) {
       toClearIdxList.push(idx);
-      keyPaths.forEach(keyPath => toClearKeyStrList.push(getKeyStrByPath(keyPath)));
+      keyPaths.forEach((keyPath) => toClearKeyStrList.push(getKeyStrByPath(keyPath)));
     } else if (changedMeta) {
       for (const keyPath of keyPaths) {
         setVal(final, keyPath, changedMeta.copy);

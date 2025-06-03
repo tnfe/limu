@@ -4,7 +4,7 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import { AnyObject, DraftMeta, IApiCtx } from '../inner-types';
-import { ARRAY, IS_RAW, MAP, PROXYITEM_FNKEYS, SET, PRIVATE_META } from '../support/consts';
+import { ARRAY, IS_RAW, MAP, PRIVATE_META, PROXYITEM_FNKEYS, SET } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { mayMakeCopy } from './copy';
 import { getDraftMetaByCtx, getSafeDraftMeta, markModified, newMeta } from './meta';

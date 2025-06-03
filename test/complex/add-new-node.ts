@@ -20,7 +20,7 @@ describe('add-new-node', () => {
     expect(isDraft(draft.g)).toBeFalsy();
 
     draft.b = Array.from(Array(10000).keys());
-    draft.f = { data: 'obj'};
+    draft.f = { data: 'obj' };
     draft.g = [];
     draft.h = new Map();
 

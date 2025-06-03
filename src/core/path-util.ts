@@ -1,6 +1,6 @@
 import type { DraftMeta } from '../inner-types';
+import { genSymbolId, strSymbolDict, symbolStrDict } from '../support/inner-data';
 import { isMap, isSymbol } from '../support/util';
-import { genSymbolId, symbolStrDict, strSymbolDict } from '../support/inner-data';
 
 export function nodupPush(list: Array<string | number>, toPush: string | number) {
   if (!list.includes(toPush)) list.push(toPush);
@@ -22,7 +22,7 @@ export function ensureStrKey(maySymbolKey: any) {
 }
 
 function getKeyPathIdx(keyPaths: string[][], keyPath: string[]) {
-  const keyPathStrs = keyPaths.map(v => v.join('|'));
+  const keyPathStrs = keyPaths.map((v) => v.join('|'));
   const keyPathStr = keyPath.join('|');
   return keyPathStrs.indexOf(keyPathStr);
 }
@@ -63,7 +63,7 @@ export function toKeyStrPath(keyPath: string[], traversal?: boolean) {
  * in:  ['a', 'b', Symbol]
  */
 export function toKeyPath(keyStrPath: string[]) {
-  return keyStrPath.map(str => strSymbolDict[str] || str);
+  return keyStrPath.map((str) => strSymbolDict[str] || str);
 }
 
 export function pushKeyPath(meta: DraftMeta, keyPath: string[], inputKeyStrPath?: string[]) {
@@ -124,7 +124,7 @@ export function getVal(obj: any, keyPath: string[]) {
 }
 
 export function getValByKeyPaths(obj: any, keyPaths: string[][]) {
-  let targetVal: any
+  let targetVal: any;
   let isValGetted = false;
 
   const lastIdx = keyPaths.length - 1;

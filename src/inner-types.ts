@@ -53,7 +53,7 @@ export interface DraftMeta<T = AnyObject> {
   /**
    * 多条路径指向当前对象时，keyPaths.length > 1，子项列表里可能包含 Symbol 节点
    * 形如：[ ['a', 'b', 'c'], ['a1', Symbol('1'), 'c1'] ]
-  */
+   */
   keyPaths: string[][];
   /**
    * 多条指向当前对象的此路径，子项中会将 symbol 转为内部识别的 string 存储
@@ -104,16 +104,16 @@ export interface IOperateParams {
    * 多条路径指向当前对象时，keyPaths.length > 1
    */
   keyPaths: string[][];
-  /** 
-   * 多条执行当前对象的此路径，子项中会将 symbol 转为内部识别的 string 存储 
+  /**
+   * 多条执行当前对象的此路径，子项中会将 symbol 转为内部识别的 string 存储
    */
   keyStrPaths: string[][];
   /**
    * 访问到当前节点的最近的一个数组路径（注：只到数组下标为止），如没有则为 []
    */
   arrKeyPath: string[];
-  /** 
-   * 访问到当前节点的最近一个数组路径列表，如没有则为 []，服务于多引用 
+  /**
+   * 访问到当前节点的最近一个数组路径列表，如没有则为 []，服务于多引用
    */
   arrKeyPaths: string[][];
   /**
@@ -213,13 +213,13 @@ export interface ICreateDraftOptions {
    * 1 允许 draft 操作过程中产生多引用
    * // 待定.
    * ```
-   * 
+   *
    * 当确信不需要以上功能时，设置 fast=true 可以获得更好的性能表现。
-   * 
+   *
    * ```text
    * // 备注
    * benchmark 目录下执行, npm run s1，
-   * fast 模式耗时 0.25 ms 左右，  
+   * fast 模式耗时 0.25 ms 左右，
    * 非 fast 耗时 0.35 ms 左右，
    * 作为对比，immer 耗时 3.5 ms 左右。
    * ```

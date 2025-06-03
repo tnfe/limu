@@ -33,7 +33,7 @@ describe('symbol-key', () => {
         },
       },
       info: {
-        name: { first: 'first', last: 'last'},
+        name: { first: 'first', last: 'last' },
       },
       other: {
         info: {},
@@ -51,5 +51,4 @@ describe('symbol-key', () => {
 
     expect(base === final).toBeFalsy();
   });
-
 });

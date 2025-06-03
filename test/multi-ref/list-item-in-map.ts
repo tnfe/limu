@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createDraft, finishDraft, isDraft } from '../_util';
+import { createDraft, finishDraft } from '../_util';
 
 describe('list-item-in-map', () => {
   test('base multi ref', () => {
@@ -38,8 +38,8 @@ describe('list-item-in-map', () => {
       another: {
         sub: {
           item: base.list[0].subList[0],
-        }
-      }
+        },
+      },
     };
 
     const draft = createDraft(base);
@@ -62,8 +62,8 @@ describe('list-item-in-map', () => {
       another: {
         sub: {
           item: base.list[0].subList[0],
-        }
-      }
+        },
+      },
     };
     draft.dict.another.sub.item.name = 'newName';
 

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createDraft, finishDraft, isDraft } from '../_util';
+import { createDraft, finishDraft } from '../_util';
 
 describe('cpr-after-finish', () => {
   test('2 refs, only change 1', () => {

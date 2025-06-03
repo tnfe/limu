@@ -7,15 +7,15 @@ import { buildLimuApis, FINISH_HANDLER_MAP } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
 import {
-  getDraftProxyMeta,
   getDraftMeta,
+  getDraftProxyMeta,
   getMetaVer,
   isDiff as isDiffFn,
   isDraft as isDraftFn,
   shallowCompare as shallowCompareFn,
 } from './core/meta';
 import { current as currentFn, markRaw as markRawFn, original as originalFn } from './core/user-util';
-import type { ICreateDraftOptions, IInnerCreateDraftOptions, IImutOptions, IOperateParams, ObjectLike, Op } from './inner-types';
+import type { ICreateDraftOptions, IImutOptions, IInnerCreateDraftOptions, IOperateParams, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
 import {

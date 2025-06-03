@@ -4,15 +4,15 @@
  *  @Author: fantasticsoul
  *--------------------------------------------------------------------------------------------*/
 import type { AnyObject, DraftMeta, IApiCtx, ObjectLike, RootCtx } from '../inner-types';
-import { META_VER, PRIVATE_META, ARRAY } from '../support/consts';
+import { ARRAY, META_VER, PRIVATE_META } from '../support/consts';
 import { genMetaId, genSourceId } from '../support/inner-data';
 import { getDataType, noop } from '../support/util';
-import { toKeyStrPath, getKeyStrByPath, pushKeyPath, getVal, intersectPath, ensureStrKey } from './path-util';
+import { ensureStrKey, getKeyStrByPath, getVal, intersectPath, pushKeyPath, toKeyStrPath } from './path-util';
 
 /** multi ref data, sourceId 2 key */
 /**
  * multi ref data: sourceId 2 key dict
- * key: srouceId, value: { fullKeyStr: [ [path1Arr], [path2Arr] ] } 
+ * key: srouceId, value: { fullKeyStr: [ [path1Arr], [path2Arr] ] }
  */
 const MRDSid2KeyDict = new Map<any, Record<string, string[][]>>();
 
@@ -124,7 +124,7 @@ export function newMeta(key: any, baseData: any, options: AnyObject & { parentMe
         }
 
         // 移除已不再是共同引用的路径记录
-        toDelIdxList.forEach(idx => paths.splice(idx, 1));
+        toDelIdxList.forEach((idx) => paths.splice(idx, 1));
       } else if (parentMeta.keyPaths.length > 0) {
         // 父节点上可能有多路径，转移到子节点的 keyPaths keyStrPaths 里
         parentMeta.keyPaths.forEach((keyPath) => {
@@ -345,7 +345,6 @@ export function setMultiRefPaths(sourceId: string, key: string, paths: string[][
   dict[key] = paths;
 }
 
-
 export function getMultiRefPathsByKey(sourceId: string, key: string): string[][] {
   const dict = getMultiRefPathsDict(sourceId);
   // 不写为 (dict || {})[key] || [] , 因为此写法性能较差一些
@@ -363,7 +362,7 @@ export function getMultiRefPaths(sourceId: string): Array<string[][]> {
 export function clearMultiRefData(sourceId: string, toClearIdxList: number[], toClearKeyStrList: string[]) {
   const dict = MRDSid2KeyDict.get(sourceId);
   if (dict) {
-    toClearKeyStrList.forEach(keyStr => Reflect.deleteProperty(dict, keyStr));
+    toClearKeyStrList.forEach((keyStr) => Reflect.deleteProperty(dict, keyStr));
   }
 
   const pathsList = MRDSid2PathsList.get(sourceId) || [];
@@ -378,13 +377,13 @@ export function recordMultiRefData(meta: DraftMeta, keyStrs: string[]) {
   // [[1,2,3],[4,5,6]], [[a,b],[x]], ...
   const pathsList = MRDSid2PathsList.get(sourceId) || [];
 
-  const keyStrsOfKP = keyPaths.map(keyPath => getKeyStrByPath(keyPath, true));
+  const keyStrsOfKP = keyPaths.map((keyPath) => getKeyStrByPath(keyPath, true));
   let matched = false;
   out: for (const paths of pathsList) {
     for (const keyPath of paths) {
       const curKeyStr = getKeyStrByPath(keyPath, true);
       if (keyStrsOfKP.includes(curKeyStr)) {
-        const keyStrsOfPaths = paths.map(keyPath => getKeyStrByPath(keyPath, true));
+        const keyStrsOfPaths = paths.map((keyPath) => getKeyStrByPath(keyPath, true));
         keyPaths.forEach((keyPath, idx) => {
           if (!keyStrsOfPaths.includes(keyStrsOfKP[idx])) {
             paths.push(keyPath);

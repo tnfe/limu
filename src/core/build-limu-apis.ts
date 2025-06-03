@@ -24,10 +24,17 @@ import { handleDataNode } from './data-node-processor';
 import { deepFreeze } from './freeze';
 import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
 import {
-  getSafeDraftMeta, getDraftMetaByCtx, isDraft, getPrivateMeta, replaceMetaPartial,
-  mayRelinkPath, ROOT_CTX, getSourceId, setSourceId,
+  getDraftMetaByCtx,
+  getPrivateMeta,
+  getSafeDraftMeta,
+  getSourceId,
+  isDraft,
+  mayRelinkPath,
+  replaceMetaPartial,
+  ROOT_CTX,
+  setSourceId,
 } from './meta';
-import { pushKeyPath, getValByKeyPaths, getVal, setValByKeyPaths } from './path-util';
+import { getVal, getValByKeyPaths, pushKeyPath, setValByKeyPaths } from './path-util';
 import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 
 // 可直接返回的属性
@@ -130,8 +137,16 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
 
     const parentMeta = (inputPMeta || {}) as DraftMeta;
     const {
-      selfType = '', keyPath = [], copy, self, modified, proxyVal: parentProxy, arrKeyPath = [],
-      keyPaths = [], keyStrPaths = [], arrKeyPaths = [],
+      selfType = '',
+      keyPath = [],
+      copy,
+      self,
+      modified,
+      proxyVal: parentProxy,
+      arrKeyPath = [],
+      keyPaths = [],
+      keyStrPaths = [],
+      arrKeyPaths = [],
     } = parentMeta;
 
     // console.log('execOnOperate parentMeta', parentMeta);
@@ -343,7 +358,6 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           isValueDraft = true;
           // see case debug/complex/set-draft-node
           if (isInSameScope(inputValue, metaVer)) {
-
             const rawValue = getUnProxyValue(inputValue, apiCtx);
             // 相同路径赋相同的值，不做任何处理
             if (rawValue === parent[key]) {
