@@ -1,7 +1,10 @@
 import type { DraftMeta } from '../inner-types';
 import { isMap, isSymbol } from '../support/util';
-import { genSymbolId, symbolStrDict } from '../support/inner-data';
+import { genSymbolId, symbolStrDict, strSymbolDict } from '../support/inner-data';
 
+export function nodupPush(list: Array<string | number>, toPush: string | number) {
+  if (!list.includes(toPush)) list.push(toPush);
+}
 
 export function ensureStrKey(maySymbolKey: any) {
   const key = maySymbolKey;
@@ -24,19 +27,50 @@ function getKeyPathIdx(keyPaths: string[][], keyPath: string[]) {
   return keyPathStrs.indexOf(keyPathStr);
 }
 
-export function getKeyStrPath(keyPath: string[]) {
+export function getKeyStrByPath(keyPath: string[], ensureStr?: boolean) {
+  let target = keyPath;
+  if (ensureStr) {
+    target = toKeyStrPath(keyPath, true);
+  }
+  return target.join('|');
+}
+
+/**
+ * in:  ['a', 'b', Symbol]
+ * out: ['a', 'b', 'SID_1']
+ */
+export function toKeyStrPath(keyPath: string[], traversal?: boolean) {
+  let keyStrPath: string[] = [];
+
+  if (traversal) {
+    keyPath.forEach((v) => {
+      const keyStr = ensureStrKey(v);
+      keyStrPath.push(keyStr);
+    });
+    return keyStrPath;
+  }
+
+  keyStrPath = keyPath.slice();
   const lastIdx = keyPath.length - 1;
   const lastKey = keyPath[lastIdx];
   const keyStr = ensureStrKey(lastKey);
-  const keyStrPath = keyPath.slice();
   keyStrPath[lastIdx] = keyStr;
   return keyStrPath;
 }
 
-export function pushKeyPath(meta: DraftMeta, keyPath: string[]) {
+/**
+ * out: ['a', 'b', 'SID_1']
+ * in:  ['a', 'b', Symbol]
+ */
+export function toKeyPath(keyStrPath: string[]) {
+  return keyStrPath.map(str => strSymbolDict[str] || str);
+}
+
+export function pushKeyPath(meta: DraftMeta, keyPath: string[], inputKeyStrPath?: string[]) {
   const { keyPaths, keyStrPaths } = meta;
-  const keyStrPath = getKeyStrPath(keyPath);
+  const keyStrPath = inputKeyStrPath || toKeyStrPath(keyPath);
   const idx = getKeyPathIdx(keyStrPaths, keyStrPath);
+
   if (idx < 0) {
     keyPaths.push(keyPath);
     keyStrPaths.push(keyStrPath);
@@ -128,4 +162,32 @@ export function setValByKeyPaths(obj: any, keyPaths: string[][], val: any) {
     const keyPath = keyPaths[i];
     setVal(obj, keyPath, val);
   }
+}
+
+/**
+ * in: keyPath [a,b,0,d,0]  [[a,b,0], [info,0]]
+ * out: [[a,b,0,d,0], [info,0,d,0]]
+ */
+export function intersectPath(keyPath: string[], commonKeyPaths: string[][]) {
+  const inputKeyStr = getKeyStrByPath(keyPath);
+  let restStr = '';
+  for (const tmpKeyPath of commonKeyPaths) {
+    const tmpKeyStr = getKeyStrByPath(tmpKeyPath, true);
+    const prefix = `${tmpKeyStr}|`;
+    if (inputKeyStr.startsWith(prefix)) {
+      restStr = inputKeyStr.substring(prefix.length);
+      break;
+    }
+  }
+
+  const newKeyPaths: string[][] = [];
+  if (restStr) {
+    const subStrPaths = restStr.split('|');
+    const subPaths = toKeyPath(subStrPaths);
+    commonKeyPaths.forEach((keyPath) => {
+      newKeyPaths.push(keyPath.concat(subPaths));
+    });
+  }
+
+  return newKeyPaths;
 }

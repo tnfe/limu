@@ -7,7 +7,7 @@ import { AnyObject, DraftMeta, IApiCtx } from '../inner-types';
 import { ARRAY, IS_RAW, MAP, PROXYITEM_FNKEYS, SET, PRIVATE_META } from '../support/consts';
 import { isFn, isObject, isPrimitive, noop } from '../support/util';
 import { mayMakeCopy } from './copy';
-import { getDraftMeta, getSafeDraftMeta, markModified, newMeta } from './meta';
+import { getDraftMetaByCtx, getSafeDraftMeta, markModified, newMeta } from './meta';
 import { recordVerScope } from './scope';
 
 export function createScopedMeta(key: any, baseData: any, options: any) {
@@ -193,7 +193,7 @@ export function replaceSetOrMapMethods(
     mapOrSet.get = function limuGet(...args: any[]) {
       const mayProxyVal = oriGet(...args);
       if (meta.hasOnOperate) {
-        const draftMeta = getDraftMeta(mayProxyVal, apiCtx);
+        const draftMeta = getDraftMetaByCtx(mayProxyVal, apiCtx);
         const value = draftMeta ? draftMeta.copy || draftMeta.self : mayProxyVal;
         meta.rootMeta.execOnOperate('get', args[0], { mayProxyVal, value, parentMeta: meta, isChanged: false });
       }

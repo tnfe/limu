@@ -103,7 +103,6 @@ export function mayMakeCopy(
   if (options.immutBase) {
     return ori;
   }
-
   const copy = tryMakeCopy(ori, options.readOnly);
   return copy;
 }

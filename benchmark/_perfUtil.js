@@ -1,6 +1,6 @@
 const immer = require('./libs/immer');
 const mutative = require('./libs/mutative');
-const { limu, limuDebug, limuDebugSlow } = require('./libs/limu');
+const { limu, limuFast } = require('./libs/limu');
 const pstr = require('./libs/pstr');
 const native = require('./libs/native');
 const structura = require('./libs/structura');
@@ -9,8 +9,7 @@ const util = require('./_util');
 const immutLibs = {
   immer,
   limu,
-  limuDebug,
-  limuDebugSlow,
+  limuFast,
   structura,
   mutative,
   pstr,
@@ -102,10 +101,9 @@ exports.runPerfCase = async function (options) {
   const { arrLen = ARR_LEN, seeMemLeakTimes = 12 } = options;
   console.log(`autoFreeze ${AUTO_FREEZE}, opArr ${OP_ARR}, moreDeepOp ${MORE_DEEP_OP}, arrLen ${arrLen}`);
   util.showMem('Before measure', true);
-  // measureBenchmark('limuDebug', options);
-  // measureBenchmark('limuDebugSlow', options);
   measureBenchmark('immer', options);
   measureBenchmark('limu', options);
+  measureBenchmark('limuFast', options);
   measureBenchmark('mutative', options);
   measureBenchmark('structura', options);
   measureBenchmark('pstr', options);

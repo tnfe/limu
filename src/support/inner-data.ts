@@ -28,7 +28,11 @@ export const idWrap: IIdWrap = { value: 0, prefixSeed: 1 };
 
 export const symbolIdWrap: IIdWrap = { value: 0, prefixSeed: 1 };
 
+export const sourceIdWrap: IIdWrap = { value: 0, prefixSeed: 1 };
+
 export const symbolStrDict: Record<any, string> = {};
+
+export const strSymbolDict: Record<any, string> = {};
 
 export function genMetaId() {
   return getId(idWrap, 'MID_');
@@ -40,6 +44,10 @@ export function genMetaVer() {
 
 export function genSymbolId() {
   return getId(symbolIdWrap, 'SI_');
+}
+
+export function genSourceId() {
+  return getId(sourceIdWrap, 'SR_');
 }
 
 interface IConf {

@@ -6,9 +6,16 @@
 import { buildLimuApis, FINISH_HANDLER_MAP } from './core/build-limu-apis';
 import { deepCopy as deepCopyFn } from './core/copy';
 import { deepFreeze as deepFreezeFn } from './core/freeze';
-import { getDraftMeta, isDiff as isDiffFn, isDraft as isDraftFn, shallowCompare as shallowCompareFn } from './core/meta';
+import {
+  getDraftProxyMeta,
+  getDraftMeta,
+  getMetaVer,
+  isDiff as isDiffFn,
+  isDraft as isDraftFn,
+  shallowCompare as shallowCompareFn,
+} from './core/meta';
 import { current as currentFn, markRaw as markRawFn, original as originalFn } from './core/user-util';
-import type { ICreateDraftOptions, IInnerCreateDraftOptions, IOperateParams, ObjectLike, Op } from './inner-types';
+import type { ICreateDraftOptions, IInnerCreateDraftOptions, IImutOptions, IOperateParams, ObjectLike, Op } from './inner-types';
 import { IMMUT_BASE, VER as v } from './support/consts';
 import { conf } from './support/inner-data';
 import {
@@ -103,6 +110,30 @@ export interface IProduce {
 //   <T = ObjectLike>(baseState: T, cb: ProduceCb<T>, options?: ICreateDraftOptions): any[];
 // }
 
+function checkCbFn(cb: any) {
+  if (!isFn(cb)) {
+    throw new Error('produce callback is not a function');
+  }
+}
+
+const notRootDraftTip = 'Not a Limu root draft';
+const finishedTip = 'Draft has been finished!';
+
+function getFinishHandler(draft: Draft<any>): LimuApis['finishDraft'] {
+  const finishHandler = FINISH_HANDLER_MAP.get(draft);
+  if (!finishHandler) {
+    if (!getMetaVer(draft)) {
+      throw new Error(notRootDraftTip);
+    }
+    const meta = getDraftProxyMeta(draft);
+    if (meta?.level !== 0) {
+      throw new Error(notRootDraftTip);
+    }
+    throw new Error(finishedTip);
+  }
+  return finishHandler;
+}
+
 /** limu 的版本号 */
 export const VER = v;
 
@@ -112,8 +143,8 @@ export const VER = v;
  */
 export function createDraft<T = ObjectLike>(base: T, options?: ICreateDraftOptions): Draft<T> {
   const apis = buildLimuApis(options as IInnerCreateDraftOptions);
-  // @ts-ignore add [as] just for click to see implement
-  return apis.createDraft(base) as LimuApis['createDraft'];
+  const rootDraft = apis.createDraft(base);
+  return rootDraft;
 }
 
 /**
@@ -121,18 +152,27 @@ export function createDraft<T = ObjectLike>(base: T, options?: ICreateDraftOptio
  * @see https://tnfe.github.io/limu/docs/api/basic/create-draft
  */
 export function finishDraft<T = ObjectLike>(draft: Draft<T>): T {
-  const finishHandler: LimuApis['finishDraft'] = FINISH_HANDLER_MAP.get(draft);
-  if (!finishHandler) {
-    throw new Error(`Not a Limu root draft or draft has been finished!`);
-  }
-  FINISH_HANDLER_MAP.delete(draft);
+  const finishHandler: LimuApis['finishDraft'] = getFinishHandler(draft);
   return finishHandler(draft);
 }
 
-function checkCbFn(cb: any) {
-  if (!isFn(cb)) {
-    throw new Error('produce callback is not a function');
-  }
+/**
+ * 生成一个不可修改的对象im，但原始对象的修改将同步会影响到im
+ * immut 采用了读时浅代理的机制，相比deepFreeze会拥有更好性能，适用于不暴露原始对象出去，只暴露生成的不可变对象出去的场景
+ * @see: https://tnfe.github.io/limu/docs/api/basic/immut
+ */
+export function immut<T = ObjectLike>(base: T, options?: IImutOptions): T {
+  const limuApis = buildLimuApis({ ...(options || {}), readOnly: true, [IMMUT_BASE]: true });
+  const immutData = limuApis.createDraft(base);
+  return immutData;
+}
+
+/**
+ * 结束由 immut 创建的草稿对象
+ */
+export function finishImmut<T = ObjectLike>(immutDraft: Draft<T>): T {
+  const finishHandler: LimuApis['finishDraft'] = getFinishHandler(immutDraft);
+  return finishHandler(immutDraft, true);
 }
 
 // see issue https://github.com/tnfe/limu/issues/5
@@ -190,17 +230,6 @@ export const deepFreeze = deepFreezeFn;
  */
 export function deepCopy<T = ObjectLike>(obj: T) {
   return deepCopyFn(obj);
-}
-
-/**
- * 生成一个不可修改的对象im，但原始对象的修改将同步会影响到im
- * immut 采用了读时浅代理的机制，相比deepFreeze会拥有更好性能，适用于不暴露原始对象出去，只暴露生成的不可变对象出去的场景
- * @see: https://tnfe.github.io/limu/docs/api/basic/immut
- */
-export function immut<T = ObjectLike>(base: T, options?: Omit<ICreateDraftOptions, 'readOnly'>): T {
-  const limuApis = buildLimuApis({ ...(options || {}), readOnly: true, [IMMUT_BASE]: true });
-  const immutData = limuApis.createDraft(base);
-  return immutData;
 }
 
 /**

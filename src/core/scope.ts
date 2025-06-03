@@ -6,7 +6,8 @@
 import type { DraftMeta, IApiCtx } from '../inner-types';
 import { ARRAY, MAP, SET } from '../support/consts';
 import { deepDrill, isObject } from '../support/util';
-import { getDraftMeta, getMetaVer } from './meta';
+import { getDraftMetaByCtx, getDraftMeta, getMetaVer, getMultiRefPaths, clearMultiRefData } from './meta';
+import { getKeyStrByPath, getVal, setVal } from './path-util';
 
 function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targetNode: any; key: any }) {
   const { copy, isArrOrderChanged } = listMeta;
@@ -15,9 +16,9 @@ function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targe
   if (isArrOrderChanged) {
     // fix issue https://github.com/tnfe/limu/issues/13
     // 元素经过 sort 后，可能已变成 proxy 对象，所以这里需要比较 copy 和 proxyVal
-    const key = copy.findIndex((item: any) => item === itemMeta.copy || item === itemMeta.proxyVal);
-    if (key >= 0) {
-      copy[key] = targetNode;
+    const index = copy.findIndex((item: any) => item === itemMeta.copy || item === itemMeta.proxyVal);
+    if (index >= 0) {
+      copy[index] = targetNode;
     }
     return;
   }
@@ -47,7 +48,7 @@ export function clearScopes(rootMeta: DraftMeta, apiCtx: IApiCtx) {
     }
     const item = v;
     deepDrill(node, parent, key, (obj: any, parentObj: any, key: any) => {
-      const meta = getDraftMeta(obj, apiCtx);
+      const meta = getDraftMetaByCtx(obj, apiCtx);
       if (meta) {
         const { modified, copy, self } = meta;
         const targetNode = !modified ? self : copy;
@@ -99,12 +100,64 @@ export function clearScopes(rootMeta: DraftMeta, apiCtx: IApiCtx) {
   rootMeta.scopes.length = 0;
 }
 
-export function extractFinalData(rootMeta: DraftMeta, apiCtx: IApiCtx) {
+export function handleMultiRef(rootMeta: DraftMeta, final: any) {
+  const keyPathsList = getMultiRefPaths(rootMeta.sourceId);
+
+  let idx = -1;
+  const toClearIdxList: number[] = [];
+  const toClearKeyStrList: string[] = [];
+  for (const keyPaths of keyPathsList) {
+    idx += 1;
+    let changedMeta: any = null;
+    let fixedMeta: any = null;
+    const results: any[] = [];
+    for (const keyPath of keyPaths) {
+      const { val } = getVal(rootMeta.proxyVal, keyPath);
+      const valMeta = getDraftMeta(val);
+      if (!valMeta) continue;
+
+      if (valMeta.modified && !changedMeta) {
+        changedMeta = valMeta;
+      }
+
+      fixedMeta = valMeta;
+      results.push(valMeta.self);
+    }
+
+    // TODO  优化为分析所有 results，做部分清理
+    // prev: [ r1, r2, r3, r4, r5 ] 都一样
+    // now: [ r1, r2, r3 ] 一样，[ r4, r5 ] 一样
+    // 需要按照新的比较结果来记录新的，目前先实现简单的下标1和2比较
+    const isEq = results[0] === results[1];
+    if (!isEq) {
+      toClearIdxList.push(idx);
+      keyPaths.forEach(keyPath => toClearKeyStrList.push(getKeyStrByPath(keyPath)));
+    } else if (changedMeta) {
+      for (const keyPath of keyPaths) {
+        setVal(final, keyPath, changedMeta.copy);
+      }
+    } else if (fixedMeta) {
+      for (const keyPath of keyPaths) {
+        setVal(final, keyPath, fixedMeta.self);
+      }
+    }
+  }
+
+  if (toClearIdxList.length) {
+    clearMultiRefData(rootMeta.sourceId, toClearIdxList, toClearKeyStrList);
+  }
+}
+
+export function extractFinalData(rootMeta: DraftMeta, apiCtx: IApiCtx, fast: boolean) {
   const { self, copy, modified } = rootMeta;
   let final = self;
   // 有 copy 不一定有修改行为，这里需做双重判断
   if (copy && modified) {
     final = rootMeta.copy;
+  }
+  // 这里 handleMultiRef 和 clearScopes 顺序很重要，必须先处理多引用，再清理 scopes
+  if (!fast) {
+    handleMultiRef(rootMeta, final);
   }
   // if put this on first line, fail at test/set-other/update-object-item.ts
   clearScopes(rootMeta, apiCtx);

@@ -7,31 +7,13 @@ console.log('process.env.DISABLE_REVOKE', process.env.DISABLE_REVOKE);
 console.log('process.env.ST', process.env.ST);
 const autoRevoke = process.env.DISABLE_REVOKE === '1' ? false : true;
 
-const limuDebug = {
+const limuFast = {
   ...lib,
   createDraft(base, options) {
-    return lib.createDraft(base, { debug: true, fastModeRange: 'all', ...(options || {}), autoRevoke });
+    return lib.createDraft(base, { fast: true, ...(options || {}), autoRevoke });
   },
   produce(base, draftCb, options) {
-    return lib.produce(base, draftCb, {
-      fastModeRange: 'all',
-      ...(options || {}),
-      autoRevoke,
-    });
-  },
-};
-
-const limuDebugSlow = {
-  ...lib,
-  createDraft(base, options) {
-    return lib.createDraft(base, { debug: true, fastModeRange: 'none', ...(options || {}), autoRevoke });
-  },
-  produce(base, draftCb, options) {
-    return lib.produce(base, draftCb, {
-      fastModeRange: 'none',
-      ...(options || {}),
-      autoRevoke,
-    });
+    return lib.produce(base, draftCb, { fast: true, ...(options || {}), autoRevoke });
   },
 };
 
@@ -47,6 +29,5 @@ const limu = {
 
 module.exports = {
   limu,
-  limuDebug,
-  limuDebugSlow,
+  limuFast,
 };

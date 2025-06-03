@@ -19,12 +19,15 @@ import {
   SET,
 } from '../support/consts';
 import { conf, genMetaVer } from '../support/inner-data';
-import { canBeNum, has, isFn, isPrevVerDraft, isPrimitive, isSymbol } from '../support/util';
+import { canBeNum, has, isFn, isPrevVerDraft, isPrimitive } from '../support/util';
 import { handleDataNode } from './data-node-processor';
 import { deepFreeze } from './freeze';
 import { createScopedMeta, getMayProxiedVal, getUnProxyValue } from './helper';
-import { getSafeDraftMeta, getDraftMeta, isDraft, getPrivateMeta, replaceMetaPartial, ROOT_CTX } from './meta';
-import { pushKeyPath, getValByKeyPaths, getVal, setValByKeyPaths, getKeyStrPath } from './path-util';
+import {
+  getSafeDraftMeta, getDraftMetaByCtx, isDraft, getPrivateMeta, replaceMetaPartial,
+  mayRelinkPath, ROOT_CTX, getSourceId, setSourceId,
+} from './meta';
+import { pushKeyPath, getValByKeyPaths, getVal, setValByKeyPaths } from './path-util';
 import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 
 // 可直接返回的属性
@@ -33,10 +36,44 @@ import { extractFinalData, isInSameScope, recordVerScope } from './scope';
 const PROPERTIES_BLACK_LIST = ['length', 'constructor', 'asymmetricMatch', 'nodeType', 'size'] as const;
 const PBL_DICT: Record<string, number> = {}; // for perf
 PROPERTIES_BLACK_LIST.forEach((item) => (PBL_DICT[item] = 1));
-const noop = (arg: any) => arg;
 
 const TYPE_BLACK_DICT: Record<string, number> = { [ARRAY]: 1, [SET]: 1, [MAP]: 1 }; // for perf
 export const FINISH_HANDLER_MAP = new Map();
+
+// let metaMapCount = 0;
+
+// function limuStat() {
+//   const metaMapSizeStat: any = {};
+//   ROOT_CTX.forEach((value, key) => {
+//     let subKey = '';
+//     let isImmut = false;
+//     let root = null;
+//     // @ts-ignore
+//     for (const mapKey of value.metaMap.keys()) {
+//       subKey = mapKey;
+//       break;
+//     }
+//     if (subKey) {
+//       isImmut = value.metaMap.get(subKey)?.isImmutBase ?? false;
+//       root = value.metaMap.get(subKey)?.rootMeta.self;
+//     }
+
+//     metaMapSizeStat[key] = { metaVer: value.metaVer, size: value.metaMap.size, isImmut, root };
+//   });
+
+//   return {
+//     metaMapCount,
+//     ROOT_CTX,
+//     rootCtxSize: ROOT_CTX.size,
+//     metaMapSizeStat,
+//   };
+// }
+
+// Object.defineProperty(window, 's', {
+//   get() {
+//     return limuStat();
+//   },
+// });
 
 export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   const opts = options || {};
@@ -51,10 +88,17 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
   // 调用那一刻起，确定 autoFreeze 值
   // allow user overwrite autoFreeze setting in current call process
   const autoFreeze = opts.autoFreeze ?? conf.autoFreeze;
-  // 暂未实现 to be implemented in the future
-  const metaVer = genMetaVer();
+  const disableProxy = opts.disableProxy ?? false;
+  const fast = opts.fast ?? false;
+
+  let metaVer = '';
+  let isDraftFinished = false;
   const apiCtx: IApiCtx = { metaMap: new Map(), newNodeMap: new Map(), metaVer };
-  ROOT_CTX.set(metaVer, apiCtx);
+  if (!disableProxy) {
+    metaVer = genMetaVer();
+    apiCtx.metaVer = metaVer;
+    ROOT_CTX.set(metaVer, apiCtx);
+  }
 
   const autoRevoke = opts.autoRevoke ?? conf.autoRevoke;
   const silenceSetTrapErr = opts.silenceSetTrapErr ?? true;
@@ -66,8 +110,6 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     console.warn(`${op} failed, cuase the value is an expired limu proxy data! key:`, key);
     return silenceSetTrapErr;
   };
-
-  let isDraftFinished = false;
 
   const warnReadOnly = () => {
     if (!disableWarn) {
@@ -85,8 +127,14 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
     let replacedValue: any = isNotGet ? value : mayProxyVal;
 
     if (!onOperate) return { isChanged, replacedValue };
+
     const parentMeta = (inputPMeta || {}) as DraftMeta;
-    const { selfType = '', keyPath = [], copy, self, modified, proxyVal: parentProxy } = parentMeta || {};
+    const {
+      selfType = '', keyPath = [], copy, self, modified, proxyVal: parentProxy, arrKeyPath = [],
+      keyPaths = [], keyStrPaths = [], arrKeyPaths = [],
+    } = parentMeta;
+
+    // console.log('execOnOperate parentMeta', parentMeta);
 
     let isBuiltInFnKey = false;
     // 优先采用显式传递的 isChange
@@ -124,7 +172,11 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
       isCustom,
       key,
       keyPath,
+      keyPaths,
+      keyStrPaths,
       fullKeyPath: keyPath.concat(key),
+      arrKeyPath,
+      arrKeyPaths,
       value,
       // 写操作时，proxyValue 是 undefined
       proxyValue: mayProxyVal,
@@ -194,36 +246,27 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         let mayProxyVal = currentVal;
         const parentMeta = getSafeDraftMeta(parent, apiCtx);
 
-        const valueMeta = getDraftMeta(mayProxyVal, apiCtx);
-        noop(isSymbol);
+        // const keyStr = getKeyStrByPath(parentMeta.keyStrPath.concat(key));
+        // const paths = getMultiRefPaths(parentMeta.sourceId, keyStr);
+        // if (paths.length > 1) {
 
-        // if (valueMeta && valueMeta.parentMeta !== parentMeta && !isSymbol(key)) {
-        if (valueMeta && valueMeta.parentMeta !== parentMeta) {
-          const prevKeyPath = valueMeta.keyPath;
-          const newKeyPath = parentMeta.keyPath.concat(key);
-          const prevKeyStrPath = getKeyStrPath(prevKeyPath);
-          const newKeyStrPath = getKeyStrPath(newKeyPath);
+        // }
 
-          if (prevKeyStrPath.join('|') !== newKeyStrPath.join('|')) {
-            // 发现一条新的路径指向当前 value，说明存在多引用
-            valueMeta.keyPaths.push(newKeyPath);
-            valueMeta.keyStrPaths.push(newKeyStrPath);
-            if (valueMeta.modified) {
-              let curKey = key;
-              let curMeta = valueMeta;
-              let curPMeta = parentMeta;
-              do {
-                curPMeta.copy[curKey] = curMeta.copy;
-                curPMeta.modified = true;
+        // if (key === 'currentUser') {
+        //   console.trace(`get sourceId ${parentMeta.sourceId}`, metaVer);
+        //   const keyStr = getKeyStrByPath(parentMeta.keyStrPath.concat(key));
+        //   console.log(getMultiRefPaths(parentMeta.sourceId, keyStr));
+        // }
 
-                curKey = curPMeta.key;
-                curMeta = curPMeta;
-                // @ts-ignore
-                curPMeta = curPMeta.parentMeta;
-              } while (curPMeta);
-            }
-            return valueMeta.proxyVal;
-          }
+        /**
+         * 当执行类似代码时：
+         * draft.a = draft.info.a;
+         * 需重记录多引用关系
+         */
+        const valueMeta = getDraftMetaByCtx(mayProxyVal, apiCtx);
+        const proxyVal = mayRelinkPath(key, parentMeta, valueMeta);
+        if (proxyVal) {
+          return proxyVal;
         }
 
         if (customKeys.includes(key)) {
@@ -254,6 +297,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           apiCtx,
           hasOnOperate,
           autoRevoke,
+          fast,
         });
 
         // 用下标取数组时，可直接返回
@@ -307,6 +351,11 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
             }
 
             const valueMeta = getSafeDraftMeta(inputValue, apiCtx);
+
+            // 对某个对象做了2次赋值，例如：
+            // draft.current = draft.list[0];
+            mayRelinkPath(key, parentMeta, valueMeta);
+
             const newKeyPath = parentMeta.keyPath.concat(key);
             pushKeyPath(valueMeta, newKeyPath);
           } else {
@@ -337,7 +386,6 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
 
           pushKeyPath(curVerMeta, newKeyPath);
           setValByKeyPaths(rootSelf, curVerMeta.keyPaths, curVerMeta.self);
-
           mayNewNode = curVerMeta.keyPaths.length === 1;
           apiCtx.metaMap.set(curVerMeta.copy, curVerMeta);
 
@@ -425,7 +473,13 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
         if (isPrimitive(mayDraft)) {
           throw new Error('base state can not be primitive');
         }
+        if (disableProxy) {
+          FINISH_HANDLER_MAP.set(mayDraft, limuApis.finishDraft);
+          return mayDraft;
+        }
+
         let oriBase = mayDraft;
+        const sourceId = opts.sourceId || getSourceId(mayDraft);
 
         const draftMeta = getSafeDraftMeta(mayDraft, apiCtx);
         if (draftMeta) {
@@ -445,6 +499,7 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           apiCtx,
           hasOnOperate,
           autoRevoke,
+          sourceId,
         });
         recordVerScope(meta);
         meta.execOnOperate = execOnOperate;
@@ -452,27 +507,24 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
 
         return meta.proxyVal as T;
       },
-      finishDraft: (proxyDraft: any) => {
-        // attention: if pass a revoked proxyDraft
-        // it will throw: Cannot perform 'set' on a proxy that has been revoked
-        const rootMeta = getSafeDraftMeta(proxyDraft, apiCtx);
-        if (!rootMeta) {
-          throw new Error('rootMeta should not be null!');
-        }
-        if (rootMeta.level !== 0) {
-          throw new Error('can not finish sub draft node!');
-        }
-
-        // TODO support fastCopy
-
-        // immutBase 是一个一直可用的代理对象（不会被revoke）
-        // 对 immut() 返回的对象调用 finishDraft 则总是返回 immutBase 自身代理
-        // 将 immut() 返回结果传给 finishDraft 是无意义的
-        if (rootMeta.isImmutBase) {
+      finishDraft: (proxyDraft: any, clearImmut?: boolean) => {
+        if (disableProxy) {
+          FINISH_HANDLER_MAP.delete(proxyDraft);
           return proxyDraft;
         }
 
-        let final = extractFinalData(rootMeta, apiCtx);
+        // attention: if pass a revoked proxyDraft
+        // it will throw: Cannot perform 'set' on a proxy that has been revoked
+        const rootMeta = getSafeDraftMeta(proxyDraft, apiCtx);
+        // immutBase 是一个一直可用的代理对象（不会被revoke）
+        // 对 immut() 返回的对象调用 finishDraft 则总是返回 immutBase 自身代理
+        // 将 immut() 返回结果传给 finishDraft 是无意义的
+        // 彻底清理 immut 需调用 finishImmut 接口
+        if (rootMeta.isImmutBase && !clearImmut) {
+          return proxyDraft;
+        }
+
+        let final = extractFinalData(rootMeta, apiCtx, fast);
         if (autoFreeze && canFreezeDraft) {
           // TODO deep pruning
           // see https://github.com/immerjs/immer/issues/687
@@ -480,6 +532,8 @@ export function buildLimuApis(options?: IInnerCreateDraftOptions) {
           final = deepFreeze(final);
         }
         ROOT_CTX.delete(metaVer);
+        FINISH_HANDLER_MAP.delete(proxyDraft);
+        setSourceId(final, rootMeta.sourceId);
 
         isDraftFinished = true;
         return final;

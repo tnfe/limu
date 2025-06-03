@@ -18,7 +18,7 @@ import {
 } from '../support/consts';
 import { isFn, isPrimitive } from '../support/util';
 import { getUnProxyValue } from './helper';
-import { getDraftMeta, markModified } from './meta';
+import { getDraftMetaByCtx, markModified } from './meta';
 import { delKeyPath } from './path-util';
 
 function mayMarkModified(options: { calledBy: string; parentMeta: DraftMeta; op: string; parentType: string; key: string | number }) {
@@ -102,11 +102,11 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
 
   const oldValue = parentCopy[key];
   const tryMarkDel = () => {
-    const oldValueMeta = getDraftMeta(oldValue, apiCtx);
+    const oldValueMeta = getDraftMetaByCtx(oldValue, apiCtx);
     oldValueMeta && (oldValueMeta.isDel = true);
   };
   const tryMarkUndel = () => {
-    const valueMeta = getDraftMeta(mayProxyValue, apiCtx);
+    const valueMeta = getDraftMetaByCtx(mayProxyValue, apiCtx);
     if (valueMeta && valueMeta.isDel) {
       valueMeta.isDel = false;
       valueMeta.key = key;
@@ -118,7 +118,7 @@ export function handleDataNode(parentDataNode: any, copyCtx: { parentMeta: Draft
   };
 
   if (OP_DEL === op) {
-    const valueMeta = getDraftMeta(mayProxyValue, apiCtx);
+    const valueMeta = getDraftMetaByCtx(mayProxyValue, apiCtx);
     // for test/complex/data-node-change case3
     if (valueMeta) {
       const { keyPaths } = valueMeta;

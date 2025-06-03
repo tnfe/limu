@@ -7,8 +7,9 @@ import type { DataType } from '../inner-types';
 
 /**
  * 4.0 开始，新增 keyPaths 支持多引用记录
+ * 4.1 开始，支持 draft 操作过程中产生新引用
  */
-export const VER = '4.0.0';
+export const VER = '4.1.0';
 
 /** meta 数据key，仅 debug 模式才挂到对象的原型上 (4.0+ 移除debug) */
 export const META_KEY = Symbol('M');
