@@ -9,7 +9,7 @@ const jestConfig = {
   ],
   setupFilesAfterEnv: [],
   testMatch: [
-    // lastest passed case count: 533
+    // latest passed case count: 533
     '<rootDir>/test/**/*.ts',
 
     // '<rootDir>/test/multi-ref/*.ts',

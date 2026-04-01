@@ -151,7 +151,7 @@ export function getProxyVer(mayProxy: any) {
   return mayProxy[META_VER] || '';
 }
 
-export function isPrevVerDraft(mayProxy: any, curVer: string) {
+export function isDifferentVerDraft(mayProxy: any, curVer: string) {
   const ver = getProxyVer(mayProxy);
   if (!ver) {
     return false;

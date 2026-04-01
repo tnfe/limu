@@ -2,7 +2,7 @@
 import type { ObjectLike } from '../src/index';
 import * as limu from '../src/index'; // test limu source code
 // import * as limu from '../benchmark/libs/limu'; // test limu compiled code
-// import { lib as limu } from '../benchmark/libs/mutative'; // test mutative
+// import * as limu from '../benchmark/libs/mutative'; // test mutative
 // import * as limu from '../benchmark/libs/immer'; // test mutative
 
 if (limu.enableMapSet) {

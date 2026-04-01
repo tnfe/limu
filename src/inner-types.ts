@@ -206,25 +206,6 @@ export interface ICreateDraftOptions {
    * 数据源 id，不透传的话内部会自己生成一个，用于表示多个版本的草稿数据来源于同一份初始数据
    */
   sourceId?: string;
-  /**
-   * default: false，是否为快速运行模式，fast=true：时，fast=fase：否。
-   * ```text
-   * false 模式目前会缺失以下功能
-   * 1 允许 draft 操作过程中产生多引用
-   * // 待定.
-   * ```
-   *
-   * 当确信不需要以上功能时，设置 fast=true 可以获得更好的性能表现。
-   *
-   * ```text
-   * // 备注
-   * benchmark 目录下执行, npm run s1，
-   * fast 模式耗时 0.25 ms 左右，
-   * 非 fast 耗时 0.35 ms 左右，
-   * 作为对比，immer 耗时 3.5 ms 左右。
-   * ```
-   */
-  fast?: boolean;
 }
 
 export type IImutOptions = Omit<ICreateDraftOptions, 'readOnly'>;

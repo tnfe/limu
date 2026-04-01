@@ -50,7 +50,7 @@ export function getKeyPath(draftNode: any, curKey: string, apiCtx: IApiCtx) {
 }
 
 export function newMeta(key: any, baseData: any, options: AnyObject & { parentMeta: DraftMeta }) {
-  const { ver, parentMeta = null, immutBase, compareVer, apiCtx, hasOnOperate, fast } = options;
+  const { ver, parentMeta = null, immutBase, compareVer, apiCtx, hasOnOperate } = options;
   const dataType = getDataType(baseData);
 
   let sourceId = options.sourceId;
@@ -74,68 +74,66 @@ export function newMeta(key: any, baseData: any, options: AnyObject & { parentMe
     keyPath = getKeyPath(copy, key, apiCtx);
     keyStrPath = toKeyStrPath(keyPath);
 
-    if (!fast) {
-      // 尝试查出记录的多引用关系
-      let paths: string[][] = [];
-      // 当前节点本身也是可由数组下标访问到的
-      if (parentMeta.arrKeyPath.length) {
-        const keyStr = getKeyStrByPath(parentMeta.arrKeyPath, true);
-        const parentPaths = getMultiRefPathsByKey(sourceId, keyStr);
-        paths = intersectPath(keyPath, parentPaths);
-      }
-      if (!paths.length) {
-        const { keyStrPathStr } = parentMeta;
-        const fullKeyStr = keyStrPathStr ? `${keyStrPathStr}|${keyStr}` : keyStr;
-        paths = getMultiRefPathsByKey(sourceId, fullKeyStr);
-      }
+    // 尝试查出记录的多引用关系
+    let paths: string[][] = [];
+    // 当前节点本身也是可由数组下标访问到的
+    if (parentMeta.arrKeyPath.length) {
+      const keyStr = getKeyStrByPath(parentMeta.arrKeyPath, true);
+      const parentPaths = getMultiRefPathsByKey(sourceId, keyStr);
+      paths = intersectPath(keyPath, parentPaths);
+    }
+    if (!paths.length) {
+      const { keyStrPathStr } = parentMeta;
+      const fullKeyStr = keyStrPathStr ? `${keyStrPathStr}|${keyStr}` : keyStr;
+      paths = getMultiRefPathsByKey(sourceId, fullKeyStr);
+    }
 
-      if (paths.length > 1) {
-        // draft 结束后再次创建草稿，发现了多引用路径
-        const { copy: rootRaw } = parentMeta.rootMeta;
-        const { val: curNode } = getVal(rootRaw, keyPath);
+    if (paths.length > 1) {
+      // draft 结束后再次创建草稿，发现了多引用路径
+      const { copy: rootRaw } = parentMeta.rootMeta;
+      const { val: curNode } = getVal(rootRaw, keyPath);
 
-        const toDelIdxList: number[] = [];
-        let isNodeParentArr = false;
-        const mayArrKeyPaths: string[][] = [];
+      const toDelIdxList: number[] = [];
+      let isNodeParentArr = false;
+      const mayArrKeyPaths: string[][] = [];
 
-        paths.forEach((keyPath, idx) => {
-          const { val: tmpNode } = getVal(rootRaw, keyPath);
-          if (!isNodeParentArr) {
-            const parentKeyPath = keyPath.slice(0, keyPath.length - 1);
-            const { val: parentNode } = getVal(rootRaw, parentKeyPath);
-            if (Array.isArray(parentNode)) {
-              // 只有有一条路径上确认了该节点是数组下标索引到节点，即可标识 isNodeParentArr 为 true
-              isNodeParentArr = true;
-            }
+      paths.forEach((keyPath, idx) => {
+        const { val: tmpNode } = getVal(rootRaw, keyPath);
+        if (!isNodeParentArr) {
+          const parentKeyPath = keyPath.slice(0, keyPath.length - 1);
+          const { val: parentNode } = getVal(rootRaw, parentKeyPath);
+          if (Array.isArray(parentNode)) {
+            // 只有有一条路径上确认了该节点是数组下标索引到节点，即可标识 isNodeParentArr 为 true
+            isNodeParentArr = true;
           }
-
-          // 当前节点还是上一个版本的节点
-          if (tmpNode === curNode) {
-            keyPaths.push(keyPath);
-            keyStrPaths.push(toKeyStrPath(keyPath));
-            mayArrKeyPaths.push(keyPath);
-          } else {
-            toDelIdxList.push(idx);
-          }
-        });
-
-        if (isNodeParentArr) {
-          arrKeyPaths = mayArrKeyPaths;
         }
 
-        // 移除已不再是共同引用的路径记录
-        toDelIdxList.forEach((idx) => paths.splice(idx, 1));
-      } else if (parentMeta.keyPaths.length > 0) {
-        // 父节点上可能有多路径，转移到子节点的 keyPaths keyStrPaths 里
-        parentMeta.keyPaths.forEach((keyPath) => {
-          const curKeyPath = keyPath.concat(key);
-          keyPaths.push(curKeyPath);
-          keyStrPaths.push(toKeyStrPath(curKeyPath));
-        });
-      } else {
-        keyPaths = [keyPath];
-        keyStrPaths = [keyStrPath];
+        // 当前节点还是上一个版本的节点
+        if (tmpNode === curNode) {
+          keyPaths.push(keyPath);
+          keyStrPaths.push(toKeyStrPath(keyPath));
+          mayArrKeyPaths.push(keyPath);
+        } else {
+          toDelIdxList.push(idx);
+        }
+      });
+
+      if (isNodeParentArr) {
+        arrKeyPaths = mayArrKeyPaths;
       }
+
+      // 移除已不再是共同引用的路径记录
+      toDelIdxList.forEach((idx) => paths.splice(idx, 1));
+    } else if (parentMeta.keyPaths.length > 0) {
+      // 父节点上可能有多路径，转移到子节点的 keyPaths keyStrPaths 里
+      parentMeta.keyPaths.forEach((keyPath) => {
+        const curKeyPath = keyPath.concat(key);
+        keyPaths.push(curKeyPath);
+        keyStrPaths.push(toKeyStrPath(curKeyPath));
+      });
+    } else {
+      keyPaths = [keyPath];
+      keyStrPaths = [keyStrPath];
     }
   }
 
@@ -369,6 +367,11 @@ export function clearMultiRefData(sourceId: string, toClearIdxList: number[], to
   // @ts-ignore
   const newPathsList = pathsList.filter((v, idx) => !toClearIdxList.includes(idx));
   MRDSid2PathsList.set(sourceId, newPathsList);
+}
+
+export function resetMultiRefData(sourceId: string, keyPathsList: string[][][], keyStr2KeyPathsDict: Record<string, string[][]>) {
+  MRDSid2PathsList.set(sourceId, keyPathsList);
+  MRDSid2KeyDict.set(sourceId, keyStr2KeyPathsDict);
 }
 
 export function recordMultiRefData(meta: DraftMeta, keyStrs: string[]) {

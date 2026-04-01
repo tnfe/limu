@@ -6,7 +6,7 @@
 import type { DraftMeta, IApiCtx } from '../inner-types';
 import { ARRAY, MAP, SET } from '../support/consts';
 import { deepDrill, isObject } from '../support/util';
-import { clearMultiRefData, getDraftMeta, getDraftMetaByCtx, getMetaVer, getMultiRefPaths } from './meta';
+import { clearMultiRefData, getDraftMeta, getDraftMetaByCtx, getMetaVer, getMultiRefPaths, resetMultiRefData } from './meta';
 import { getKeyStrByPath, getVal, setVal } from './path-util';
 
 function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targetNode: any; key: any }) {
@@ -26,6 +26,9 @@ function ressignArrayItem(listMeta: DraftMeta, itemMeta: DraftMeta, ctx: { targe
   copy[key] = targetNode;
 }
 
+/**
+ * true: 表示当前代理节点属于草稿对象
+ */
 export function isInSameScope(mayDraftProxy: any, callerScopeVer: string) {
   if (!isObject(mayDraftProxy)) {
     return true;
@@ -100,6 +103,74 @@ export function clearScopes(rootMeta: DraftMeta, apiCtx: IApiCtx) {
   rootMeta.scopes.length = 0;
 }
 
+/**
+ * TODO  将来使用 handleMultiRefV2 替换掉 handleMultiRef
+ * @param rootMeta T
+ * @param final 
+ */
+export function handleMultiRefV2(rootMeta: DraftMeta, final: any) {
+  type Stat = { modified: boolean; keyPaths: string[][]; data: any };
+  const { sourceId, proxyVal } = rootMeta;
+  const keyPathsList = getMultiRefPaths(sourceId);
+
+  const keyPathsListNew: string[][][] = [];
+  const keyStr2KeyPaths: Record<string, string[][]> = {};
+
+  for (const keyPaths of keyPathsList) {
+    const resultStatMap = new Map<any, Stat>();
+
+    const getResultStat = (val: any) => {
+      let stat = resultStatMap.get(val);
+      if (!stat) {
+        stat = { modified: false, keyPaths: [], data: null };
+        resultStatMap.set(val, stat);
+      }
+      return stat;
+    };
+
+    // keyPaths 里每一个路径代表上一刻记录的多引用关系，
+    // 这里开始对比实际值并记录为新的多引用关系
+    for (const subIdx in keyPaths) {
+      const subIdxNum = Number(subIdx);
+      const keyPath = keyPaths[subIdxNum];
+      const { val } = getVal(proxyVal, keyPath);
+      const valMeta = getDraftMeta(val);
+      if (!valMeta) {
+        continue;
+      }
+
+      const result = valMeta.modified ? valMeta.copy : valMeta.self;
+      const stat = getResultStat(result);
+      stat.keyPaths.push(keyPath);
+
+      if (stat.modified) {
+        continue;
+      }
+
+      if (valMeta.modified) {
+        stat.modified = true;
+        stat.data = valMeta.copy;
+      } else {
+        stat.data = valMeta.self;
+      }
+    }
+
+    resultStatMap.forEach((stat) => {
+      const { keyPaths, data } = stat;
+      for (const keyPath of keyPaths) {
+        // 统一指到同一个 self 或者 copy
+        setVal(final, keyPath, data);
+        // 记录行新的 keyStr keyPaths 映射关系
+        keyStr2KeyPaths[getKeyStrByPath(keyPath)] = keyPaths;
+      }
+      // 添加到新的同一个数据多引用路径列表里
+      keyPathsListNew.push(keyPaths);
+    });
+  }
+
+  resetMultiRefData(sourceId, keyPathsListNew, keyStr2KeyPaths);
+}
+
 export function handleMultiRef(rootMeta: DraftMeta, final: any) {
   const keyPathsList = getMultiRefPaths(rootMeta.sourceId);
 
@@ -124,7 +195,7 @@ export function handleMultiRef(rootMeta: DraftMeta, final: any) {
       results.push(valMeta.self);
     }
 
-    // TODO  优化为分析所有 results，做部分清理
+    // TODO  优化为分析所有 results，做部分清理，见 handleMultiRefV2
     // prev: [ r1, r2, r3, r4, r5 ] 都一样
     // now: [ r1, r2, r3 ] 一样，[ r4, r5 ] 一样
     // 需要按照新的比较结果来记录新的，目前先实现简单的下标1和2比较
@@ -148,7 +219,7 @@ export function handleMultiRef(rootMeta: DraftMeta, final: any) {
   }
 }
 
-export function extractFinalData(rootMeta: DraftMeta, apiCtx: IApiCtx, fast: boolean) {
+export function extractFinalData(rootMeta: DraftMeta, apiCtx: IApiCtx) {
   const { self, copy, modified } = rootMeta;
   let final = self;
   // 有 copy 不一定有修改行为，这里需做双重判断
@@ -156,9 +227,7 @@ export function extractFinalData(rootMeta: DraftMeta, apiCtx: IApiCtx, fast: boo
     final = rootMeta.copy;
   }
   // 这里 handleMultiRef 和 clearScopes 顺序很重要，必须先处理多引用，再清理 scopes
-  if (!fast) {
-    handleMultiRef(rootMeta, final);
-  }
+  handleMultiRef(rootMeta, final);
   // if put this on first line, fail at test/set-other/update-object-item.ts
   clearScopes(rootMeta, apiCtx);
   return final;
